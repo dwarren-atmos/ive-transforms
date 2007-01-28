@@ -1,0 +1,36 @@
+16,17c16,17
+< machine := ${shell /usr/bin/arch}
+< ifeq (${machine},alpha)
+---
+> 
+> #ifeq (${machine},alpha)
+20,21c20,21
+<    LDEC = -shared 
+<    LIBS = -L/usr/local/matlab4.2/extern/lib/alpha -lmat -lfftpack
+---
+>    LDEC = -shared
+>    LIBS = -L/usr/local/matlab4.2/extern/lib/alpha -lmat -lfftpack 
+25c25
+< else
+---
+> #else
+36,37c36
+< endif
+< #
+---
+> #endif
+51d49
+< 	     geopot.o		\
+54a53
+> 	     ll2ij.o		\
+57d55
+< 	     ll2ij.o		\
+74,76c72,75
+< 	     stagering_calc.o	\
+< 	     test.o			\
+< 	     z2zint.o
+---
+> 	     z2zint.o		\
+> 	     stag_calc.o		\
+> 	     geopot.o		\
+> 	     test.o
