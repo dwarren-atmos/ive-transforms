@@ -1,0 +1,3031 @@
+
+      program 2lyr_o2      
+
+      include '/usr/local/include/netcdf.inc'
+
+      integer ispc,nspc
+      parameter (ispc=45000000,nspc=19)
+
+      real a(ispc)
+
+      integer maxslb
+      parameter (maxslb=201)
+
+      integer idcdf1,idcdf2,isclr,isgz,iwgz,izs_p,izs_u,izs_v
+      integer itran(3),iwrk(3),iter(3),ik,il,iwrk_x,iwrk_y,mptr(nspc)
+      integer fptr,fptr1,fptr2,fptr3,iptr,igu,iu1,igv,iv1,igw,iw1,igb
+      integer ib1,ib0,id11,id12,id13,id22,id23,id33,ikm,idgu,idgv
+      integer ius,ivs,iws,idgus,idgvs,igws,igbs,igxi,iget,igze
+      integer iw2,iwf,idwf,ipf,inf1,inf2,inf3,iuf,ivf
+      integer iu,iv,iw,i1,i2,izsr,izsf,idz,ifld,ift,isgzt,iwgzt
+      integer iGs,igh,ircof,isz(maxslb),iwz(maxslb),nslb,rslb,ntop
+      integer igut,igvt,igus,igvs,iuzt,ivzt,iwzt,icalc,is,ifld1,ifld2
+      integer igm,igm1,igm2,igm3,igm4,igm5
+      integer nx,ny,nz,nzt,nxout,nyout,nzout,itopo,ntmp
+      real dx,dy,x0,y0,zt,ztop,pi,vel,mix,xout,yout,twod
+      real time1,time2,rtmp(2)
+      character*(80) outfl1,outfl2,ctmp,var1,var2
+
+      integer nvar,nsclr
+      parameter (nvar=30,nsclr=24)
+
+      real dz
+      common /dzblk/ dz
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      character*(80) var(nvar),units(nvar),sclr(nsclr)
+      data var / 'u1','u2','v1','v2','w1','w2','p1','p2','km1','b1',
+     >           'b2','zeta1','zeta2','xi1','xi2','eta1','eta2',
+     >           'u0','v0','b0','p0','gu','gv','gw','gb','dgu',
+     >           'dgv','gxi','get','gze' /
+      data units / 'm/s','m/s','m/s','m/s','m/s','m/s','m*m/s/s',
+     >             'm*m/s/s','m*m/s','m/s/s','m/s/s','m','m',
+     >             'm','m','m','m','m/s','m/s','m/s/s','m*m/s/s',
+     >             'm/s/s','m/s/s','m/s/s','m/s/s/s','1/s/s',
+     >             '1/s/s','m/s','m/s','m/s' /
+      data sclr / 'f_cor','ztop','type','h','a1','a2','b1','b2',
+     >            'y_len','xc','yc','d','Nu','Nl','U0','V0','ps','Ts',
+     >            'rhos','zt','mix','Cm','rprandl','twod' /
+
+ 886  FORMAT(A80)
+
+      time1 = etime(rtmp)
+
+      if (nspc.lt.19) then
+        write(6,*)
+        write(6,*) 'Error:  need space for at least 19 variables.'
+        write(6,*) '        Increase nspc.'
+        write(6,*)
+        stop
+      end if 
+
+      isclr = 1
+
+      iunit = 32
+
+      open (unit=iunit,file='2lyr_o2.in',status='old')
+
+      read(iunit,*) x0,y0
+      read(iunit,*) nx,ny,nz
+      read(iunit,*) dx,dy,dz
+      read(iunit,*) xout,yout
+      read(iunit,*) nxout,nyout,nzout
+      read(iunit,*) a(isclr+24-1)
+      read(iunit,*) a(isclr+3-1)
+      read(iunit,*) a(isclr+5-1),a(isclr+7-1),a(isclr+4-1)
+      read(iunit,*) a(isclr+6-1),a(isclr+8-1),a(isclr+9-1)
+      read(iunit,*) a(isclr+10-1),a(isclr+11-1)
+      read(iunit,*) a(isclr+1-1)
+      read(iunit,*) a(isclr+12-1)
+      read(iunit,*) a(isclr+13-1)
+      read(iunit,*) a(isclr+14-1)
+      read(iunit,*) a(isclr+15-1)
+      read(iunit,*) a(isclr+16-1)
+      read(iunit,*) a(isclr+17-1)
+      read(iunit,*) a(isclr+18-1)
+      read(iunit,*) a(isclr+20-1)
+      read(iunit,*) a(isclr+21-1)
+      read(iunit,*) a(isclr+22-1)
+      read(iunit,*) a(isclr+23-1)
+      read(iunit,886) outfl2
+      read(iunit,*) itopo
+
+      close (unit=iunit)
+
+      mix = a(isclr+21-1)
+      twod = a(isclr+24-1)
+      if (itopo.eq.1) then
+        outfl1 = 'tmp_out'
+      else
+        outfl1 = outfl2
+      end if
+
+      if ((mod(nx,2).eq.0).or.(mod(ny,2).eq.0)) then
+        write(6,*)
+        write(6,*) 'Error:  nx-1 and ny-1 must be even.'
+        write(6,*)
+        stop
+      else if ((mix.ne.0.).and.(nz.lt.7)) then
+        write(6,*)
+        write(6,*) 'Error:  need a layer depth of at least seven ',
+     >             '        when using mixing.'
+        write(6,*)
+        stop
+      else if ((twod.ne.0.).and.(ny.ne.7)) then
+        write(6,*) 
+        write(6,*) 'Error:  set ny to seven when solving in 2D.'
+        write(6,*)
+        stop
+      end if  
+
+      iout = nint(xout/dx) + 1
+      jout = nint(yout/dy) + 1
+      if ((iout+nxout-1.gt.nx).or.(jout+nyout-1.gt.ny)) then
+        write(6,*) 
+        write(6,*) 'Error:  output domain exceeds calculation domain.'
+        write(6,*)
+        stop
+      end if
+      xout = (iout-1)*dx
+      yout = (jout-1)*dy
+
+      pi = 2.*asin(1.)
+      vel = sqrt(a(isclr+15-1)**2+a(isclr+16-1)**2)
+      a(isclr+12-1) = a(isclr+12-1)*2.*pi*vel/a(isclr+14-1)
+      ntmp = nint(a(isclr+12-1)/dz)
+      dz = a(isclr+12-1)/ntmp
+
+      a(isclr+2-1) = dz*(nzout-1)
+      a(isclr+19-1) = a(isclr+17-1)/287.04/a(isclr+18-1)
+      zt = a(isclr+12-1) + a(isclr+20-1)*2.*pi*vel/a(isclr+13-1)
+      nzt = nint(zt/dz)+1
+      zt = (nzt-1)*dz
+
+      if (nzt.lt.nzout) then
+        write(6,*) 'Error:  upper radiation boundary less ',
+     >                      'than output domain height.'
+        stop
+      end if
+
+      call set_sclrblk(a(isclr),nsclr)
+
+      isgzt = isclr + nsclr
+      iwgzt = isgzt + nzt + 2
+      isgz = iwgzt + nzt + 2
+      iwgz = isgz + nzout
+      izs_p = iwgz + nzout
+      izs_u = izs_p + 2*nx*ny 
+      izs_v = izs_u + 2*nx*ny
+      igus = izs_v + 2*nx*ny
+      igvs = igus + 2*nx*ny
+      igut = igvs + 2*nx*ny
+      igvt = igut + 2*nx*ny
+      itran(1) = igvt + 2*nx*ny
+      itran(2) = itran(1) + 2*nx*ny
+      itran(3) = itran(2) + 2*nx*ny
+      iwrk(1) = itran(3) + 2*nx*ny
+      iwrk(2) = iwrk(1) + 2*nx*ny
+      iwrk(3) = iwrk(2) + 2*nx*ny
+      iter(1) = iwrk(3) + 2*nx*ny
+      iter(2) = iter(1) + nx*ny
+      iter(3) = iter(2) + nx*ny
+      ik = iter(3) + nx*ny
+      il = ik + nx
+      iwrk_x = il + ny
+      iwrk_y = iwrk_x + 4*nx + 15
+      ircof = iwrk_y + 4*ny + 15
+      igh = ircof + 2*nx*ny
+      igm1 = igh + 2*nx*ny
+      igm5 = igm1 + 2*nx*ny
+      iGs = igm5 + 2*nx*ny
+     
+      mptr(1) = iGs + 2*nx*ny
+      k = 2 
+ 89   if (k.le.nspc) then
+        mptr(k) = mptr(k-1) + nx*ny*nz
+        k = k+1
+        goto 89
+      end if
+
+      fptr = mptr(nspc) + nx*ny*nz
+      if (fptr.gt.ispc) then
+        write(6,*) 
+        write(6,*) 'Error:  not enough space!  Increase ispc.'
+        write(6,*) '        needed:  ',fptr
+        write(6,*) '        allocated:  ',ispc
+        write(6,*)
+        stop
+      end if
+
+      call get_ter(a(isclr),a(izs_p),a(izs_u),a(izs_v),x0,y0,dx,dy,
+     >                       nx,ny,nsclr)
+
+      do ij=1,nx*ny
+        a(iter(1)+ij-1) = a(izs_p+ij-1)
+        a(iter(2)+ij-1) = a(izs_u+ij-1)
+        a(iter(3)+ij-1) = a(izs_v+ij-1)
+      enddo
+
+      a(iwgz+1-1) = 0.
+      a(isgz+1-1) = 0.5*dz
+      do k=2,nzout
+        a(isgz+k-1) = a(isgz+k-2) + dz
+        a(iwgz+k-1) = a(iwgz+k-2) + dz
+      enddo
+
+      call set_outfl(idcdf1,nxout,nyout,nzout,dx,dy,dz,xout,yout,
+     >                a(isgz),a(iwgz),a(isclr),0.,sclr,var,units,
+     >                outfl1,nsclr,nvar)
+
+      call write_2d(idcdf1,a(izs_p),a(itran(1)),'zbot_p',iout,jout,
+     >                  nx,ny,nxout,nyout,0,0)
+      call write_2d(idcdf1,a(izs_u),a(itran(1)),'zbot_u',iout,jout,
+     >                  nx,ny,nxout,nyout,1,0)
+      call write_2d(idcdf1,a(izs_v),a(itran(1)),'zbot_v',iout,jout,
+     >                  nx,ny,nxout,nyout,0,1)
+
+      call calc_wavnm(a(ik),dx,nx-1) 
+      call calc_wavnm(a(il),dy,ny-1)
+
+      call cffti(nx-1,a(iwrk_x))
+      call cffti(ny-1,a(iwrk_y))
+      call trnsfrm2d(a(izs_p),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,0,0)
+      call trnsfrm2d(a(izs_u),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,1,0)
+      call trnsfrm2d(a(izs_v),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,0,1)
+
+      fptr1 = mptr(14)
+      fptr2 = mptr(16)
+      fptr3 = mptr(18)
+
+      ius = mptr(1)
+      ivs = mptr(2)
+      iws = mptr(3)
+
+      do k=1,3
+        if (k.eq.1) then
+          iptr = ius
+          ctmp = 'u1'
+        else if (k.eq.2) then 
+          iptr = ivs
+          ctmp = 'v1'
+        else 
+          iptr = iws
+          ctmp = 'w1'
+        end if
+        call calc_o1(a(iptr),a(fptr1),a(izs_p),a(itran(1)),a(iwrk(1)),
+     >            0.,a(iwrk_x),a(iwrk_y),a(ik),a(il),dx,dy,ctmp,
+     >            nx,ny,1,0,0)
+      enddo
+
+      idgus = mptr(4)
+      idgvs = mptr(6)
+      igws = mptr(8)
+      igbs = mptr(10)
+
+      do ij=1,nx*ny
+        a(idgus+ij-1) = 0.
+        a(idgvs+ij-1) = 0.
+        a(igws+ij-1) = 0.
+        a(igbs+ij-1) = 0.
+        a(igus+ij-1) = 0.
+        a(igvs+ij-1) = 0.
+      enddo
+
+      do k=1,6
+        if (k.eq.1) then
+          iptr = idgus
+          ctmp = 'dgu'
+          idz = 1
+        else if (k.eq.2) then 
+          iptr = idgvs
+          ctmp = 'dgv'
+          idz = 1
+        else if (k.eq.3) then 
+          iptr = igws
+          ctmp = 'gw'
+          idz = 0
+        else if (k.eq.4) then
+          iptr = igbs
+          ctmp = 'gb'
+          idz = 0
+        else if (k.eq.5) then
+          iptr = igus
+          ctmp = 'gu'
+          idz = 0
+        else
+          iptr = igvs
+          ctmp = 'gv'
+          idz = 0
+        end if
+        call calc_advc(ctmp,a(iptr),a(ius),a(ivs),a(iws),a(fptr1),
+     >         a(fptr2),a(fptr3),a(izs_p),a(itran(1)),a(itran(2)),
+     >         a(itran(3)),a(iwrk(1)),a(iwrk(2)),a(iwrk(3)),
+     >         a(iwrk_x),a(iwrk_y),a(ik),a(il),0.,nx,ny,1,0,0,idz)
+        call trnsfrm2d(a(iptr),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                                       0,0)
+      enddo
+
+      call calc_Gfac(a(iGs),a(idgus),a(idgvs),a(igws),a(igbs),
+     >                a(ik),a(il),nx,ny)
+
+      call calc_gh(a(igh),a(ius),a(ivs),a(iter(1)),a(izs_p),
+     >         a(itran(1)),a(itran(2)),a(itran(3)),a(iwrk(1)),
+     >         a(iwrk(2)),a(iwrk(3)),a(iwrk_x),a(iwrk_y),a(ik),
+     >         a(il),nx,ny)
+      call trnsfrm2d(a(igh),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,0,0)
+
+      igm2 = mptr(1)
+      igm3 = mptr(3)
+      igm4 = mptr(5)
+
+      do k=1,4
+        if (k.eq.1) then
+          iptr = igm1
+          ctmp = 'gm1'
+        else if (k.eq.2) then
+          iptr = igm2
+          ctmp = 'gm2'
+        else if (k.eq.3) then
+          iptr = igm3
+          ctmp = 'gm3'
+        else
+          iptr = igm4
+          ctmp = 'gm4'
+        end if
+        call calc_gm(ctmp,a(iptr),a(izs_p),a(itran(1)),a(itran(2)),
+     >                a(itran(3)),a(iwrk(1)),a(iwrk(2)),a(iwrk(3)), 
+     >                a(iwrk_x),a(iwrk_y),a(ik),a(il),nx,ny)
+        call trnsfrm2d(a(iptr),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                                       0,0)
+      enddo
+
+      call calc_gm5(a(igm5),a(igm2),a(igm3),a(igm4),a(ik),a(il),nx,ny)
+
+      iuzt = mptr(1)
+      ivzt = mptr(2)
+      iwzt = mptr(3)
+
+      do k=1,3
+        if (k.eq.1) then
+          iptr = iuzt
+          ctmp = 'u1'
+        else if (k.eq.2) then 
+          iptr = ivzt
+          ctmp = 'v1'
+        else 
+          iptr = iwzt
+          ctmp = 'w1'
+        end if
+        call calc_o1(a(iptr),a(fptr1),a(izs_p),a(itran(1)),a(iwrk(1)),
+     >            zt,a(iwrk_x),a(iwrk_y),a(ik),a(il),dx,dy,ctmp,
+     >            nx,ny,1,0,0)
+      enddo
+
+      do ij=1,nx*ny
+        a(igut+ij-1) = 0.
+        a(igvt+ij-1) = 0.
+      enddo
+
+      do k=1,2
+        if (k.eq.1) then
+          iptr = igut
+          ctmp = 'gu'
+          idz = 0
+        else if (k.eq.2) then 
+          iptr = igvt
+          ctmp = 'gv'
+          idz = 0
+        end if
+        call calc_advc(ctmp,a(iptr),a(iuzt),a(ivzt),a(iwzt),a(fptr1),
+     >         a(fptr2),a(fptr3),a(izs_p),a(itran(1)),a(itran(2)),
+     >         a(itran(3)),a(iwrk(1)),a(iwrk(2)),a(iwrk(3)),
+     >         a(iwrk_x),a(iwrk_y),a(ik),a(il),zt,nx,ny,1,0,0,idz)
+      enddo
+
+      k=1
+ 91   if (k.le.nzt+2) then
+        if (k.le.nzout) then
+          a(iwgzt+k-1) = a(iwgz+k-1)
+          a(isgzt+k-1) = a(isgz+k-1)
+        else
+          a(iwgzt+k-1) = a(iwgzt+k-2) + dz
+          a(isgzt+k-1) = a(isgzt+k-2) + dz 
+        end if
+        k = k+1
+        goto 91 
+      end if
+
+      rslb = 0
+      if (mix.ne.0.) then
+        isz(1) = isgzt + min(nz-6,nzout+2-6)
+        iwz(1) = iwgzt + min(nz-6,nzout+2-6)
+ 97     if (isz(rslb+1)-isgzt+1.lt.nzt-3) then
+          rslb = rslb + 1
+          if (rslb.gt.maxslb-1) then
+            write(6,*) 'Error:  too many slabs for radiation ',
+     >                           'calculation!'
+            stop
+          end if
+          isz(rslb+1) = isz(rslb) + nz-6
+          iwz(rslb+1) = iwz(rslb) + nz-6
+          goto 97
+        end if
+        ntop = nzt+2 - (isz(rslb)-isgzt+1) + 1
+      else
+        isz(1) = isgzt + min(nz,nzout-1)
+        iwz(1) = iwgzt + min(nz,nzout-1)
+ 99     if (isz(rslb+1)-isgzt+1.lt.nzt) then
+          rslb = rslb + 1
+          if (rslb.gt.maxslb-1) then
+            write(6,*) 'Error:  too many slabs for radiation ',
+     >                          'calculation!'
+            stop
+          end if
+          isz(rslb+1) = isz(rslb) + nz
+          iwz(rslb+1) = iwz(rslb) + nz
+          goto 99
+        end if
+        ntop = nzt - (isz(rslb)-isgzt+1)
+      end if
+
+      do ij=1,nx*ny
+        a(ircof+ij-1) = 0.
+      enddo
+
+      idgu = mptr(1)
+      iu1 = mptr(2)
+      idgv = mptr(3)
+      iv1 = mptr(4)
+      igw = mptr(5)
+      iw1 = mptr(6)
+      igb = mptr(7)
+      ib1 = mptr(8)
+      igu = mptr(9)
+      igv = mptr(10)
+      id11 = mptr(13)
+      id12 = mptr(14)
+      id13 = mptr(15)
+      id22 = mptr(16)
+      id23 = mptr(17)
+      id33 = mptr(18)
+      ikm = mptr(19)
+
+      if (rslb.gt.0) then
+        call rad_coeff(a,ispc,ircof,iu1,iv1,iw1,ib1,igu,igv,igw,igb,
+     >                  idgu,idgv,id11,id12,id13,id22,id23,id33,ikm,
+     >                  fptr1,fptr2,fptr3,izs_p,izs_u,izs_v,itran,
+     >                  iwrk,iwrk_x,iwrk_y,ik,il,isclr,isz(1),iwz(1),
+     >                  rslb,ntop,dx,dy,dz,nx,ny,nz,1)
+        if (mix.ne.0.) then
+          call mix_zt(a(igut),a(igvt),a(igu),a(igv),nx,ny,ntop)
+        end if
+      end if
+
+      isz(1) = isgzt
+      iwz(1) = iwgzt
+      nslb = 0
+      if (mix.ne.0.) then
+ 102    if (isz(nslb+1)-isgzt+1.lt.nzout-3) then
+          nslb = nslb+1
+          isz(nslb+1) = isz(nslb) + nz-6
+          iwz(nslb+1) = iwz(nslb) + nz-6
+          goto 102
+        end if
+        ntop = nzout+2 - (isz(nslb)-isgzt+1) + 1
+      else
+ 104    if (isz(nslb+1)-isgzt+1.lt.nzout) then
+          nslb = nslb+1
+          isz(nslb+1) = isz(nslb) + nz
+          iwz(nslb+1) = iwz(nslb) + nz
+          goto 104
+        end if
+        ntop = nzout - (isz(nslb)-isgzt+1)
+      end if
+
+      is = 1
+ 107  if (is.le.nslb) then
+ 
+        if (is.eq.nslb) then
+          nzs = ntop
+        else
+          nzs = nz
+        end if
+ 
+        idgu = mptr(1)
+        iu1 = mptr(2)
+        idgv = mptr(3)
+        iv1 = mptr(4)
+        igw = mptr(5)
+        iw1 = mptr(6)
+        igb = mptr(7)
+        ib1 = mptr(8)
+        igu = mptr(9)
+        igv = mptr(10)
+        id11 = mptr(13)
+        id12 = mptr(14)
+        id13 = mptr(15)
+        id22 = mptr(16)
+        id23 = mptr(17)
+        id33 = mptr(18)
+        ikm = mptr(19)
+
+        fptr1 = mptr(14)
+        fptr2 = mptr(16)
+        fptr3 = mptr(18)
+
+        do ijk=1,nx*ny*nzs
+          a(igu+ijk-1) = 0.
+          a(igv+ijk-1) = 0.
+          a(igw+ijk-1) = 0.
+          a(igb+ijk-1) = 0.
+          a(idgu+ijk-1) = 0.
+          a(idgv+ijk-1) = 0.
+          a(ikm+ijk-1) = 0.
+        enddo
+
+        do k=1,4
+          iu = 0
+          iv = 0
+          igz = isz(is)
+          izsf = izs_p
+          if (k.eq.1) then
+            ctmp = 'u1'
+            iu = 1
+            izsf = izs_u
+            iptr = iu1
+          else if (k.eq.2) then
+            ctmp = 'v1'
+            iv = 1
+            izsf = izs_v
+            iptr = iv1
+          else if (k.eq.3) then
+            ctmp = 'w1'
+            igz = iwz(is)
+            iptr = iw1
+          else
+            ctmp = 'b1'
+            iptr = ib1
+          end if
+          call calc_o1(a(iptr),a(fptr1),a(izsf),a(itran(1)),
+     >                 a(iwrk(1)),a(igz),a(iwrk_x),a(iwrk_y),
+     >                 a(ik),a(il),dx,dy,ctmp,nx,ny,nzs,iu,iv)
+        enddo
+
+        if (mix.ne.0.) then
+ 
+          call calc_def(a(id11),a(id12),a(id13),a(id22),a(id23),
+     >                 a(id33),a(iu1),a(iv1),a(iw1),a(isz(is)),
+     >                 a(iwz(is)),dx,dy,nx,ny,nzs)
+          call calc_km(a(id11),a(id12),a(id13),a(id22),a(id23),
+     >                 a(id33),a(ib1),a(ikm),a(isz(is)),a(isclr+5-1),
+     >                 a(isclr+22-1),a(isclr+23-1),nx,ny,nzs)
+          call u_mix(a(id11),a(id12),a(id13),a(igu),a(idgu),
+     >                    a(iwz(is)),a(isz(is)),dx,dy,nx,ny,nzs)
+          call v_mix(a(id12),a(id22),a(id23),a(igv),a(idgv),
+     >                    a(iwz(is)),a(isz(is)),dx,dy,nx,ny,nzs)
+          call w_mix(a(id13),a(id23),a(id33),a(igw),a(isz(is)),dx,dy,
+     >                             nx,ny,nzs)
+          call b_mix(a(ikm),a(ib1),a(igb),a(isz(is)),a(iwz(is)),
+     >                     a(isclr+23-1),dx,dy,nx,ny,nzs)
+          if (rslb.eq.0) then
+            call mix_zt(a(igut),a(igvt),a(igu),a(igv),nx,ny,nzs)
+          end if
+
+          if (is.ne.1) then
+            nzs = nzs-6
+            idgu = idgu + 3*(nx-1)*(ny-1)
+            idgv = idgv + 3*(nx-1)*(ny-1)
+            igw = igw + 3*(nx-1)*(ny-1)
+            igb = igb + 3*(nx-1)*(ny-1)
+            igu = igu + 3*(nx-1)*(ny-1)
+            igv = igv + 3*(nx-1)*(ny-1)
+            iu1 = iu1 + 3*nx*(ny-1)
+            iv1 = iv1 + 3*(nx-1)*ny
+            iw1 = iw1 + 3*(nx-1)*(ny-1)
+            ib1 = ib1 + 3*(nx-1)*(ny-1)
+            ikm = ikm + 3*(nx-1)*(ny-1)
+            isz(is) = isz(is) + 3
+            iwz(is) = iwz(is) + 3
+          else
+            nzs = nzs-3
+          end if
+          if (twod.ne.0.) then
+            call set_2d(a(idgu),a(idgv),a(igw),a(igb),a(igu),a(igv),
+     >                     a(ikm),a(igut),a(igvt),nx,ny,nzs)
+          end if
+
+        end if
+
+        do k=1,nvar
+          lgth = index(var(k),' ')-1
+          if ((var(k)(lgth:lgth).eq.'1')
+     >                 .or.(var(k)(lgth:lgth).eq.'0')) then
+            iu = 0
+            iv = 0
+            izsf = izs_p
+            izsr = iter(1)
+            igz = isz(is)
+            iptr = fptr2
+            icalc = 1
+            if (var(k)(1:1).eq.'u') then
+              iu = 1
+              izsf = izs_u
+              izsr = iter(2)
+              if (var(k)(1:lgth).eq.'u1') then
+                iptr = iu1
+                icalc = 0
+              end if 
+            else if (var(k)(1:1).eq.'v') then
+              iv = 1
+              izsf = izs_v
+              izsr = iter(3)
+              if (var(k)(1:lgth).eq.'v1') then
+                iptr = iv1
+                icalc = 0
+              end if
+            else if (var(k)(1:1).eq.'w') then
+              igz = iwz(is)
+              if (var(k)(1:lgth).eq.'w1') then
+                iptr = iw1
+                icalc = 0
+              end if
+            else if (var(k)(1:lgth).eq.'b1') then
+              iptr = ib1
+              icalc = 0
+            else if (var(k)(1:lgth).eq.'km1') then
+              iptr = ikm
+              icalc = 0
+            end if
+            i1 = iu
+            i2 = iv
+            if (icalc.eq.1) then
+              call calc_o1(a(iptr),a(fptr1),a(izsf),a(itran(1)),
+     >                 a(iwrk(1)),a(igz),a(iwrk_x),a(iwrk_y),a(ik),
+     >                 a(il),dx,dy,var(k),nx,ny,nzs,iu,iv)
+            end if
+            call write_3d(idcdf1,a(iptr),a(fptr1),a(izsr),a(igz),
+     >             a(isclr+2-1),mix,var(k),nx,ny,nz,nzs,nxout,
+     >             nyout,nzout,iout,jout,is,iu,iv,i1,i2)
+          end if
+        enddo
+
+        iu1 = mptr(2)
+        iv1 = mptr(4)
+        iw1 = mptr(6)
+
+        do k=1,3
+          if (k.eq.1) then
+            iptr = iu1
+            ctmp = 'u1'
+          else if (k.eq.2) then 
+            iptr = iv1
+            ctmp = 'v1'
+          else 
+            iptr = iw1
+            ctmp = 'w1'
+          end if
+          call calc_o1(a(iptr),a(fptr1),a(izs_p),a(itran(1)),
+     >            a(iwrk(1)),a(isz(is)),a(iwrk_x),a(iwrk_y),a(ik),
+     >            a(il),dx,dy,ctmp,nx,ny,nzs,0,0)
+        enddo
+
+        igxi = mptr(11)
+        iget = mptr(12)
+        igze = mptr(13)
+        fptr = mptr(8)
+
+        do ijk=1,nx*ny*nzs
+          a(igxi+ijk-1) = 0.
+          a(iget+ijk-1) = 0.
+          a(igze+ijk-1) = 0.
+        enddo
+
+        do k=1,9
+          idz = 0
+          if (k.eq.1) then
+            iptr = idgu
+            ctmp = 'dgu'
+            idz = 1
+          else if (k.eq.2) then
+            iptr = idgv
+            ctmp = 'dgv'
+            idz = 1
+          else if (k.eq.3) then
+            iptr = igu
+            ctmp = 'gu'
+          else if (k.eq.4) then
+            iptr = igv
+            ctmp = 'gv'
+          else if (k.eq.5) then
+            iptr = igw
+            ctmp = 'gw'
+          else if (k.eq.6) then
+            iptr = igb
+            ctmp = 'gb'
+          else if (k.eq.7) then
+            iptr = igxi
+            ctmp = 'gxi'
+          else if (k.eq.8) then
+            iptr = iget
+            ctmp = 'get'
+          else if (k.eq.9) then
+            iptr = igze
+            ctmp = 'gze'
+          end if
+          call calc_advc(ctmp,a(iptr),a(iu1),a(iv1),a(iw1),a(fptr1),
+     >         a(fptr2),a(fptr3),a(izs_p),a(itran(1)),a(itran(2)),
+     >         a(itran(3)),a(iwrk(1)),a(iwrk(2)),a(iwrk(3)),
+     >         a(iwrk_x),a(iwrk_y),a(ik),a(il),a(isz(is)),nx,ny,nzs,
+     >         0,0,idz)
+          call write_3d(idcdf1,a(iptr),a(fptr),a(iter(1)),a(isz(is)),
+     >           a(isclr+2-1),mix,ctmp,nx,ny,nz,nzs,nxout,nyout,
+     >           nzout,iout,jout,is,0,0,0,0)     
+        enddo
+
+        fptr = 0
+        fptr1 = 0
+        fptr2 = 0
+        fptr3 = 0
+
+        call trnsfrm3d(a(igw),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                            nzs,0,0)
+        call trnsfrm3d(a(igb),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                            nzs,0,0)
+        call trnsfrm3d(a(idgu),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                            nzs,0,0)
+        call trnsfrm3d(a(idgv),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                            nzs,0,0)
+
+        if (is.eq.1) then
+          itmp = nzs
+          call rad_coeff(a,ispc,ircof,mptr(2),mptr(4),mptr(6),mptr(8),
+     >                  mptr(1),mptr(3),igw,igb,idgu,idgv,
+     >                  mptr(13),mptr(14),mptr(15),mptr(16),mptr(17),
+     >                  mptr(18),mptr(19),fptr1,fptr2,fptr3,izs_p,
+     >                  izs_u,izs_v,itran,iwrk,iwrk_x,iwrk_y,ik,il,
+     >                  isclr,isz(1),iwz(1),1,itmp,dx,dy,dz,nx,ny,
+     >                  nzs,0)
+          call trnsfrm2d(a(igut),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                                 nx,ny,0,0)
+          call trnsfrm2d(a(igvt),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                                 nx,ny,0,0)
+          call rad_bc(a(ircof),a(igut),a(igvt),a(ik),a(il),zt,nx,ny)
+          call drag_calc(a(igh),a(ircof),a(izs_p),a(igus),a(igvs),
+     >                  a(itran(1)),a(itran(2)),a(itran(3)),
+     >                  a(iwrk(1)),a(iwrk(2)),a(iwrk(3)),a(iter(1)),
+     >                  a(iter(2)),a(iter(3)),a(iwrk_x),a(iwrk_y),
+     >                  a(ik),a(il),dx,dy,nx,ny)
+          ic1 = igus
+          ic2 = igvs
+          ic1w = igut
+          ic2w = igvt
+          do ij=1,2*nx*ny
+            a(ic1+ij-1) = 0.
+            a(ic2+ij-1) = 0.
+            a(ic1w+ij-1) = 0.
+            a(ic2w+ij-1) = 0.
+          enddo
+        end if
+
+        iw2 = mptr(14)
+        iwf = mptr(16)
+        idwf = mptr(18)
+
+        call calc_w2(a(iw2),a(iwf),a(idwf),a(idgu),a(idgv),a(igb),
+     >               a(igw),a(igh),a(ircof),a(iGs),a(ic1),a(ic2),
+     >               a(ic1w),a(ic2w),a(itran(1)),a(iwrk(1)),
+     >               a(iwrk(2)),a(iwrk_x),a(iwrk_y),a(ik),a(il),
+     >               a(isz(is)),a(iwz(is)),dz,nx,ny,nzs,is)
+
+        fptr = mptr(5)
+  
+        call write_3d(idcdf1,a(iw2),a(fptr),a(iter(1)),a(iwz(is)),
+     >             a(isclr+2-1),mix,'w2',nx,ny,nz,nzs,nxout,nyout,
+     >             nzout,iout,jout,is,0,0,0,0)
+
+        do ijk=1,nx*ny*nzs
+          a(mptr(1)+ijk-1) = a(igu+ijk-1)
+          a(mptr(3)+ijk-1) = a(igv+ijk-1) 
+        enddo
+
+        igu = mptr(1)
+        igv = mptr(3)
+
+        call trnsfrm3d(a(igu),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                           nzs,0,0)
+        call trnsfrm3d(a(igv),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                           nzs,0,0)
+
+        do k=1,4
+          i1 = 0
+          i2 = 0 
+          izsr = iter(1)
+          if (k.eq.1) then
+            ctmp = 'b2'
+            ifld = mptr(9)
+            ift = mptr(14)
+            inf1 = iwf
+            inf2 = igb
+            inf3 = fptr
+          else if (k.eq.2) then
+            ctmp = 'p2'
+            ipf = mptr(7)
+            ifld = mptr(9)
+            ift = ipf
+            inf1 = idwf
+            inf2 = igu
+            inf3 = igv
+          else if (k.eq.3) then
+            ctmp = 'u2'
+            iuf = mptr(9)
+            ifld = mptr(18)
+            ift = iuf
+            inf1 = ipf
+            inf2 = igu
+            inf3 = igv
+            i1 = 1
+            izsr = iter(2)
+          else if (k.eq.4) then
+            ctmp = 'v2'
+            ivf = mptr(14)
+            ifld = mptr(18)
+            ift = ivf
+            inf1 = ipf
+            inf2 = igu
+            inf3 = igv
+            i2 = 1
+            izsr = iter(3)
+          end if
+          call calc_o2(ctmp,a(ifld),a(ift),a(inf1),a(inf2),a(inf3),
+     >                  a(itran(1)),a(iwrk(1)),a(iwrk_x),a(iwrk_y),
+     >                  a(ik),a(il),nx,ny,nzs)
+          call write_3d(idcdf1,a(ifld),a(fptr),a(izsr),a(isz(is)),
+     >               a(isclr+2-1),mix,ctmp,nx,ny,nz,nzs,nxout,nyout,
+     >               nzout,iout,jout,is,0,0,i1,i2)
+        enddo
+
+        do ijk=1,nx*ny*nzs
+          a(mptr(1)+ijk-1) = a(igxi+ijk-1)
+          a(mptr(3)+ijk-1) = a(iget+ijk-1)
+          a(mptr(5)+ijk-1) = a(igze+ijk-1)
+        enddo
+
+        igxi = mptr(1)
+        iget = mptr(3)
+        igze = mptr(5)
+
+        call trnsfrm3d(a(igxi),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                           nzs,0,0)
+        call trnsfrm3d(a(iget),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                           nzs,0,0)
+        call trnsfrm3d(a(igze),a(itran(1)),a(iwrk_x),a(iwrk_y),nx,ny,
+     >                           nzs,0,0)
+
+        fptr = mptr(18)
+        ifld = mptr(7) 
+        ift = mptr(11) 
+
+        do k=1,3
+          if (k.eq.1) then
+            ctmp = 'xi2'
+            inf1 = iuf
+            inf2 = igxi
+            inf3 = fptr
+          else if (k.eq.2) then
+            ctmp = 'eta2'
+            inf1 = ivf
+            inf2 = iget
+            inf3 = fptr
+          else if (k.eq.3) then
+            ctmp = 'zeta2'
+            inf1 = iwf
+            inf2 = igze
+            inf3 = fptr
+          end if
+          call calc_o2(ctmp,a(ifld),a(ift),a(inf1),a(inf2),a(inf3),
+     >                  a(itran(1)),a(iwrk(1)),a(iwrk_x),a(iwrk_y),
+     >                  a(ik),a(il),nx,ny,nzs)
+          call write_3d(idcdf1,a(ifld),a(fptr),a(iter(1)),a(isz(is)),
+     >             a(isclr+2-1),mix,ctmp,nx,ny,nz,nzs,nxout,nyout,
+     >             nzout,iout,jout,is,0,0,0,0)
+        enddo
+
+        is = is+1
+        goto 107
+
+      end if
+
+      iptr = mptr(1)
+      fptr = mptr(3)
+      ctmp = 'w1'
+      call calc_o1(a(iptr),a(fptr),a(izs_p),a(itran(1)),a(iwrk(1)),
+     >                a(iwgz+nzout-1),a(iwrk_x),a(iwrk_y),a(ik),a(il),
+     >                dx,dy,ctmp,nx,ny,1,0,0)
+      call write_3d(idcdf1,a(iptr),a(fptr),a(iter(1)),a(iwgz+nzout-1),
+     >                a(isclr+2-1),mix,ctmp,nx,ny,nz,1,nxout,nyout,
+     >                nzout,iout,jout,is,0,0,0,0)
+
+      iwf = mptr(5)
+      idwf = mptr(7)
+      idgu = mptr(9)
+      idgv = mptr(11)
+      igb = mptr(13)
+      igw = mptr(15)
+      ctmp = 'w2'
+      do ij=1,2*nx*ny
+        a(idgu+ij-1) = 0.
+        a(idgv+ij-1) = 0.
+        a(igb+ij-1) = 0.
+        a(igw+ij-1) = 0.
+      enddo
+      call calc_w2(a(iptr),a(iwf),a(idwf),a(idgu),a(idgv),a(igb),
+     >                  a(igw),a(igh),a(ircof),a(iGs),a(ic1),a(ic2),
+     >                  a(ic1w),a(ic2w),a(itran(1)),a(iwrk(1)),
+     >                  a(iwrk(2)),a(iwrk_x),a(iwrk_y),a(ik),a(il),
+     >                  a(isgzt+nzout-1),a(iwgzt+nzout-1),dz,
+     >                  nx,ny,1,is)
+      call write_3d(idcdf1,a(iptr),a(fptr),a(iter(1)),a(iwgz+nzout-1),
+     >                a(isclr+2-1),mix,ctmp,nx,ny,nz,1,nxout,nyout,
+     >                nzout,iout,jout,is,0,0,0,0)
+
+      if (itopo.eq.1) then
+
+        call set_outfl(idcdf2,nxout,nyout,nzout,dx,dy,dz,xout,yout,
+     >                  a(isgz),a(iwgz),a(isclr),1.,sclr,var,units,
+     >                  outfl2,nsclr,nvar)
+
+        call write_2d(idcdf2,a(iter(1)),a(itran(1)),'zbot_p',iout,
+     >                   jout,nx,ny,nxout,nyout,0,0)
+        call write_2d(idcdf2,a(iter(2)),a(itran(1)),'zbot_u',iout,
+     >                   jout,nx,ny,nxout,nyout,1,0)
+        call write_2d(idcdf2,a(iter(3)),a(itran(1)),'zbot_v',iout,
+     >                   jout,nx,ny,nxout,nyout,0,1)
+
+        ifld1 = mptr(1)
+        ifld2 = ifld1 + nxout*nyout*nzout
+        fptr = ifld2 + nxout*nyout*nzout
+
+        if (fptr.gt.ispc) then
+          write(6,*)
+          write(6,*) 'Error:  not enough space for interpolations!'
+          write(6,*) '        needed:  ',fptr
+          write(6,*) '        allocated:  ',ispc
+          write(6,*) 'Data on constant geometric height surfaces is ',
+     >                       'in tmp_out.cdf.'
+          write(6,*)
+          stop
+        end if
+
+        call interp(idcdf1,idcdf2,a,ispc,ifld1,ifld2,iter,isgz,iwgz,
+     >                 isclr,nx,ny,nxout,nyout,nzout,iout,jout)
+
+        call ncclos(idcdf2,ierr)
+        if (ierr.ne.0) then
+          write(6,*) 'Error:  problem closing data file.'
+          stop
+        end if
+
+      end if
+
+      call ncclos(idcdf1,ierr)
+      if (ierr.ne.0) then
+        write(6,*) 'Error:  problem closing data file.'
+        stop
+      end if
+
+      if (itopo.eq.1) then
+        ctmp(1:len(ctmp)) = ' '
+        write(ctmp,45) 'rm -f tmp_out.cdf'
+        call system(ctmp)
+      end if
+
+ 45   FORMAT(A80)
+
+
+      time2 = etime(rtmp)
+
+      write(6,*)
+      write(6,*) 'Elapsed Time:  ',time2-time1
+      write(6,*)
+
+      end
+
+*----------------------------------------------------------------------
+
+      subroutine rad_coeff(a,ispc,ircof,iu1,iv1,iw1,ib1,igu,igv,igw,
+     >                       igb,idgu,idgv,id11,id12,id13,id22,id23,
+     >                       id33,ikm,fptr1,fptr2,fptr3,izs_p,izs_u,
+     >                       izs_v,itran,iwrk,iwrk_x,iwrk_y,ik,il,
+     >                       isclr,isz,iwz,nslb,ntop,dx,dy,dz,
+     >                       nx,ny,nz,icalc)
+
+      integer ispc
+      real a(ispc)
+
+      integer ircof,iu1,iv1,iw1,ib1,igu,igv,igw,igb,idgu,idgv
+      integer id11,id12,id13,id22,id23,id33,ikm,fptr1,fptr2,fptr3
+      integer izs_p,izs_u,izs_v,itran(3),iwrk(3),iwrk_x,iwrk_y,ik,il
+      integer isclr,nslb,isz(nslb),iwz(nslb),ntop,nx,ny,nz,icalc
+      real dx,dy,dz
+
+      integer ijk,is,j,k
+      integer nzs,iu,iv,iw,igz,idz,iGfac,isave(4)
+      real mix,twod
+      character*(80) ctmp
+
+      mix = a(isclr+21-1)
+      twod = a(isclr+24-1)
+
+      isave(1) = idgu
+      isave(2) = idgv
+      isave(3) = igw
+      isave(4) = igb
+
+      is = 1
+ 99   if (is.le.nslb) then
+
+        if ((is.eq.nslb).and.(icalc.eq.1)) then
+          nzs = ntop 
+        else
+          nzs = nz
+        end if
+
+        if (icalc.eq.1) then
+
+          do ijk=1,nx*ny*nz
+            a(igu+ijk-1) = 0.
+            a(igv+ijk-1) = 0.
+            a(igw+ijk-1) = 0.
+            a(igb+ijk-1) = 0.
+            a(idgu+ijk-1) = 0.
+            a(idgv+ijk-1) = 0.
+          enddo
+
+          if (mix.ne.0.) then
+ 
+            do j=1,4
+              iu = 0
+              iv = 0
+              igz = isz(is)
+              izs = izs_p
+              if (j.eq.1) then
+                ctmp = 'u1'
+                iptr = iu1
+                iu = 1
+                izs = izs_u
+              else if (j.eq.2) then
+                ctmp = 'v1'
+                iptr = iv1
+                iv = 1
+                izs = izs_v
+              else if (j.eq.3) then 
+                ctmp = 'w1'
+                iptr = iw1
+                igz = iwz(is)
+              else
+                ctmp = 'b1'
+                iptr = ib1
+              end if
+              call calc_o1(a(iptr),a(fptr1),a(izs),a(itran(1)),
+     >           a(iwrk(1)),a(igz),a(iwrk_x),a(iwrk_y),a(ik),a(il),
+     >           dx,dy,ctmp,nx,ny,nzs,iu,iv)
+            enddo 
+ 
+            call calc_def(a(id11),a(id12),a(id13),a(id22),a(id23),
+     >                      a(id33),a(iu1),a(iv1),a(iw1),a(isz(is)),        
+     >                      a(iwz(is)),dx,dy,nx,ny,nzs)
+            call calc_km(a(id11),a(id12),a(id13),a(id22),a(id23),
+     >                      a(id33),a(ib1),a(ikm),a(isz(is)),
+     >                      a(isclr+5-1),a(isclr+22-1),a(isclr+23-1),
+     >                      nx,ny,nzs)
+            call u_mix(a(id11),a(id12),a(id13),a(igu),a(idgu),
+     >                      a(iwz(is)),a(isz(is)),dx,dy,nx,ny,nzs)
+            call v_mix(a(id12),a(id22),a(id23),a(igv),a(idgv),
+     >                      a(iwz(is)),a(isz(is)),dx,dy,nx,ny,nzs)
+            call w_mix(a(id13),a(id23),a(id33),a(igw),a(isz(is)),
+     >                              dx,dy,nx,ny,nzs)
+            call b_mix(a(ikm),a(ib1),a(igb),a(isz(is)),a(iwz(is)),
+     >                    a(isclr+23-1),dx,dy,nx,ny,nzs)
+
+            nzs = nzs-6
+            idgu = idgu + 3*(nx-1)*(ny-1)
+            idgv = idgv + 3*(nx-1)*(ny-1)
+            igw = igw + 3*(nx-1)*(ny-1)
+            igb = igb + 3*(nx-1)*(ny-1)
+            isz(is) = isz(is) + 3
+            iwz(is) = iwz(is) + 3
+            if (twod.ne.0.) then
+              call set_2d(a(idgu),a(idgv),a(igw),a(igb),a(igu),a(igv),
+     >                     a(ikm),a(iwrk(1)),a(iwrk(2)),nx,ny,nzs)
+            end if
+
+          end if
+
+          do k=1,3
+            if (k.eq.1) then
+              iptr = iu1
+              ctmp = 'u1'
+            else if (k.eq.2) then
+              iptr = iv1
+              ctmp = 'v1'
+            else
+              iptr = iw1
+              ctmp = 'w1'
+            end if
+            call calc_o1(a(iptr),a(fptr1),a(izs_p),a(itran(1)),
+     >               a(iwrk(1)),a(isz(is)),a(iwrk_x),a(iwrk_y),a(ik),
+     >               a(il),dx,dy,ctmp,nx,ny,nzs,0,0)
+          enddo
+
+          do k=1,4
+            if (k.eq.1) then
+              iptr = idgu
+              ctmp = 'dgu'
+              idz = 1
+            else if (k.eq.2) then
+              iptr = idgv
+              ctmp = 'dgv'
+              idz = 1
+            else if (k.eq.3) then
+              iptr = igw
+              ctmp = 'gw'
+              idz = 0
+            else
+              iptr = igb
+              ctmp = 'gb'
+              idz = 0
+            end if
+            call calc_advc(ctmp,a(iptr),a(iu1),a(iv1),a(iw1),a(fptr1),
+     >                 a(fptr2),a(fptr3),a(izs_p),a(itran(1)),
+     >                 a(itran(2)),a(itran(3)),a(iwrk(1)),a(iwrk(2)),
+     >                 a(iwrk(3)),a(iwrk_x),a(iwrk_y),a(ik),a(il),
+     >                 a(isz(is)),nx,ny,nzs,0,0,idz) 
+          enddo
+
+          call trnsfrm3d(a(igw),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                          nx,ny,nzs,0,0)
+          call trnsfrm3d(a(igb),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                          nx,ny,nzs,0,0)
+          call trnsfrm3d(a(idgu),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                          nx,ny,nzs,0,0)
+          call trnsfrm3d(a(idgv),a(itran(1)),a(iwrk_x),a(iwrk_y),
+     >                          nx,ny,nzs,0,0)
+
+        end if
+
+        iGfac = iwrk(1) 
+
+        call calc_rad_coeff(a(ircof),a(idgu),a(idgv),a(igw),a(igb),
+     >                          a(iGfac),a(ik),a(il),a(isz(is)),
+     >                          dz,nx,ny,nzs)
+
+        if (mix.ne.0.) then
+          idgu = isave(1)
+          idgv = isave(2)
+          igw = isave(3)
+          igb = isave(4)
+        end if
+
+        is = is+1
+        goto 99
+
+      end if
+
+      return
+      end
+
+*---------------------------------------------------------------------
+
+      subroutine calc_rad_coeff(rcof,dgu,dgv,gw,gb,Gfac,ak,al,
+     >                                sgz,dz,nx,ny,nz)
+
+      integer nx,ny,nz
+      real ak(nx-1),al(ny-1),sgz(nz),dz
+      complex rcof(nx-1,ny-1),dgu(nx-1,ny-1,nz),dgv(nx-1,ny-1,nz)
+      complex gw(nx-1,ny-1,nz),gb(nx-1,ny-1,nz),Gfac(nx-1,ny-1)
+       
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j,k
+      real omga,m2,gam2,m,gam
+      complex exfac
+      logical mzero2,requ
+
+      do k=1,nz
+
+        tau = sgz(k)
+
+        call calc_Gfac(Gfac,dgu(1,1,k),dgv(1,1,k),gw(1,1,k),gb(1,1,k),
+     >                             ak,al,nx,ny)
+
+        do j=1,ny-1
+        do i=1,nx-1
+
+          omga = ak(i)*U0+al(j)*V0
+          if (requ(abs(omga),abs(fcor))) then
+            m2 = 0.
+            gam2 = 0.
+          else 
+            m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >                 / (omga**2-fcor**2)
+            gam2 = -m2
+          end if
+
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+            rcof(i,j) = 0.
+
+          else if (m2.gt.0.) then
+
+            m = sqrt(m2)*omga/abs(omga)
+            exfac = cmplx(cos(m*tau),sin(m*tau))
+            rcof(i,j) = rcof(i,j) + cmplx(0.,0.5/m)*Gfac(i,j)
+     >                          * exfac*dz
+
+          else 
+
+            gam = sqrt(gam2)
+            exfac = cmplx(exp(-gam*tau),0.)
+            rcof(i,j) = rcof(i,j) + cmplx(0.5/gam,0.)*Gfac(i,j)
+     >                      * exfac*dz
+
+          end if
+
+        enddo
+        enddo
+
+      enddo
+
+      return
+      end
+
+*----------------------------------------------------------------------
+
+      subroutine rad_bc(rcof,gu,gv,ak,al,zt,nx,ny)
+
+      integer nx,ny
+      real ak(nx-1),al(ny-1),zt
+      complex rcof(nx-1,ny-1),gu(nx-1,ny-1),gv(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j
+      real omga,m2,gam2,m,gam,fac(4)
+      logical mzero2,requ
+      complex exfac
+
+      do j=1,ny-1
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+          rcof(i,j) = 0.
+
+        else if (m2.gt.0.) then
+
+          m = sqrt(m2)*omga/abs(omga)
+          exfac = cmplx(cos(m*zt),sin(m*zt))
+          fac(1) = 0.5*fcor*al(j)/m/(omga**2-fcor**2)
+          fac(2) = -0.5*omga*ak(i)/m/(omga**2-fcor**2)
+          fac(3) = -0.5*fcor*ak(i)/m/(omga**2-fcor**2)
+          fac(4) = -0.5*omga*al(j)/m/(omga**2-fcor**2)
+          rcof(i,j) = rcof(i,j) + cmplx(fac(1),fac(2))*gu(i,j)*exfac
+     >                   + cmplx(fac(3),fac(4))*gv(i,j)*exfac
+
+        else
+
+          gam = sqrt(gam2)
+          exfac = cmplx(exp(-gam*zt),0.)
+          fac(1) = -0.5*omga*ak(i)/gam/(omga**2-fcor**2)
+          fac(2) = -0.5*fcor*al(j)/gam/(omga**2-fcor**2)
+          fac(3) = -0.5*omga*al(j)/gam/(omga**2-fcor**2)
+          fac(4) = 0.5*fcor*ak(i)/gam/(omga**2-fcor**2)
+          rcof(i,j) = rcof(i,j) + cmplx(fac(1),fac(2))*gu(i,j)*exfac
+     >                   + cmplx(fac(3),fac(4))*gv(i,j)*exfac
+
+        end if
+
+      enddo
+      enddo
+
+      return
+      end
+
+*----------------------------------------------------------------------
+
+      subroutine calc_Gfac(Gfac,dgu,dgv,gw,gb,ak,al,nx,ny)      
+
+      integer nx,ny
+      real ak(nx-1),al(ny-1)
+      complex Gfac(nx-1,ny-1),dgu(nx-1,ny-1),dgv(nx-1,ny-1)
+      complex gw(nx-1,ny-1),gb(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j
+      real omga,m2
+      logical mzero2,requ
+      complex fac(4)
+
+      do j=1,ny-1
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >             / (omga**2-fcor**2)
+        end if        
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+          Gfac(i,j) = 0.
+        else
+          fac(1) = cmplx(omga*ak(i),fcor*al(j))
+          fac(2) = cmplx(omga*al(j),-fcor*ak(i))
+          fac(3) = cmplx(-ak(i)**2-al(j)**2,0.)
+          fac(4) = cmplx(0.,-omga*(ak(i)**2+al(j)**2))
+          Gfac(i,j) = (fac(1)*dgu(i,j) + fac(2)*dgv(i,j)
+     >                + fac(3)*gb(i,j) + fac(4)*gw(i,j))
+     >                   /(omga**2-fcor**2)
+        end if
+
+      enddo
+      enddo
+
+      return
+      end
+
+*------------------------------------------------------------------------
+
+      subroutine calc_o1(fld,ft,hft,tran,wrk,gz,cwrkx,cwrky,ak,al,
+     >                       dx,dy,var,nx,ny,nz,iu,iv)
+
+      implicit none
+
+      integer nx,ny,nz,iu,iv
+      real fld(nx-1+iu,ny-1+iv,nz)
+      real ak(nx-1),al(ny-1),gz(nz),cwrkx(4*nx+15),cwrky(4*ny+15)
+      real dx,dy
+      complex ft(nx-1,ny-1,nz)
+      complex hft(nx-1+iu,ny-1+iv),tran(ny-1,nx-1),wrk(nx-1,ny-1)
+      character*(*) var
+      logical plus
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      real dz
+      common /dzblk/ dz
+
+      real x,y,z,mu,ml,mu2,ml2,gamu,gaml,gamu2,gaml2,omga,R
+      real alph,fac1,fac2
+      integer nzl,lgth 
+      logical mzero2,requ
+      complex Al,pfac,pfac1,pfac2,exfac1,exfac2
+
+      lgth = index(var,' ') - 1
+      nzl = nint((d-gz(1))/dz) + 1
+      nzl = max(min(nzl,nz),0)
+
+      if (var(lgth:lgth).eq.'0') then
+ 
+        if (var(1:lgth).eq.'u0') then
+          do k=1,nz  
+          do j=1,ny-1
+          do i=1,nx
+            fld(i,j,k) = U0
+          enddo
+          enddo
+          enddo
+        else if (var(1:lgth).eq.'v0') then
+          do k=1,nz
+          do j=1,ny
+          do i=1,nx-1
+            fld(i,j,k) = V0
+          enddo
+          enddo
+          enddo
+        else if (var(1:lgth).eq.'b0') then
+          do k=nzl+1,nz
+            z = gz(k)
+            do j=1,ny-1
+            do i=1,nx-1
+              fld(i,j,k) = -g*(1.-Nl**2/g*d-Nu**2/g*(z-d))
+            enddo
+            enddo
+          enddo
+          do k=1,nzl
+            z = gz(k)
+            do j=1,ny-1
+            do i=1,nx-1
+              fld(i,j,k) = -g*(1.-Nl**2/g*z)        
+            enddo
+            enddo
+          enddo
+        else if (var(1:lgth).eq.'p0') then
+          do k=nzl+1,nz
+            z = gz(k)
+            do j=1,ny-1
+            do i=1,nx-1
+              x = ((i-1)+0.5)*dx
+              y = ((j-1)+0.5)*dy
+              fld(i,j,k) = ps/rhos + fcor*V0*x - fcor*U0*y
+     >                      - g*z + 0.5*(Nl**2)*(d**2)
+     >               + (Nl**2)*d*(z-d) + 0.5*(Nu**2)*(z-d)**2
+            enddo
+            enddo
+          enddo
+          do k=1,nzl
+            z = gz(k)
+            do j=1,ny-1
+            do i=1,nx-1
+              x = ((i-1)+0.5)*dx
+              y = ((j-1)+0.5)*dy
+              fld(i,j,k) = ps/rhos + fcor*V0*x - fcor*U0*y
+     >                       - g*z + 0.5*(Nl**2)*(z**2)
+            enddo
+            enddo
+          enddo
+        else 
+          write(6,*) 'Error:  field ',var(1:lgth),' not recognized.'
+          stop
+        end if
+
+        return
+
+      end if
+
+      alph = Nu/Nl
+      R = (1.-alph)/(alph+1.)
+
+      if (nz.gt.nzl) then
+
+        do j=1,ny-1
+        do i=1,nx-1
+
+          omga = ak(i)*U0+al(j)*V0 
+          if (requ(abs(omga),abs(fcor))) then
+            ml2 = 0.
+            mu2 = 0.
+            gaml2 = 0.
+            gamu2 = 0.
+          else
+            ml2 = (Nl**2)*(ak(i)**2+al(j)**2)/(omga**2-fcor**2)
+            mu2 = ml2*alph**2
+            gaml2 = -ml2
+            gamu2 = -mu2             
+          end if
+
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+            do k=nzl+1,nz
+              ft(i,j,k) = 0.
+            enddo
+
+          else if (mu2.gt.0.) then
+
+            ml = sqrt(ml2)*omga/abs(omga)
+            mu = alph*ml
+            exfac1 = (cos(ml*d),sin(ml*d))
+            exfac2 = (cos(ml*d),-sin(ml*d))
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+
+            call calc_pfac(pfac,ak,al,mu2,mu,gamu2,0.,Nu,omga,fcor,
+     >                                var,i,j,nx,ny,0)
+
+            do k=nzl+1,nz
+              z = gz(k)
+              exfac = cmplx(cos(mu*(z-d)),sin(mu*(z-d)))
+              ft(i,j,k) = Al*cmplx(1.+R,0.)*exfac*pfac*hft(i,j)
+            enddo
+
+          else
+
+            gaml = sqrt(gaml2)
+            gamu = alph*gaml
+            exfac1 = cmplx(exp(-gaml*d),0.)
+            exfac2 = cmplx(exp(gaml*d),0.)
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2) 
+
+            call calc_pfac(pfac,ak,al,mu2,0.,gamu2,gamu,Nu,omga,fcor,
+     >                                var,i,j,nx,ny,0)
+
+            do k=nzl+1,nz
+              z = gz(k)
+              exfac = cmplx(exp(-gamu*(z-d)),0.)
+              ft(i,j,k) = Al*cmplx(1.+R,0.)*exfac*pfac*hft(i,j)
+            enddo
+
+          end if
+
+        enddo
+        enddo
+
+      end if
+
+      if (nzl.gt.0) then
+
+        plus = .true.
+        if ((var(1:lngth).eq.'p1').or.(var(1:lngth).eq.'u1')
+     >      .or.(var(1:lngth).eq.'v1').or.(var(1:lngth).eq.'xi1')
+     >         .or.(var(1:lngth).eq.'eta1')) then
+          plus = .false.
+        end if
+
+        do j=1,ny-1
+        do i=1,nx-1
+
+          omga = ak(i)*U0+al(j)*V0 
+          if (requ(abs(omga),abs(fcor))) then
+            ml2 = 0.
+            mu2 = 0.
+            gaml2 = 0.
+            gamu2 = 0.
+          else
+            ml2 = (Nl**2)*(ak(i)**2+al(j)**2)/(omga**2-fcor**2)
+            mu2 = ml2*alph**2
+            gaml2 = -ml2
+            gamu2 = -mu2
+          end if
+  
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+            do k=1,nz
+              ft(i,j,k) = 0.
+            enddo
+
+          else if (ml2.gt.0.) then
+
+            ml = sqrt(ml2)*omga/abs(omga)
+            exfac1 = (cos(ml*d),sin(ml*d))
+            exfac2 = (cos(ml*d),-sin(ml*d))
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+
+            call calc_pfac(pfac,ak,al,ml2,ml,gaml2,0.,Nl,omga,fcor,
+     >                                var,i,j,nx,ny,0)
+
+            do k=1,nzl     
+              z = gz(k)
+              exfac1 = cmplx(cos(ml*(z-d)),sin(ml*(z-d)))
+              exfac2 = cmplx(cos(ml*(z-d)),-sin(ml*(z-d)))
+              if (plus) then
+                ft(i,j,k) = Al*(exfac1+cmplx(R,0.)*exfac2)
+     >                               *pfac*hft(i,j)
+              else
+                ft(i,j,k) = Al*(exfac1-cmplx(R,0.)*exfac2)
+     >                               *pfac*hft(i,j)
+              end if
+            enddo
+
+          else
+
+            gaml = sqrt(gaml2)
+            exfac1 = cmplx(exp(-gaml*d),0.)
+            exfac2 = cmplx(exp(gaml*d),0.)
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2) 
+
+            call calc_pfac(pfac,ak,al,ml2,0.,gaml2,gaml,Nl,omga,fcor,
+     >                                var,i,j,nx,ny,0)
+
+            do k=1,nzl    
+              z = gz(k)
+              exfac1 = cmplx(exp(-gaml*(z-d)),0.)
+              exfac2 = cmplx(exp(gaml*(z-d)),0.)
+              if (plus) then
+                ft(i,j,k) = Al*(exfac1+cmplx(R,0.)*exfac2)
+     >                               *pfac*hft(i,j)
+              else
+                ft(i,j,k) = Al*(exfac1-cmplx(R,0.)*exfac2)
+     >                               *pfac*hft(i,j)
+              end if
+            enddo
+
+          end if
+
+        enddo
+        enddo
+
+      end if
+
+
+      do k=1,nz
+
+        do i=1,nx-1
+          do j=1,ny-1
+            tran(j,i) = ft(i,j,k)
+          enddo
+          call cfftb(ny-1,tran(1,i),cwrky) 
+          do j=1,ny-1
+            wrk(i,j) = tran(j,i)
+          enddo
+        enddo
+
+        do j=1,ny-1
+          call cfftb(nx-1,wrk(1,j),cwrkx)
+          do i=1,nx-1
+            fld(i,j,k) = real(wrk(i,j))
+          enddo
+        enddo
+
+        if (iu.eq.1) then
+          do j=1,ny-1
+            fld(nx,j,k) = fld(1,j,k)
+          enddo
+        else if (iv.eq.1) then
+          do i=1,nx-1
+            fld(i,ny,k) = fld(i,1,k)
+          enddo
+        end if
+
+      enddo
+
+      return
+      end
+
+*---------------------------------------------------------------------
+
+      subroutine calc_pfac(pfac,ak,al,m2,m,gam2,gam,N,omga,fcor,var, 
+     >                                  i,j,nx,ny,idz)
+
+      integer i,j,nx,ny,idz
+      real ak(nx-1),al(ny-1),m2,m,gam2,gam,N,omga,fcor
+      character*(*) var
+      complex pfac
+
+      integer lgth
+      real fac1,fac2
+      
+      lgth = index(var,' ') - 1
+
+      if (m2.gt.0.) then
+      
+        if (var(1:1).eq.'w') then
+          if (idz.eq.0) then
+            pfac = cmplx(0.,omga)
+          else
+            pfac = cmplx(-m*omga,0.)
+          end if
+        else if (var(1:1).eq.'u') then
+          if (idz.eq.0) then
+            fac1 = -m*fcor*al(j)/(ak(i)**2+al(j)**2) 
+            fac2 = -m*ak(i)*omga/(ak(i)**2+al(j)**2) 
+          else
+            fac1 = m2*ak(i)*omga/(ak(i)**2+al(j)**2)
+            fac2 = -m2*fcor*al(j)/(ak(i)**2+al(j)**2)
+          end if
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'v') then
+          if (idz.eq.0) then
+            fac1 = m*fcor*ak(i)/(ak(i)**2+al(j)**2)
+            fac2 = -m*al(j)*omga/(ak(i)**2+al(j)**2)
+          else
+            fac1 = m2*al(j)*omga/(ak(i)**2+al(j)**2)
+            fac2 = m2*fcor*ak(i)/(ak(i)**2+al(j)**2)
+          end if     
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'p') then
+          if (idz.eq.0) then
+            fac1 = 0.
+            fac2 = N**2/m
+          else
+            fac1 = -N**2
+            fac2 = 0.
+          end if
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'b') then
+          pfac = cmplx(-N**2,0.)
+        else if (var(1:2).eq.'xi') then
+          fac1 = -m*ak(i)/(ak(i)**2+al(j)**2)
+          fac2 = m*fcor*al(j)/omga/(ak(i)**2+al(j)**2)
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:3).eq.'eta') then
+          fac1 = -m*al(j)/(ak(i)**2+al(j)**2)
+          fac2 = -m*fcor*ak(i)/omga/(ak(i)**2+al(j)**2)
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:4).eq.'zeta') then
+          pfac = cmplx(1.,0.)
+        else 
+          write(6,*) 'Error:  field ',var(1:lgth),
+     >                      ' not recognized.'
+          stop
+        end if 
+
+      else
+
+        if (var(1:1).eq.'w') then
+          if (idz.eq.0) then
+            pfac = cmplx(0.,omga)
+          else
+            pfac = cmplx(0.,-gam*omga)
+          end if
+        else if (var(1:1).eq.'u') then
+          if (idz.eq.0) then
+            fac1 = gam*ak(i)*omga/(ak(i)**2+al(j)**2)
+            fac2 = -gam*fcor*al(j)/(ak(i)**2+al(j)**2)
+          else
+            fac1 = -gam2*ak(i)*omga/(ak(i)**2+al(j)**2)
+            fac2 = gam2*fcor*al(j)/(ak(i)**2+al(j)**2)
+          end if
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'v') then
+          if (idz.eq.0) then
+            fac1 = gam*al(j)*omga/(ak(i)**2+al(j)**2)
+            fac2 = gam*fcor*ak(i)/(ak(i)**2+al(j)**2)
+          else
+            fac1 = -gam2*al(j)*omga/(ak(i)**2+al(j)**2)
+            fac2 = -gam2*fcor*ak(i)/(ak(i)**2+al(j)**2)
+          end if
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'p') then
+          if (idz.eq.0) then
+            fac1 = N**2/gam
+            fac2 = 0.
+          else
+            fac1 = -N**2
+            fac2 = 0.
+          end if
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:1).eq.'b') then
+          pfac = cmplx(-N**2,0.)
+        else if (var(1:2).eq.'xi') then
+          fac1 = -gam*fcor*al(j)/omga/(ak(i)**2+al(j)**2)
+          fac2 = -gam*ak(i)/(ak(i)**2+al(j)**2)
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:3).eq.'eta') then
+          fac1 = gam*fcor*ak(i)/omga/(ak(i)**2+al(j)**2)
+          fac2 = -gam*al(j)/(ak(i)**2+al(j)**2)
+          pfac = cmplx(fac1,fac2)
+        else if (var(1:4).eq.'zeta') then
+          pfac = cmplx(1.,0.)
+        else 
+          write(6,*) 'Error:  field ',var(1:lgth),' not recognized.'
+          stop
+        end if 
+
+      end if
+
+      return
+      end
+
+*---------------------------------------------------------------------
+
+      subroutine calc_gh(gh,us,vs,zs_p,hft,tran1,tran2,tran3,wrk1,
+     >                     wrk2,wrk3,cwrkx,cwrky,ak,al,nx,ny)
+
+      integer nx,ny
+      real gh(nx-1,ny-1),us(nx-1,ny-1),vs(nx-1,ny-1)
+      real zs_p(nx-1,ny-1)
+      real ak(nx-1),al(ny-1),cwrkx(4*nx+15),cwrky(4*ny+15)
+      complex hft(nx-1,ny-1)
+      complex tran1(ny-1,nx-1),tran2(ny-1,nx-1),tran3(ny-1,nx-1)
+      complex wrk1(nx-1,ny-1),wrk2(nx-1,ny-1),wrk3(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j
+      real dwdz,dhdx,dhdy
+      real mu,ml,mu2,ml2,gamu,gaml,gamu2,gaml2,omga,fac1,fac2
+      real alph,R
+      logical mzero2,requ
+      character*(1) var
+      complex pfac,exfac1,exfac2,Al
+
+      alph = Nu/Nl
+      R = (1.-alph)/(alph+1.)
+
+      do i=1,nx-1
+
+        do j=1,ny-1
+
+          omga = ak(i)*U0+al(j)*V0
+          if (requ(abs(omga),abs(fcor))) then
+            ml2 = 0.
+            mu2 = 0.
+            gaml2 = 0.
+            gamu2 = 0.
+          else
+            ml2 = (Nl**2)*(ak(i)**2+al(j)**2)/(omga**2-fcor**2)
+            mu2 = ml2*alph**2
+            gaml2 = -ml2
+            gamu2 = -mu2
+          end if
+
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+            tran3(j,i) = 0.
+          else if (ml2.gt.0.) then
+            ml = sqrt(ml2)*omga/abs(omga)
+            exfac1 = (cos(ml*d),sin(ml*d))
+            exfac2 = (cos(ml*d),-sin(ml*d))
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+            var = 'w'               
+            call calc_pfac(pfac,ak,al,ml2,ml,gaml2,0.,Nl,omga,fcor,
+     >                               var,i,j,nx,ny,1)
+            tran3(j,i) = Al*(exfac2-cmplx(R,0.)*exfac1)*pfac*hft(i,j) 
+          else 
+            gaml = sqrt(gaml2)
+            exfac1 = cmplx(exp(-gaml*d),0.)
+            exfac2 = cmplx(exp(gaml*d),0.)
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+            var = 'w'
+            call calc_pfac(pfac,ak,al,ml2,0.,gaml2,gaml,Nl,omga,fcor,
+     >                                var,i,j,nx,ny,1)
+            tran3(j,i) = Al*(exfac2-cmplx(R,0.)*exfac1)*pfac*hft(i,j)
+          end if
+
+          tran1(j,i) = cmplx(0.,ak(i))*hft(i,j)
+          tran2(j,i) = cmplx(0.,al(j))*hft(i,j)
+
+        enddo
+
+        call cfftb(ny-1,tran1(1,i),cwrky)
+        call cfftb(ny-1,tran2(1,i),cwrky)
+        call cfftb(ny-1,tran3(1,i),cwrky)
+        do j=1,ny-1
+          wrk1(i,j) = tran1(j,i)
+          wrk2(i,j) = tran2(j,i)
+          wrk3(i,j) = tran3(j,i)
+        enddo
+
+      enddo
+
+      do j=1,ny-1
+        call cfftb(nx-1,wrk1(1,j),cwrkx)
+        call cfftb(nx-1,wrk2(1,j),cwrkx)
+        call cfftb(nx-1,wrk3(1,j),cwrkx)
+        do i=1,nx-1
+          dhdx = real(wrk1(i,j))
+          dhdy = real(wrk2(i,j))
+          dwdz = real(wrk3(i,j))
+          gh(i,j) = us(i,j)*dhdx + vs(i,j)*dhdy - dwdz*zs_p(i,j)
+        enddo
+      enddo
+
+      return
+      end
+
+*---------------------------------------------------------------------
+
+      subroutine calc_gm(ctmp,gm,hft,tran1,tran2,tran3,wrk1,wrk2,
+     >                          wrk3,cwrkx,cwrky,ak,al,nx,ny)
+
+      integer nx,ny
+      real gm(nx-1,ny-1),ak(nx-1),al(ny-1)
+      real cwrkx(4*nx+15),cwrky(4*ny+15)
+      complex hft(nx-1,ny-1)
+      complex tran1(ny-1,nx-1),tran2(ny-1,nx-1),tran3(ny-1,nx-1)
+      complex wrk1(nx-1,ny-1),wrk2(nx-1,ny-1),wrk3(nx-1,ny-1)
+      character*(*) ctmp
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j
+      real dv1ldz,dv1udz,v2
+      real mu,ml,mu2,ml2,gamu,gaml,gamu2,gaml2,omga,fac1,fac2
+      real alph,R
+      logical mzero2,requ,plus
+      character*(5) var1,var2
+      complex pfac,exfac1,exfac2,Al
+
+      plus = .false.
+
+      if (ctmp(1:2).eq.'gm1') then
+        var1 = 'w'
+        var2 = 'zeta'
+      else if (ctmp(1:2).eq.'gm2') then
+        var1 = 'p'
+        var2 = 'zeta'
+        plus = .true.
+      else if (ctmp(1:2).eq.'gm3') then
+        var1 = 'u'
+        var2 = 'w'
+        plus = .true.
+      else if (ctmp(1:2).eq.'gm4') then
+        var1 = 'v'
+        var2 = 'w'
+        plus = .true.
+      else
+        write(6,*) 'Error:  unknown variable in calc_gm.'
+        write(6,*) '        ctmp = ',ctmp
+        stop
+      end if
+
+      alph = Nu/Nl
+      R = (1.-alph)/(alph+1.)
+
+      do i=1,nx-1
+
+        do j=1,ny-1
+
+          omga = ak(i)*U0+al(j)*V0
+          if (requ(abs(omga),abs(fcor))) then
+            ml2 = 0.
+            mu2 = 0.
+            gaml2 = 0.
+            gamu2 = 0.
+          else
+            ml2 = (Nl**2)*(ak(i)**2+al(j)**2)/(omga**2-fcor**2)
+            mu2 = ml2*alph**2
+            gaml2 = -ml2
+            gamu2 = -mu2
+          end if
+
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+            tran1(j,i) = 0.
+            tran2(j,i) = 0.
+            tran3(j,i) = 0.
+
+          else if (ml2.gt.0.) then
+
+            ml = sqrt(ml2)*omga/abs(omga)
+            mu = alph*ml
+            exfac1 = (cos(ml*d),sin(ml*d))
+            exfac2 = (cos(ml*d),-sin(ml*d))
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+
+            call calc_pfac(pfac,ak,al,ml2,ml,gaml2,0.,Nl,omga,fcor,
+     >                               var1,i,j,nx,ny,1)
+            if (plus) then
+              tran1(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)
+            else
+              tran1(j,i) = Al*cmplx(1.-R,0.)*pfac*hft(i,j)
+            end if
+
+            call calc_pfac(pfac,ak,al,mu2,mu,gamu2,0.,Nu,omga,fcor,
+     >                               var1,i,j,nx,ny,1)
+            tran2(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)
+
+            call calc_pfac(pfac,ak,al,mu2,mu,gamu2,0.,Nu,omga,fcor,
+     >                               var2,i,j,nx,ny,0)
+            tran3(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)
+
+          else
+
+            gaml = sqrt(gaml2)
+            gamu = alph*gaml
+            exfac1 = cmplx(exp(-gaml*d),0.)
+            exfac2 = cmplx(exp(gaml*d),0.)
+            Al = cmplx(1.,0.)/(cmplx(R,0.)*exfac1+exfac2)
+
+            call calc_pfac(pfac,ak,al,ml2,0.,gaml2,gaml,Nl,omga,fcor,
+     >                               var1,i,j,nx,ny,1)
+            if (plus) then
+              tran1(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)  
+            else
+              tran1(j,i) = Al*cmplx(1.-R,0.)*pfac*hft(i,j)
+            end if
+
+            call calc_pfac(pfac,ak,al,mu2,0.,gamu2,gamu,Nu,omga,fcor,
+     >                               var1,i,j,nx,ny,1)
+            tran2(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)
+
+            call calc_pfac(pfac,ak,al,mu2,0.,gamu2,gamu,Nu,omga,fcor,
+     >                               var2,i,j,nx,ny,0)
+            tran3(j,i) = Al*cmplx(1.+R,0.)*pfac*hft(i,j)
+
+          end if
+
+        enddo
+
+        call cfftb(ny-1,tran1(1,i),cwrky)
+        call cfftb(ny-1,tran2(1,i),cwrky)
+        call cfftb(ny-1,tran3(1,i),cwrky)
+        do j=1,ny-1
+          wrk1(i,j) = tran1(j,i)
+          wrk2(i,j) = tran2(j,i)
+          wrk3(i,j) = tran3(j,i)
+        enddo
+
+      enddo
+
+      do j=1,ny-1
+        call cfftb(nx-1,wrk1(1,j),cwrkx)
+        call cfftb(nx-1,wrk2(1,j),cwrkx)
+        call cfftb(nx-1,wrk3(1,j),cwrkx)
+        do i=1,nx-1
+          dv1ldz = real(wrk1(i,j))
+          dv1udz = real(wrk2(i,j))
+          v2 = real(wrk3(i,j))
+          gm(i,j) = (dv1ldz-dv1udz)*v2
+        enddo
+      enddo
+
+      return
+      end
+
+*---------------------------------------------------------------------
+
+      subroutine calc_gm5(gm5,gm2,gm3,gm4,ak,al,nx,ny)
+
+      integer nx,ny
+      real ak(nx-1),al(nx-1)
+      complex gm5(nx-1,ny-1),gm2(nx-1,ny-1)
+      complex gm3(nx-1,ny-1),gm4(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j
+      real omga,fac(6)
+      logical mzero2,requ
+
+      do j=1,ny-1
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+
+        if (requ(abs(omga),abs(fcor))) then
+
+          gm5(i,j) = 0.
+
+        else
+
+          fac(1) = 0.
+          fac(2) = omga*(ak(i)**2+al(j)**2)/(omga**2-fcor**2)
+          fac(3) = -omga*ak(i)/(omga**2-fcor**2)
+          fac(4) = -fcor*al(j)/(omga**2-fcor**2)
+          fac(5) = -omga*al(j)/(omga**2-fcor**2)
+          fac(6) = fcor*ak(i)/(omga**2-fcor**2)
+          gm5(i,j) = cmplx(fac(1),fac(2))*gm2(i,j)
+     >                 + cmplx(fac(3),fac(4))*gm3(i,j)
+     >                     + cmplx(fac(5),fac(6))*gm4(i,j)
+
+        end if
+
+      enddo
+      enddo
+
+      return
+      end 
+ 
+*---------------------------------------------------------------------
+
+      subroutine calc_advc(var,gs,u,v,w,ft1,ft2,ft3,hft,tran1,tran2,
+     >                     tran3,wrk1,wrk2,wrk3,cwrkx,cwrky,ak,al,gz,
+     >                     nx,ny,nz,iu,iv,idz)
+
+      integer nx,ny,nz,iu,iv,idz
+      real gs(nx-1+iu,ny-1+iv,nz),u(nx-1+iu,ny-1+iv,nz)
+      real v(nx-1+iu,ny-1+iv,nz),w(nx-1+iu,ny-1+iv,nz)
+      real cwrkx(4*nx+15),cwrky(4*ny+15)
+      real ak(nx-1),al(ny-1),gz(nz)
+      complex ft1(nx-1,ny-1,nz),ft2(nx-1,ny-1,nz)
+      complex ft3(nx-1,ny-1,nz),hft(nx-1+iu,ny-1+iv)
+      complex tran1(ny-1,nx-1),tran2(ny-1,nx-1),tran3(ny-1,nx-1)
+      complex wrk1(nx-1,ny-1),wrk2(nx-1,ny-1),wrk3(nx-1,ny-1)
+      character*(*) var
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      integer i,j,k,trm
+      real dsdx,dsdy,dsdz,du,ds
+      real m,m2,gam,gam2,omga,fac1,fac2,z
+      logical mzero2,requ
+      complex pfac,dfac,exfac,pfac1,pfac2
+
+      lgth = index(var,' ') - 1
+      if (lgth.eq.0) lgth = len(var)
+
+      do j=1,ny-1
+      do i=1,nx-1
+ 
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+          do k=1,nz
+            ft1(i,j,k) = 0.
+            ft2(i,j,k) = 0.
+            ft3(i,j,k) = 0.
+          enddo 
+         
+        else if (m2.gt.0.) then
+
+          m = sqrt(m2)*omga/abs(omga)
+          if (var(1:lgth).eq.'gze') then
+            pfac = 1.
+          else if (var(1:lgth).eq.'gw') then
+            pfac = cmplx(0.,omga)
+          else if (var(lgth-1:lgth).eq.'gu') then
+            if (idz.eq.0) then
+              fac1 = -m*fcor*al(j)/(ak(i)**2+al(j)**2)  
+              fac2 = -m*ak(i)*omga/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            else
+              fac1 = m2*ak(i)*omga/(ak(i)**2+al(j)**2)
+              fac2 = -m2*fcor*al(j)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            end if
+          else if (var(lgth-1:lgth).eq.'gv') then
+            if (idz.eq.0) then
+              fac1 = m*fcor*ak(i)/(ak(i)**2+al(j)**2)
+              fac2 = -m*al(j)*omga/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            else
+              fac1 = m2*al(j)*omga/(ak(i)**2+al(j)**2)
+              fac2 = m2*fcor*ak(i)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            end if
+          else if (var(1:lgth).eq.'gb') then
+            fac1 = -N**2
+            pfac = cmplx(fac1,0.)
+          else if (var(1:lgth).eq.'gxi') then
+            fac1 = -m*ak(i)/(ak(i)**2+al(j)**2)
+            fac2 = m*fcor*al(j)/omga/(ak(i)**2+al(j)**2)
+            pfac = cmplx(fac1,fac2)
+          else if (var(1:lgth).eq.'get') then
+            fac1 = -m*al(j)/(ak(i)**2+al(j)**2)
+            fac2 = -m*fcor*ak(i)/omga/(ak(i)**2+al(j)**2)
+            pfac = cmplx(fac1,fac2)
+          else 
+            write(6,*) 'Error:  field ',var(1:lgth),' not recognized.'
+            stop
+          end if 
+
+          do k=1,nz
+            z = gz(k)
+            exfac = cmplx(cos(m*z),sin(m*z))
+            ft1(i,j,k) = cmplx(0.,ak(i))*pfac*exfac*hft(i,j)
+            ft2(i,j,k) = cmplx(0.,al(j))*pfac*exfac*hft(i,j)
+            ft3(i,j,k) = cmplx(0.,m)*pfac*exfac*hft(i,j)
+          enddo
+
+        else
+
+          gam = sqrt(gam2)
+          if (var(1:lgth).eq.'gze') then
+            pfac = 1.
+          else if (var(1:lgth).eq.'gw') then
+            pfac = cmplx(0.,omga)
+          else if (var(lgth-1:lgth).eq.'gu') then
+            if (idz.eq.0) then
+              fac1 = gam*ak(i)*omga/(ak(i)**2+al(j)**2)
+              fac2 = -gam*fcor*al(j)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            else
+              fac1 = -gam2*ak(i)*omga/(ak(i)**2+al(j)**2)
+              fac2 = gam2*fcor*al(j)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            end if 
+          else if (var(lgth-1:lgth).eq.'gv') then
+            if (idz.eq.0) then
+              fac1 = gam*al(j)*omga/(ak(i)**2+al(j)**2)
+              fac2 = gam*fcor*ak(i)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            else
+              fac1 = -gam2*al(j)*omga/(ak(i)**2+al(j)**2)
+              fac2 = -gam2*fcor*ak(i)/(ak(i)**2+al(j)**2)
+              pfac = cmplx(fac1,fac2)
+            end if
+          else if (var(1:lgth).eq.'gb') then
+            fac1 = -N**2
+            pfac = cmplx(fac1,0.)
+          else if (var(1:lgth).eq.'gxi') then
+            fac1 = -gam*fcor*al(j)/omga/(ak(i)**2+al(j)**2)
+            fac2 = -gam*ak(i)/(ak(i)**2+al(j)**2)
+            pfac = cmplx(fac1,fac2)
+          else if (var(1:lgth).eq.'get') then
+            fac1 = gam*fcor*ak(i)/omga/(ak(i)**2+al(j)**2)
+            fac2 = -gam*al(j)/(ak(i)**2+al(j)**2)
+            pfac = cmplx(fac1,fac2)
+          else 
+            write(6,*) 'Error:  field ',var(1:lgth),' not recognized.'
+            stop
+          end if 
+
+          do k=1,nz
+            z = gz(k)
+            exfac = cmplx(exp(-gam*z),0.)
+            ft1(i,j,k) = cmplx(0.,ak(i))*pfac*exfac*hft(i,j)
+            ft2(i,j,k) = cmplx(0.,al(j))*pfac*exfac*hft(i,j)
+            ft3(i,j,k) = cmplx(-gam,0.)*pfac*exfac*hft(i,j)
+          enddo
+
+        end if
+
+      enddo
+      enddo
+
+      do k=1,nz
+
+        do i=1,nx-1
+          do j=1,ny-1
+            tran1(j,i) = ft1(i,j,k)
+            tran2(j,i) = ft2(i,j,k)
+            tran3(j,i) = ft3(i,j,k)
+          enddo
+          call cfftb(ny-1,tran1(1,i),cwrky)
+          call cfftb(ny-1,tran2(1,i),cwrky)
+          call cfftb(ny-1,tran3(1,i),cwrky)
+          do j=1,ny-1
+            wrk1(i,j) = tran1(j,i)
+            wrk2(i,j) = tran2(j,i)
+            wrk3(i,j) = tran3(j,i)
+          enddo
+        enddo
+
+        do j=1,ny-1
+          call cfftb(nx-1,wrk1(1,j),cwrkx)
+          call cfftb(nx-1,wrk2(1,j),cwrkx)
+          call cfftb(nx-1,wrk3(1,j),cwrkx)
+          do i=1,nx-1
+            dsdx = real(wrk1(i,j))
+            dsdy = real(wrk2(i,j))
+            dsdz = real(wrk3(i,j))
+            gs(i,j,k) = gs(i,j,k) - u(i,j,k)*dsdx - v(i,j,k)*dsdy
+     >                                   - w(i,j,k)*dsdz
+          enddo
+        enddo
+
+        if (iu.eq.1) then
+          do j=1,ny-1
+            gs(nx,j,k) = gs(1,j,k)
+          enddo
+        else if (iv.eq.1) then
+          do i=1,nx-1
+            gs(i,ny,k) = gs(i,1,k)
+          enddo
+        end if
+
+      enddo
+
+      if (idz.ne.0) then
+
+        do trm=1,3
+            
+          do j=1,ny-1
+          do i=1,nx-1
+
+            omga = ak(i)*U0+al(j)*V0
+            if (requ(abs(omga),abs(fcor))) then
+              m2 = 0.
+              gam2 = 0.
+            else
+              m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >                   / (omga**2-fcor**2)
+              gam2 = -m2
+            end if
+
+            if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+              do k=1,nz
+                ft1(i,j,k) = 0.
+                ft2(i,j,k) = 0.
+              enddo
+
+            else if (m2.gt.0.) then
+
+              m = sqrt(m2)*omga/abs(omga)
+              if (trm.eq.1) then
+                fac1 = -m*fcor*al(j)/(ak(i)**2+al(j)**2)  
+                fac2 = -m*ak(i)*omga/(ak(i)**2+al(j)**2)
+                pfac1 = cmplx(fac1,fac2)
+                if (var(lgth:lgth).eq.'u') then
+                  pfac2 = pfac1
+                else if (var(lgth:lgth).eq.'v') then
+                  fac1 = m*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                  fac2 = -m*al(j)*omga/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                end if
+                dfac = cmplx(0.,ak(i))
+              else if (trm.eq.2) then
+                fac1 = m*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                fac2 = -m*al(j)*omga/(ak(i)**2+al(j)**2)
+                pfac1 = cmplx(fac1,fac2)
+                if (var(lgth:lgth).eq.'u') then
+                  fac1 = -m*fcor*al(j)/(ak(i)**2+al(j)**2)  
+                  fac2 = -m*ak(i)*omga/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                else if (var(lgth:lgth).eq.'v') then
+                  pfac2 = pfac1
+                end if
+                dfac = cmplx(0.,al(j))
+              else
+                pfac1 = cmplx(0.,omga)
+                if (var(lgth:lgth).eq.'u') then
+                  fac1 = -m*fcor*al(j)/(ak(i)**2+al(j)**2)  
+                  fac2 = -m*ak(i)*omga/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                else if (var(lgth:lgth).eq.'v') then
+                  fac1 = m*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                  fac2 = -m*al(j)*omga/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                end if
+                dfac = cmplx(0.,m)
+              end if
+
+              do k=1,nz
+                z = gz(k)
+                exfac = cmplx(cos(m*z),sin(m*z))
+                ft1(i,j,k) = cmplx(0.,m)*pfac1*exfac*hft(i,j)
+                ft2(i,j,k) = dfac*pfac2*exfac*hft(i,j)
+              enddo
+
+            else
+
+              gam = sqrt(gam2)
+              if (trm.eq.1) then
+                fac1 = gam*ak(i)*omga/(ak(i)**2+al(j)**2)
+                fac2 = -gam*fcor*al(j)/(ak(i)**2+al(j)**2)
+                pfac1 = cmplx(fac1,fac2)
+                if (var(lgth:lgth).eq.'u') then
+                  pfac2 = pfac1
+                else if (var(lgth:lgth).eq.'v') then
+                  fac1 = gam*al(j)*omga/(ak(i)**2+al(j)**2)
+                  fac2 = gam*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                end if
+                dfac = cmplx(0.,ak(i))
+              else if (trm.eq.2) then
+                fac1 = gam*al(j)*omga/(ak(i)**2+al(j)**2)
+                fac2 = gam*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                pfac1 = cmplx(fac1,fac2)
+                if (var(lgth:lgth).eq.'u') then
+                  fac1 = gam*ak(i)*omga/(ak(i)**2+al(j)**2)
+                  fac2 = -gam*fcor*al(j)/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                else if (var(lgth:lgth).eq.'v') then
+                  pfac2 = pfac1
+                end if
+                dfac = cmplx(0.,al(j))
+              else
+                pfac1 = cmplx(0.,omga)
+                if (var(lgth:lgth).eq.'u') then
+                  fac1 = gam*ak(i)*omga/(ak(i)**2+al(j)**2)
+                  fac2 = -gam*fcor*al(j)/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                else if (var(lgth:lgth).eq.'v') then
+                  fac1 = gam*al(j)*omga/(ak(i)**2+al(j)**2)
+                  fac2 = gam*fcor*ak(i)/(ak(i)**2+al(j)**2)
+                  pfac2 = cmplx(fac1,fac2)
+                end if
+                dfac = cmplx(-gam,0.)
+              end if
+
+              do k=1,nz
+                z = gz(k)
+                exfac = cmplx(exp(-gam*z),0.)
+                ft1(i,j,k) = cmplx(-gam,0.)*pfac1*exfac*hft(i,j)
+                ft2(i,j,k) = dfac*pfac2*exfac*hft(i,j)
+              enddo
+
+            end if
+
+          enddo
+          enddo
+
+          do k=1,nz
+
+            do i=1,nx-1
+              do j=1,ny-1
+                tran1(j,i) = ft1(i,j,k)
+                tran2(j,i) = ft2(i,j,k)
+              enddo
+              call cfftb(ny-1,tran1(1,i),cwrky)
+              call cfftb(ny-1,tran2(1,i),cwrky)
+              do j=1,ny-1
+                wrk1(i,j) = tran1(j,i)
+                wrk2(i,j) = tran2(j,i)
+              enddo
+            enddo 
+
+            do j=1,ny-1
+              call cfftb(nx-1,wrk1(1,j),cwrkx)
+              call cfftb(nx-1,wrk2(1,j),cwrkx)
+              do i=1,nx-1
+                du = real(wrk1(i,j))
+                ds = real(wrk2(i,j))
+                gs(i,j,k) = gs(i,j,k) - du*ds 
+              enddo
+            enddo
+
+          enddo
+
+        enddo
+
+      end if
+
+      return
+      end
+
+*----------------------------------------------------------------------
+
+      subroutine calc_w2(w2,wf,dwf,dgu,dgv,gb,gw,gh,rcof,Gs,c1,c2,
+     >                      c1w,c2w,tran,wrk,Gfac,cwrkx,cwrky,ak,al,
+     >                      sgz,wgz,dz,nx,ny,nz,is)
+
+      integer nx,ny,nz,is
+      real cwrkx(4*nx+15),cwrky(4*ny+15),ak(nx-1),al(ny-1)
+      real w2(nx-1,ny-1,nz),sgz(nz),wgz(nz),dz
+      complex wf(nx-1,ny-1,nz),dwf(nx-1,ny-1,nz)
+      complex dgu(nx-1,ny-1,nz),dgv(nx-1,ny-1,nz)
+      complex gb(nx-1,ny-1,nz),gw(nx-1,ny-1,nz)
+      complex gh(nx-1,ny-1),rcof(nx-1,ny-1),Gs(nx-1,ny-1)
+      complex tran(ny-1,nx-1),wrk(nx-1,ny-1),Gfac(nz)
+      complex c1(nx-1,ny-1),c2(nx-1,ny-1),c1w(nx-1,ny-1)
+      complex c2w(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      real m,m2,gam,gam2,omga,z,tau,dz1
+      complex fac(4),exfac1,exfac2,exfac3,exfac4,Gave
+      logical mzero2,requ
+      integer i,j
+
+      do j=1,ny-1   
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+          fac(1) = cmplx(omga*ak(i),fcor*al(j))
+          fac(2) = cmplx(omga*al(j),-fcor*ak(i))
+          fac(3) = cmplx(-ak(i)**2-al(j)**2,0.)
+          fac(4) = cmplx(0.,-omga*(ak(i)**2+al(j)**2))
+          do k=1,nz
+            Gfac(k) = (fac(1)*dgu(i,j,k) + fac(2)*dgv(i,j,k)
+     >                 + fac(3)*gb(i,j,k) + fac(4)*gw(i,j,k))
+     >                     /(omga**2-fcor**2)
+          enddo
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+          do k=1,nz
+           
+            wf(i,j,k) = 0.         
+
+          enddo
+
+        else if (m2.gt.0.) then
+
+          m = sqrt(m2)*omga/abs(omga)
+
+          do k=1,nz
+
+            z = wgz(k)
+            exfac1 = cmplx(cos(m*z),sin(m*z))
+            exfac2 = cmplx(cos(m*z),-sin(m*z))
+
+            wf(i,j,k) = (gh(i,j)+c1w(i,j)-rcof(i,j))*exfac1
+     >                     + (rcof(i,j)-c2w(i,j))*exfac2
+
+            tau = wgz(k) + 0.5*dz
+            exfac3 = cmplx(cos(m*tau),sin(m*tau))
+            exfac4 = cmplx(cos(m*tau),-sin(m*tau)) 
+            c1w(i,j) = c1w(i,j) + cmplx(0.,0.5/m)*Gfac(k)
+     >                          * exfac4*dz
+            c2w(i,j) = c2w(i,j) + cmplx(0.,0.5/m)*Gfac(k)
+     >                          * exfac3*dz
+
+          enddo
+
+        else 
+
+          gam = sqrt(gam2)
+
+          do k=1,nz
+
+            z = wgz(k)
+            exfac1 = cmplx(exp(-gam*z),0.)
+            exfac2 = cmplx(exp(gam*z),0.)
+
+            wf(i,j,k) = (gh(i,j)+c1w(i,j)-rcof(i,j))*exfac1
+     >                     + (rcof(i,j)-c2w(i,j))*exfac2
+
+            tau = wgz(k) + 0.5*dz
+            exfac3 = cmplx(exp(-gam*tau),0.)
+            exfac4 = cmplx(exp(gam*tau),0.)
+            c1w(i,j) = c1w(i,j) + cmplx(0.5/gam,0.)*Gfac(k)
+     >                           *exfac4*dz
+            c2w(i,j) = c2w(i,j) + cmplx(0.5/gam,0.)*Gfac(k)
+     >                           *exfac3*dz
+
+          enddo
+
+        end if
+
+      enddo
+      enddo
+
+      do k=1,nz
+
+        do i=1,nx-1
+          do j=1,ny-1
+            tran(j,i) = wf(i,j,k)
+          enddo
+          call cfftb(ny-1,tran(1,i),cwrky)
+          do j=1,ny-1
+            wrk(i,j) = tran(j,i)
+          enddo
+        enddo
+
+        do j=1,ny-1
+          call cfftb(nx-1,wrk(1,j),cwrkx)
+          do i=1,nx-1
+            w2(i,j,k) = real(wrk(i,j))
+          enddo
+        enddo
+
+      enddo
+
+      do j=1,ny-1   
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+          fac(1) = cmplx(omga*ak(i),fcor*al(j))
+          fac(2) = cmplx(omga*al(j),-fcor*ak(i))
+          fac(3) = cmplx(-ak(i)**2-al(j)**2,0.)
+          fac(4) = cmplx(0.,-omga*(ak(i)**2+al(j)**2))
+          do k=1,nz
+            Gfac(k) = (fac(1)*dgu(i,j,k) + fac(2)*dgv(i,j,k)
+     >                  + fac(3)*gb(i,j,k) + fac(4)*gw(i,j,k))
+     >                     /(omga**2-fcor**2)
+          enddo
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+
+          do k=1,nz
+           
+            wf(i,j,k) = 0.         
+            dwf(i,j,k) = 0.
+
+          enddo
+
+        else if (m2.gt.0.) then
+
+          m = sqrt(m2)*omga/abs(omga)
+
+          z = sgz(1)
+          exfac1 = cmplx(cos(m*z),sin(m*z))
+          exfac2 = cmplx(cos(m*z),-sin(m*z))
+          if (is.eq.1) then
+            tau = 0.25*dz
+            dz1 = 0.5*dz
+          else
+            tau = sgz(1) - 0.5*dz
+            dz1 = dz
+          end if
+          Gave = 0.5*(Gs(i,j)+Gfac(1))
+          exfac3 = cmplx(cos(m*tau),sin(m*tau))
+          exfac4 = cmplx(cos(m*tau),-sin(m*tau))
+          c1(i,j) = c1(i,j) + cmplx(0.,0.5/m)*Gave*exfac4*dz1
+          c2(i,j) = c2(i,j) + cmplx(0.,0.5/m)*Gave*exfac3*dz1
+          
+          wf(i,j,1) = (gh(i,j)+c1(i,j)-rcof(i,j))*exfac1
+     >                    + (rcof(i,j)-c2(i,j))*exfac2
+          dwf(i,j,1) = cmplx(0.,m)*(gh(i,j)+c1(i,j)-rcof(i,j))*exfac1
+     >                    + cmplx(0.,-m)*(rcof(i,j)-c2(i,j))*exfac2
+
+          do k=2,nz
+
+            z = sgz(k)
+            exfac1 = cmplx(cos(m*z),sin(m*z))
+            exfac2 = cmplx(cos(m*z),-sin(m*z))
+            tau = 0.5*(sgz(k)+sgz(k-1))
+            Gave = 0.5*(Gfac(k)+Gfac(k-1))
+            exfac3 = cmplx(cos(m*tau),sin(m*tau))
+            exfac4 = cmplx(cos(m*tau),-sin(m*tau))
+            c1(i,j) = c1(i,j) + cmplx(0.,0.5/m)*Gave*exfac4
+     >                       * (sgz(k)-sgz(k-1))
+            c2(i,j) = c2(i,j) + cmplx(0.,0.5/m)*Gave*exfac3
+     >                       * (sgz(k)-sgz(k-1))
+
+            wf(i,j,k) = (gh(i,j)+c1(i,j)-rcof(i,j))*exfac1
+     >                     + (rcof(i,j)-c2(i,j))*exfac2
+            dwf(i,j,k) = cmplx(0.,m)*(gh(i,j)+c1(i,j)-rcof(i,j))
+     >                                   *exfac1
+     >               + cmplx(0.,-m)*(rcof(i,j)-c2(i,j))*exfac2 
+
+          enddo
+
+          Gs(i,j) = Gfac(nz)
+
+        else 
+
+          gam = sqrt(gam2)
+
+          z = sgz(1)
+          exfac1 = cmplx(exp(-gam*z),0.)
+          exfac2 = cmplx(exp(gam*z),0.)
+          if (is.eq.1) then
+            tau = 0.25*dz
+            dz1 = 0.5*dz
+          else
+            tau = sgz(1) - 0.5*dz
+            dz1 = dz
+          end if
+          Gave = 0.5*(Gs(i,j)+Gfac(1))
+          exfac3 = cmplx(exp(-gam*tau),0.)
+          exfac4 = cmplx(exp(gam*tau),0.)
+          c1(i,j) = c1(i,j) + cmplx(0.5/gam,0.)*Gave*exfac4*dz1
+          c2(i,j) = c2(i,j) + cmplx(0.5/gam,0.)*Gave*exfac3*dz1
+          
+          wf(i,j,1) = (gh(i,j)+c1(i,j)-rcof(i,j))*exfac1
+     >                    + (rcof(i,j)-c2(i,j))*exfac2
+          dwf(i,j,1) = cmplx(-gam,0.)*(gh(i,j)+c1(i,j)-rcof(i,j))
+     >                                 * exfac1
+     >                + cmplx(gam,0.)*(rcof(i,j)-c2(i,j))*exfac2
+          
+          do k=2,nz
+
+            z = sgz(k)
+            exfac1 = cmplx(exp(-gam*z),0.)
+            exfac2 = cmplx(exp(gam*z),0.)
+            tau = 0.5*(sgz(k)+sgz(k-1))
+            Gave = 0.5*(Gfac(k)+Gfac(k-1))
+            exfac3 = cmplx(exp(-gam*tau),0.)
+            exfac4 = cmplx(exp(gam*tau),0.)
+            c1(i,j) = c1(i,j) + cmplx(0.5/gam,0.)*Gave*exfac4
+     >                          *(sgz(k)-sgz(k-1))
+            c2(i,j) = c2(i,j) + cmplx(0.5/gam,0.)*Gave*exfac3
+     >                          *(sgz(k)-sgz(k-1))
+
+            wf(i,j,k) = (gh(i,j)+c1(i,j)-rcof(i,j))*exfac1 
+     >                       + (rcof(i,j)-c2(i,j))*exfac2
+            dwf(i,j,k) = cmplx(-gam,0.)*(gh(i,j)+c1(i,j)-rcof(i,j))
+     >                                  *exfac1
+     >                   + cmplx(gam,0.)*(rcof(i,j)-c2(i,j))*exfac2 
+
+          enddo
+
+          Gs(i,j) = Gfac(nz)
+
+        end if
+
+      enddo
+      enddo
+
+      return
+      end            
+
+*------------------------------------------------------------------------
+
+      subroutine calc_o2(var,fld,ft,inf1,inf2,inf3,tran,wrk,cwrkx,
+     >                             cwrky,ak,al,nx,ny,nz)
+
+      integer nx,ny,nz
+      real fld(nx-1,ny-1,nz),cwrkx(4*nx+15),cwrky(4*ny+15)
+      real ak(nx-1),al(ny-1)
+      complex ft(nx-1,ny-1,nz),inf1(nx-1,ny-1,nz)
+      complex inf2(nx-1,ny-1,nz),inf3(nx-1,ny-1,nz)
+      complex tran(ny-1,nx-1),wrk(nx-1,ny-1)
+      character*(*) var
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      real omga,m2,fac(6)
+      integer i,j,k
+      logical mzero2,requ
+  
+      lgth = index(var,' ') - 1
+
+      do j=1,ny-1
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+        
+          do k=1,nz 
+            ft(i,j,k) = 0.
+          enddo
+
+        else
+
+          if (var(1:1).eq.'p') then
+            fac(1) = 0.
+            fac(2) = -(omga**2-fcor**2)/omga/(ak(i)**2+al(j)**2)
+            fac(3) = fcor*al(j)/omga/(ak(i)**2+al(j)**2)
+            fac(4) = -ak(i)/(ak(i)**2+al(j)**2)
+            fac(5) = -fcor*ak(i)/omga/(ak(i)**2+al(j)**2)
+            fac(6) = -al(j)/(ak(i)**2+al(j)**2)
+          else if (var(1:1).eq.'b') then
+            fac(1) = 0.
+            fac(2) = N**2/omga
+            fac(3) = 0.
+            fac(4) = -1./omga
+            fac(5) = 0.
+            fac(6) = 0.
+          else if (var(1:1).eq.'u') then 
+            fac(1) = -ak(i)*omga/(omga**2-fcor**2)
+            fac(2) = fcor*al(j)/(omga**2-fcor**2)
+            fac(3) = 0.
+            fac(4) = -omga/(omga**2-fcor**2)
+            fac(5) = -fcor/(omga**2-fcor**2)
+            fac(6) = 0.
+          else if (var(1:1).eq.'v') then
+            fac(1) = -al(j)*omga/(omga**2-fcor**2)
+            fac(2) = -fcor*ak(i)/(omga**2-fcor**2)
+            fac(3) = fcor/(omga**2-fcor**2)
+            fac(4) = 0.
+            fac(5) = 0.
+            fac(6) = -omga/(omga**2-fcor**2)
+          else 
+            fac(1) = 0.
+            fac(2) = -1./omga
+            fac(3) = 0.
+            fac(4) = -1./omga
+            fac(5) = 0.
+            fac(6) = 0.
+          end if
+ 
+          do k=1,nz
+            ft(i,j,k) = cmplx(fac(1),fac(2))*inf1(i,j,k) 
+     >              + cmplx(fac(3),fac(4))*inf2(i,j,k)
+     >                   + cmplx(fac(5),fac(6))*inf3(i,j,k)
+          enddo
+
+        end if
+
+      enddo
+      enddo
+
+      do k=1,nz
+
+        do i=1,nx-1
+          do j=1,ny-1
+            tran(j,i) = ft(i,j,k)
+          enddo
+          call cfftb(ny-1,tran(1,i),cwrky)
+          do j=1,ny-1
+            wrk(i,j) = tran(j,i)
+          enddo
+        enddo
+
+        do j=1,ny-1
+          call cfftb(nx-1,wrk(1,j),cwrkx)
+          do i=1,nx-1
+            fld(i,j,k) = real(wrk(i,j))
+          enddo
+        enddo
+
+      enddo
+
+      return
+      end
+
+*------------------------------------------------------------------------
+
+      subroutine drag_calc(gh,rcof,hft,gus,gvs,p2,dwdz,tran1,   
+     >                      tran2,wrk1,wrk2,zs_p,zs_u,zs_v,cwrkx,
+     >                      cwrky,ak,al,dx,dy,nx,ny) 
+
+      integer nx,ny
+      real zs_p(nx-1,ny-1),zs_u(nx,ny-1),zs_v(nx-1,ny)
+      real ak(nx-1),al(ny-1),cwrkx(4*nx+15),cwrky(4*ny+15),dx,dy
+      real p2(nx-1,ny-1)
+      complex gh(nx-1,ny-1),rcof(nx-1,ny-1),hft(nx-1,ny-1)
+      complex gus(nx-1,ny-1),gvs(nx-1,ny-1),dwdz(nx-1,ny-1)
+      complex tran1(ny-1,nx-1),tran2(ny-1,nx-1),wrk1(nx-1,ny-1)
+      complex wrk2(nx-1,ny-1)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      real m,gam,m2,gam2,omga,fac,sum1x,sum1y,sum2x,sum2y
+      real p1,dp1dz
+      character*(80) ctmp
+      logical requ,mzero2
+      complex pfac1,pfac2 
+
+      do j=1,ny-1
+      do i=1,nx-1
+
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+        end if
+
+        if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+          dwdz(i,j) = 0.
+        else if (m2.gt.0.) then
+          m = sqrt(m2)*omga/abs(omga)
+          dwdz(i,j) = cmplx(0.,m)*(gh(i,j)-rcof(i,j))
+     >                 + cmplx(0.,-m)*rcof(i,j)
+        else
+          gam = sqrt(gam2)
+          dwdz(i,j) = cmplx(-gam,0.)*(gh(i,j)-rcof(i,j))
+     >                 + cmplx(gam,0.)*rcof(i,j)
+        end if
+
+      enddo
+      enddo
+
+      ctmp = 'p'
+      call calc_o2(ctmp,p2,wrk2,dwdz,gus,gvs,tran1,wrk1,cwrkx,cwrky,
+     >                           ak,al,nx,ny,1)
+
+      do i=1,nx-1
+ 
+        do j=1,ny-1 
+ 
+          omga = ak(i)*U0+al(j)*V0
+          if (requ(abs(omga),abs(fcor))) then
+            m2 = 0.
+            gam2 = 0.
+          else
+            m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >              / (omga**2-fcor**2)
+            gam2 = -m2
+          end if 
+ 
+          if (mzero2(omga,Nu,Nl,fcor,ml2,mu2)) then
+            pfac1 = 0.
+            pfac2 = 0.
+          else if (m2.gt.0.) then
+            m = sqrt(m2)*omga/abs(omga)
+            fac = rhos*(N**2-omga**2)/m
+            pfac1 = cmplx(0.,fac)
+            fac = rhos*(N**2-omga**2)
+            pfac2 = cmplx(-fac,0.)
+          else
+            gam = sqrt(gam2) 
+            fac = rhos*(N**2-omga**2)/gam
+            pfac1 = cmplx(fac,0.)
+            fac = rhos*(N**2-omga**2)
+            pfac2 = cmplx(-fac,0.)
+          end if
+ 
+          tran1(j,i) = pfac1*hft(i,j)
+          tran2(j,i) = pfac2*hft(i,j)
+ 
+        enddo
+ 
+        call cfftb(ny-1,tran1(1,i),cwrky)
+        call cfftb(ny-1,tran2(1,i),cwrky)
+        do j=1,ny-1
+          wrk1(i,j) = tran1(j,i)
+          wrk2(i,j) = tran2(j,i)
+        enddo
+ 
+      enddo
+
+      sum1x = 0.
+      sum2x = 0.
+      sum1y = 0.
+      sum2y = 0.
+ 
+      do j=1,ny-1
+
+        call cfftb(nx-1,wrk1(1,j),cwrkx)
+        call cfftb(nx-1,wrk2(1,j),cwrkx)
+
+        do i=1,nx-1
+
+          p1 = real(wrk1(i,j))
+          dp1dz = real(wrk2(i,j))
+
+          sum1x = sum1x + p1*dy*(zs_u(i+1,j)-zs_u(i,j))
+          sum1y = sum1y + p1*dx*(zs_v(i,j+1)-zs_v(i,j))
+
+          sum2x = sum2x + (p1 + dp1dz*zs_p(i,j) + rhos*p2(i,j))
+     >                      *dy*(zs_u(i+1,j)-zs_u(i,j))
+          sum2y = sum2y + (p1 + dp1dz*zs_p(i,j) + rhos*p2(i,j))
+     >                      *dx*(zs_v(i,j+1)-zs_v(i,j))
+
+        enddo
+      enddo
+
+      write(6,*) 
+      write(6,*) 'Net x drag, first order = ',sum1x
+      write(6,*) 'Net y drag, first order = ',sum1y 
+      write(6,*) 
+      write(6,*) 'Net x drag, second order = ',sum2x
+      write(6,*) 'Net y drag, second order = ',sum2y
+      write(6,*)
+ 
+      return
+      end
+
+*----------------------------------------------------------------------
+
+      logical function mzero1(omga,Nu,Nl,fcor)
+
+      real omga,Nu,Nl,fcor
+      
+      logical requ
+
+      mzero1 = .false.
+      if (requ(abs(omga),abs(fcor)).or.requ(abs(omga),Nu)
+     >           .or.(requ(omga),Nl).or.(omga.eq.0.)) then
+        mzero1 = .true.
+      end if
+
+      return
+      end
+
+*---------------------------------------------------------------------------
+
+      logical function mzero2(omga,Nu,Nl,fcor,ml2,mu2)
+
+      real omga,Nu,Nl,fcor,ml2,mu2
+
+      real dz
+      common /dzblk/ dz
+
+      real kz,pi,alph
+      logical requ
+
+      alph = Nu/Nl
+      pi = 2.*asin(1.)
+      kz = sqrt(max(abs(ml2),abs(mu2)))
+
+      mzero2 = .false.
+      
+      if (requ(abs(omga),abs(fcor)).or.requ(abs(omga),Nu)
+     >      .or.requ(abs(omga),Nl).or.(omga.eq.0.) 
+     >         .or.((ml2.gt.0.).and.(kz.gt.(2.*pi/5./dz)))
+     >           .or.((ml2.lt.0.).and.(kz.gt.(1./5./dz)))) then
+        mzero2 = .true.
+      end if
+
+      return
+      end
+
+*---------------------------------------------------------------------------
+
+      logical function requ(val1,val2)
+
+      real val1,val2,eps,diff,big	
+
+      parameter (eps=1.e-3)
+
+      big = amax1(abs(val1),abs(val2))
+
+      if (big.eq.0.) then
+        requ = .true.
+        return
+      end if
+
+      diff = abs((val1-val2)/big)
+
+      if (diff.le.eps) then
+        requ = .true.
+      else
+        requ = .false.
+      end if
+
+      return
+      end
+
+*--------------------------------------------------------------------------
+
+      subroutine set_sclrblk(asclr,nsclr)
+
+      integer nsclr
+      real asclr(nsclr)
+
+      real fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,d,Nu,Nl,U0,V0,ps,rhos,g
+
+      real dz
+      common /dzblk/ dz
+
+      fcor = asclr(1)
+      d = asclr(12)
+      Nu = asclr(13)
+      Nl = asclr(14)
+      U0 = asclr(15)
+      V0 = asclr(16)
+      ps = asclr(17)
+      rhos = asclr(19)
+      g = 9.806
+
+      return
+      end
+

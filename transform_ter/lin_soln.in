@@ -1,0 +1,16 @@
+0.  0.                   origin
+401 401 25               nx,ny,nz
+1000. 1000.              dx,dy
+170.  170.               dz,dzbot
+3.                       terrain type
+10000. 10000. 667.       a1,b1,h
+10000. 10000. 0000.      a2,b2,y_len
+200000. 200000.          xc,yc
+0.0                      fcor
+0.012                    N
+8.0                      U
+0.0                      V
+100000.                  ps
+273.                     Ts
+lintst                   output file
+

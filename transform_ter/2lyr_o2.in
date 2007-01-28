@@ -1,0 +1,24 @@
+0.  0.                   origin
+2001  07  41             nx,ny,nz
+2000. 2000. 100.         dx,dy,dz
+000000. 000000.          xout,yout
+2001  07  41             nxout,nyout,nzout
+1.                       twod
+1.                       terrain type
+10000. 10000. 667.       a1,b1,h
+10000. 10000. 00000.     a2,b2,y_len
+2000000. 00000.          xc,yc
+0.0                      fcor
+0.25                     height of interface
+0.006                    Nu (upper layer)
+0.012                    Nl (lower layer)
+8.0                      U
+0.0                      V
+100000.                  ps
+273.                     Ts
+2.15                     zt
+1.                       mixing flag
+0.60                     Cm
+1.                       rprandl
+tst.mix                  output file
+0                        transform (1) output or not (0)
