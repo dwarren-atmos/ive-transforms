@@ -1,0 +1,23 @@
+0.  0.                   origin
+701 1001 02              nx,ny,nz
+1800. 1800. 90.          dx,dy,dz
+568800. 730800.          xout,yout
+133 189 51               nxout,nyout,nzout
+0.                       twod
+4.                       terrain type
+10000. 10000. 333.       a1,b1,h
+10000. 10000. 27500.     a2,b2,y_len
+630000. 900000.          xc,yc
+0.0                      fcor
+0.012                    N
+8.0                      U
+0.0                      V
+100000.                  ps
+273.                     Ts
+4.17                     zt
+0.                       mixing flag
+0.                       Cm
+0.                       rprandl
+1                        calculate vorticity (1) or not (0)
+1                        transform output (1) or not (0)
+an3d.038.05              output file

@@ -1,0 +1,59 @@
+      integer i,j,k,n,kptr,kplus
+      real z1,z2,var1,var2,tfac,znode,z0
+
+      do n=1,nt
+
+      do j=1,ny
+      do i=1,nx
+
+        z0 = zs(i,j)
+        tfac = (ztop - z0)/ztop
+        kptr = 1
+
+        do k=1,nz
+
+          if (sgz(k).lt.z0) then
+
+            v_sgz(i,j,k,n) = miss
+
+          else
+ 
+            kplus = 0
+
+ 454        if ((kplus.eq.0).and.(kptr.le.nz+iw)) then
+              znode = z0 + tfac*gz(kptr)
+              if (znode.ge.sgz(k)) then
+                kplus = kptr
+              else 
+                kptr = kptr+1
+              end if
+              goto 454
+            end if
+
+            if (kplus.eq.0) kplus = nz
+
+            if (kplus.eq.1) then
+              z1 = z0 + tfac*gz(1)
+              z2 = z0 + tfac*gz(2)
+              var1 = (var(i,j,1,n)+var(i+iu,j+iv,1,n))/2.
+              var2 = (var(i,j,2,n)+var(i+iu,j+iv,2,n))/2.
+              v_sgz(i,j,k,n) = v_sgz(i,j,k,n) * ( var1 +
+     >              (var2-var1)/(z2-z1)*(sgz(k)-z1) )
+            else
+              z1 = z0 + tfac*gz(kplus-1)
+              z2 = z0 + tfac*gz(kplus)
+              var1 = (var(i,j,kplus-1,n)+var(i+iu,j+iv,kplus-1,n))/2.
+              var2 = (var(i,j,kplus,n)+var(i+iu,j+iv,kplus,n))/2.
+              v_sgz(i,j,k,n) = v_sgz(i,j,k,n) * ( var2 +
+     >              (var2-var1)/(z2-z1)*(sgz(k)-z2) )
+            end if
+
+          end if
+
+        enddo
+
+      enddo
+      enddo
+
+      enddo
+

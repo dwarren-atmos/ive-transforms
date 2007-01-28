@@ -1,0 +1,260 @@
+
+      subroutine calc_advc(var,gs,u,v,w,ft1,ft2,ft3,hft,tran1,tran2,
+     >                     tran3,wrk1,wrk2,wrk3,cwrkx,cwrky,ak,al,gz,
+     >                     nx,ny,nz,iu,iv,idz)
+
+      integer nx,ny,nz,iu,iv,idz
+      real gs(nx-1+iu,ny-1+iv,nz),u(nx-1+iu,ny-1+iv,nz)
+      real v(nx-1+iu,ny-1+iv,nz),w(nx-1+iu,ny-1+iv,nz)
+      real cwrkx(4*nx+15),cwrky(4*ny+15)
+      real ak(nx-1),al(ny-1),gz(nz)
+      complex ft1(nx-1,ny-1,nz),ft2(nx-1,ny-1,nz)
+      complex ft3(nx-1,ny-1,nz),hft(nx-1+iu,ny-1+iv)
+      complex tran1(ny-1,nx-1),tran2(ny-1,nx-1),tran3(ny-1,nx-1)
+      complex wrk1(nx-1,ny-1),wrk2(nx-1,ny-1),wrk3(nx-1,ny-1)
+      character*(*) var
+
+      real fcor,N,U0,V0,ps,rhos,g
+      common /sclrblk/ fcor,N,U0,V0,ps,rhos,g
+
+      integer i,j,k,trm
+      real dsdx,dsdy,dsdz,du,ds
+      real m,m2,gam,gam2,omga,fac1,fac2,z
+      character*(8) vtmp,ctmp
+      logical mzero2,requ
+      complex pfac,exfac,pfac1,pfac2
+
+      lgth = index(var,' ') - 1
+      if (lgth.eq.0) lgth = len(var)
+      if (var(1:1).eq.'g') then
+        vtmp(1:lgth-1) = var(2:lgth)
+      else if (var(1:2).eq.'dg') then
+        vtmp(1:lgth-2) = var(3:lgth)
+      else
+        write(6,*) 'Error:  do not know what to calculate in ',
+     >                               'calc_advc.'
+        write(6,*) 'Stopping run.'
+        stop
+      end if
+        
+      do j=1,ny-1
+      do i=1,nx-1
+ 
+        omga = ak(i)*U0+al(j)*V0
+        if (requ(abs(omga),abs(fcor))) then
+          m2 = 0.
+          gam2 = 0.
+        else
+          m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >               / (omga**2-fcor**2)
+          gam2 = -m2
+        end if
+
+        if (mzero2(omga,N,fcor,m2)) then
+
+          do k=1,nz
+            ft1(i,j,k) = 0.
+            ft2(i,j,k) = 0.
+            ft3(i,j,k) = 0.
+          enddo 
+         
+        else if (m2.gt.0.) then
+
+          m = sqrt(m2)*omga/abs(omga)
+          call calc_pfac(pfac,ak,al,m2,m,gam2,0.,N,omga,fcor,vtmp,
+     >                             i,j,nx,ny,idz)
+          do k=1,nz
+            z = gz(k)
+            exfac = cmplx(cos(m*z),sin(m*z))
+            ft1(i,j,k) = cmplx(0.,ak(i))*pfac*exfac*hft(i,j)
+            ft2(i,j,k) = cmplx(0.,al(j))*pfac*exfac*hft(i,j)
+            ft3(i,j,k) = cmplx(0.,m)*pfac*exfac*hft(i,j)
+          enddo
+
+        else
+
+          gam = sqrt(gam2)
+          call calc_pfac(pfac,ak,al,m2,0.,gam2,gam,N,omga,fcor,vtmp,
+     >                               i,j,nx,ny,idz)
+          do k=1,nz
+            z = gz(k)
+            exfac = cmplx(exp(-gam*z),0.)
+            ft1(i,j,k) = cmplx(0.,ak(i))*pfac*exfac*hft(i,j)
+            ft2(i,j,k) = cmplx(0.,al(j))*pfac*exfac*hft(i,j)
+            ft3(i,j,k) = cmplx(-gam,0.)*pfac*exfac*hft(i,j)
+          enddo
+
+        end if
+
+      enddo
+      enddo
+
+      do k=1,nz
+
+        do i=1,nx-1
+          do j=1,ny-1
+            tran1(j,i) = ft1(i,j,k)
+            tran2(j,i) = ft2(i,j,k)
+            tran3(j,i) = ft3(i,j,k)
+          enddo
+          call cfftb(ny-1,tran1(1,i),cwrky)
+          call cfftb(ny-1,tran2(1,i),cwrky)
+          call cfftb(ny-1,tran3(1,i),cwrky)
+          do j=1,ny-1
+            wrk1(i,j) = tran1(j,i)
+            wrk2(i,j) = tran2(j,i)
+            wrk3(i,j) = tran3(j,i)
+          enddo
+        enddo
+
+        do j=1,ny-1
+          call cfftb(nx-1,wrk1(1,j),cwrkx)
+          call cfftb(nx-1,wrk2(1,j),cwrkx)
+          call cfftb(nx-1,wrk3(1,j),cwrkx)
+          do i=1,nx-1
+            dsdx = real(wrk1(i,j))
+            dsdy = real(wrk2(i,j))
+            dsdz = real(wrk3(i,j))
+            gs(i,j,k) = gs(i,j,k) - u(i,j,k)*dsdx - v(i,j,k)*dsdy
+     >                                   - w(i,j,k)*dsdz
+          enddo
+        enddo
+
+        if (iu.eq.1) then
+          do j=1,ny-1
+            gs(nx,j,k) = gs(1,j,k)
+          enddo
+        else if (iv.eq.1) then
+          do i=1,nx-1
+            gs(i,ny,k) = gs(i,1,k)
+          enddo
+        end if
+
+      enddo
+
+      if (idz.ne.0) then
+
+        do trm=1,3
+            
+          do j=1,ny-1
+          do i=1,nx-1
+
+            omga = ak(i)*U0+al(j)*V0
+            if (requ(abs(omga),abs(fcor))) then
+              m2 = 0.
+              gam2 = 0.
+            else
+              m2 = (N**2-omga**2)*(ak(i)**2+al(j)**2)
+     >                   / (omga**2-fcor**2)
+              gam2 = -m2
+            end if
+
+            if (mzero2(omga,N,fcor,m2)) then
+
+              do k=1,nz
+                ft1(i,j,k) = 0.
+                ft2(i,j,k) = 0.
+              enddo
+
+            else if (m2.gt.0.) then
+
+              m = sqrt(m2)*omga/abs(omga)
+              if (trm.eq.1) then
+                ctmp(1:1) = 'u'
+                call calc_pfac(pfac1,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              vtmp,i,j,nx,ny,0)
+                pfac2 = cmplx(0.,ak(i))*pfac2
+              else if (trm.eq.2) then
+                ctmp(1:1) = 'v'
+                call calc_pfac(pfac1,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              vtmp,i,j,nx,ny,0)
+                pfac2 = cmplx(0.,al(j))*pfac2
+              else
+                ctmp(1:1) = 'w'
+                call calc_pfac(pfac1,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,m,gam2,0.,N,omga,fcor,
+     >                              vtmp,i,j,nx,ny,1)
+              end if
+
+              do k=1,nz
+                z = gz(k)
+                exfac = cmplx(cos(m*z),sin(m*z))
+                ft1(i,j,k) = pfac1*exfac*hft(i,j)
+                ft2(i,j,k) = pfac2*exfac*hft(i,j)
+              enddo
+
+            else
+
+              gam = sqrt(gam2)
+              if (trm.eq.1) then
+                ctmp(1:1) = 'u'
+                call calc_pfac(pfac1,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    vtmp,i,j,nx,ny,0)
+                pfac2 = cmplx(0.,ak(i))*pfac2
+              else if (trm.eq.2) then
+                ctmp(1:1) = 'v'
+                call calc_pfac(pfac1,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    vtmp,i,j,nx,ny,0)
+                pfac2 = cmplx(0.,al(j))*pfac2
+              else
+                ctmp(1:1) = 'w'
+                call calc_pfac(pfac1,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    ctmp,i,j,nx,ny,1)
+                call calc_pfac(pfac2,ak,al,m2,0.,gam2,gam,N,omga,fcor,
+     >                                    vtmp,i,j,nx,ny,1)
+              end if
+
+              do k=1,nz
+                z = gz(k)
+                exfac = cmplx(exp(-gam*z),0.)
+                ft1(i,j,k) = pfac1*exfac*hft(i,j)
+                ft2(i,j,k) = pfac2*exfac*hft(i,j)
+              enddo
+
+            end if
+
+          enddo
+          enddo
+
+          do k=1,nz
+
+            do i=1,nx-1
+              do j=1,ny-1
+                tran1(j,i) = ft1(i,j,k)
+                tran2(j,i) = ft2(i,j,k)
+              enddo
+              call cfftb(ny-1,tran1(1,i),cwrky)
+              call cfftb(ny-1,tran2(1,i),cwrky)
+              do j=1,ny-1
+                wrk1(i,j) = tran1(j,i)
+                wrk2(i,j) = tran2(j,i)
+              enddo
+            enddo 
+
+            do j=1,ny-1
+              call cfftb(nx-1,wrk1(1,j),cwrkx)
+              call cfftb(nx-1,wrk2(1,j),cwrkx)
+              do i=1,nx-1
+                du = real(wrk1(i,j))
+                ds = real(wrk2(i,j))
+                gs(i,j,k) = gs(i,j,k) - du*ds 
+              enddo
+            enddo
+
+          enddo
+
+        enddo
+
+      end if
+
+      return
+      end

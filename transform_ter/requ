@@ -1,0 +1,25 @@
+
+      logical function requ(val1,val2)
+
+      real val1,val2,eps,diff,big	
+
+      parameter (eps=1.e-4)
+
+      big = amax1(abs(val1),abs(val2))
+
+      if (big.eq.0.) then
+        requ = .true.
+        return
+      end if
+
+      diff = abs((val1-val2)/big)
+
+      if (diff.le.eps) then
+        requ = .true.
+      else
+        requ = .false.
+      end if
+
+      return
+      end
+

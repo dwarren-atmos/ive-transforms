@@ -1,0 +1,199 @@
+* 
+* north and south boundaries
+*
+      do k=1,nz-1
+        kp1 = min0(k+1,nz-1)
+        km1 = max0(k-1,1)
+      do n=1,4
+        if (n.eq.1) j = 1
+        if (n.eq.2) j = 2
+        if (n.eq.3) j = ny-2
+        if (n.eq.4) j = ny-1
+        jp1 = min0(j+1,ny-1)
+        jm1 = max0(j-1,1)
+      do i=1,nx-1
+        ip1 = min0(i+1,nx-1)
+        im1 = max0(i-1,1)
+
+        fs(i,j,k) = fs(i,j,k) 
+     >                     -  0.25*rdy
+     >       *( yrbnd(j)*(u(i,jp1,k)-u(i,j,k)
+     >                        + u(i+1,jp1,k)-u(i+1,j,k))
+     >        + ylbnd(j)*(u(i,j,k)-u(i,jm1,k)
+     >                        + u(i+1,j,k)-u(i+1,jm1,k)) )
+     >                - 0.25*dqdy_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdy_zw(k+1)*zrbnd(k)*(u(i,j,kp1)
+     >             - u(i,j,k)+u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*dqdy_zw(k)*zlbnd(k)*(u(i,j,k)
+     >             - u(i,j,km1)+u(i+1,j,k)-u(i+1,j,km1)) ) 
+     >                     + 0.25*rdx
+     >       *( xrbnd(i)*(v(ip1,j,k)-v(i,j,k)
+     >                        + v(ip1,j+1,k)-v(i,j+1,k))
+     >        + xlbnd(i)*(v(i,j,k)-v(im1,j,k)
+     >                        + v(i,j+1,k)-v(im1,j+1,k)) )
+     >                + 0.25*dqdx_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdx_zw(k+1)*zrbnd(k)*(v(i,j,kp1)
+     >             - v(i,j,k)+v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*dqdx_zw(k)*zlbnd(k)*(v(i,j,k)
+     >             - v(i,j,km1)+v(i,j+1,k)-v(i,j+1,km1)) )
+
+        fr(i,j,k) = fr(i,j,k)
+     >                     - 0.25*rdx
+     >       *( xrbnd(i)*(w(ip1,j,k)-w(i,j,k)
+     >                        + w(ip1,j,k+1)-w(i,j,k+1))
+     >        + xlbnd(i)*(w(i,j,k)-w(im1,j,k)
+     >                        + w(i,j,k+1)-w(im1,j,k+1)) )
+     >                - dqdx_xy(i,j,1)*dqdx_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                + 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(u(i,j,kp1)-u(i,j,k)
+     >              + u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*zlbnd(k)*(u(i,j,k)-u(i,j,km1)
+     >              + u(i+1,j,k)-u(i+1,j,km1)) )
+
+        fq(i,j,k) = fq(i,j,k)
+     >                     + 0.25*rdy
+     >       *( yrbnd(j)*(w(i,jp1,k)-w(i,j,k)
+     >                        + w(i,jp1,k+1)-w(i,j,k+1))
+     >        + ylbnd(j)*(w(i,j,k)-w(i,jm1,k)
+     >                        + w(i,j,k+1)-w(i,jm1,k+1)) )
+     >                + dqdy_xy(i,j,1)*dqdy_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                - 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(v(i,j,kp1)-v(i,j,k)
+     >              + v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*zlbnd(k)*(v(i,j,k)-v(i,j,km1)
+     >              + v(i,j+1,k)-v(i,j+1,km1)) )
+ 
+      enddo
+      enddo
+      enddo
+* 
+* east and west boundaries  
+*
+      do k=1,nz-1
+        kp1 = min0(k+1,nz-1)
+        km1 = max0(k-1,1)
+      do n=1,4
+        if (n.eq.1) i = 1
+        if (n.eq.2) i = 2
+        if (n.eq.3) i = nx-2
+        if (n.eq.4) i = nx-1
+        ip1 = min0(i+1,nx-1)
+        im1 = max0(i-1,1)
+      do j=3,ny-3
+        jp1 = min0(j+1,ny-1)
+        jm1 = max0(j-1,1)
+
+        fs(i,j,k) = fs(i,j,k) 
+     >                     -  0.25*rdy
+     >       *( yrbnd(j)*(u(i,jp1,k)-u(i,j,k)
+     >                        + u(i+1,jp1,k)-u(i+1,j,k))
+     >        + ylbnd(j)*(u(i,j,k)-u(i,jm1,k)
+     >                        + u(i+1,j,k)-u(i+1,jm1,k)) )
+     >                - 0.25*dqdy_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdy_zw(k+1)*zrbnd(k)*(u(i,j,kp1)
+     >             - u(i,j,k)+u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*dqdy_zw(k)*zlbnd(k)*(u(i,j,k)
+     >             - u(i,j,km1)+u(i+1,j,k)-u(i+1,j,km1)) ) 
+     >                     + 0.25*rdx
+     >       *( xrbnd(i)*(v(ip1,j,k)-v(i,j,k)
+     >                        + v(ip1,j+1,k)-v(i,j+1,k))
+     >        + xlbnd(i)*(v(i,j,k)-v(im1,j,k)
+     >                        + v(i,j+1,k)-v(im1,j+1,k)) )
+     >                + 0.25*dqdx_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdx_zw(k+1)*zrbnd(k)*(v(i,j,kp1)
+     >             - v(i,j,k)+v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*dqdx_zw(k)*zlbnd(k)*(v(i,j,k)
+     >             - v(i,j,km1)+v(i,j+1,k)-v(i,j+1,km1)) )
+
+        fr(i,j,k) = fr(i,j,k)
+     >                     - 0.25*rdx
+     >       *( xrbnd(i)*(w(ip1,j,k)-w(i,j,k)
+     >                        + w(ip1,j,k+1)-w(i,j,k+1))
+     >        + xlbnd(i)*(w(i,j,k)-w(im1,j,k)
+     >                        + w(i,j,k+1)-w(im1,j,k+1)) )
+     >                - dqdx_xy(i,j,1)*dqdx_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                + 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(u(i,j,kp1)-u(i,j,k)
+     >              + u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*zlbnd(k)*(u(i,j,k)-u(i,j,km1)
+     >              + u(i+1,j,k)-u(i+1,j,km1)) )
+
+        fq(i,j,k) = fq(i,j,k)
+     >                     + 0.25*rdy
+     >       *( yrbnd(j)*(w(i,jp1,k)-w(i,j,k)
+     >                        + w(i,jp1,k+1)-w(i,j,k+1))
+     >        + ylbnd(j)*(w(i,j,k)-w(i,jm1,k)
+     >                        + w(i,j,k+1)-w(i,jm1,k+1)) )
+     >                + dqdy_xy(i,j,1)*dqdy_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                - 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(v(i,j,kp1)-v(i,j,k)
+     >              + v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*zlbnd(k)*(v(i,j,k)-v(i,j,km1)
+     >              + v(i,j+1,k)-v(i,j+1,km1)) )
+ 
+      enddo
+      enddo
+      enddo
+* 
+* interior
+*
+     do k=1,nz-1
+        kp1 = min0(k+1,nz-1)
+        km1 = max0(k-1,1)
+      do j=3,ny-3
+      do i=3,nx-3
+
+          fs(i,j,k) = fs(i,j,k) 
+     >            - 1./3.*rdy*(u(i,j+1,k)-u(i,j-1,k)
+     >                      + u(i+1,j+1,k)-u(i+1,j-1,k))
+     >            + 1./24.*rdy*(u(i,j+2,k)-u(i,j-2,k)
+     >                      + u(i+1,j+2,k)-u(i+1,j-2,k))
+     >                - 0.25*dqdy_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdy_zw(k+1)*zrbnd(k)*(u(i,j,kp1)
+     >             - u(i,j,k)+u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*dqdy_zw(k)*zlbnd(k)*(u(i,j,k)
+     >             - u(i,j,km1)+u(i+1,j,k)-u(i+1,j,km1)) ) 
+     >            + 1./3.*rdx*(v(i+1,j,k)-v(i-1,j,k)
+     >                      + v(i+1,j+1,k)-v(i-1,j+1,k))
+     >            - 1./24.*rdx*(v(i+2,j,k)-v(i-2,j,k)
+     >                      + v(i+2,j+1,k)-v(i-2,j+1,k)) 
+     >                + 0.25*dqdx_xy(i,j,1)*rdz
+     >       *( mfe(k+1)*dqdx_zw(k+1)*zrbnd(k)*(v(i,j,kp1)
+     >             - v(i,j,k)+v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*dqdx_zw(k)*zlbnd(k)*(v(i,j,k)
+     >             - v(i,j,km1)+v(i,j+1,k)-v(i,j+1,km1)) )
+
+          fr(i,j,k) = fr(i,j,k)
+     >            - 1./3.*rdx*(w(i+1,j,k)-w(i-1,j,k)
+     >                      + w(i+1,j,k+1)-w(i-1,j,k+1))
+     >            + 1./24.*rdx*(w(i+2,j,k)-w(i-2,j,k)
+     >                      + w(i+2,j,k+1)-w(i-2,j,k+1))
+     >                - dqdx_xy(i,j,1)*dqdx_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                + 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(u(i,j,kp1)-u(i,j,k)
+     >              + u(i+1,j,kp1)-u(i+1,j,k))
+     >          + mfe(k)*zlbnd(k)*(u(i,j,k)-u(i,j,km1)
+     >              + u(i+1,j,k)-u(i+1,j,km1)) )
+
+          fq(i,j,k) = fq(i,j,k)
+     >            + 1./3.*rdy*(w(i,j+1,k)-w(i,j-1,k)
+     >                      + w(i,j+1,k+1)-w(i,j-1,k+1))
+     >            - 1./24.*rdy*(w(i,j+2,k)-w(i,j-2,k)
+     >                      + w(i,j+2,k+1)-w(i,j-2,k+1))
+     >                + dqdy_xy(i,j,1)*dqdy_zt(k)*mfc(k)*rdz
+     >                        * (w(i,j,k+1)-w(i,j,k))
+     >                - 0.25*dqdz(i,j,1)*rdz
+     >       *( mfe(k+1)*zrbnd(k)*(v(i,j,kp1)-v(i,j,k)
+     >              + v(i,j+1,kp1)-v(i,j+1,k))
+     >          + mfe(k)*zlbnd(k)*(v(i,j,k)-v(i,j,km1)
+     >              + v(i,j+1,k)-v(i,j+1,km1)) )
+ 
+      enddo
+      enddo
+      enddo
+
