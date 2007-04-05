@@ -103,6 +103,8 @@ c				   will be one.  A coordinate is always
 c				   assumed to be dependent on itself.
 #include "default.icl"
 #include "misc.icl"
+c#include "netcdf.inc"
+
       integer ncid,n(4),coord_dep(4,4)
       ive_ptr exact_coord(4)
 c
@@ -128,14 +130,12 @@ c
       common/flcount/numfls
       integer numfls
 
-c      ive_ptr getmem,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
       ive_ptr tlgz,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
       ive_ptr ttgrid,theight
       logical error,flag
       real r_val,tgrid,stagger(4),min(4),max(4),missing
       real*8 slope,intercept
       integer i,j,ndims,dims(4),k,nxp1,nyp1,ierr
-c      integer iref,jref
       character*80 data_units,display_units,dim_names(4),dom_units(4)
 
       integer npts
@@ -1197,7 +1197,8 @@ c     The default is the current window in a Lambert Conic
 c     Projection.
 c
       proj = 'LC'
-      plon = 240.5
+      !plon = 240.5
+      plon = -119.5
       plat = 30.
       rota = 60.
 c

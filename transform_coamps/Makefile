@@ -39,8 +39,8 @@ RM = -/bin/rm -f
 RCSRM = -/usr/local/bin/rcsclean
 #
 DEBUG = 
-CFLAGS = ${OPT} ${SUN} ${DEC} -D_NO_PROTO ${INCLUDES}
-FFLAGS = ${OPT} ${SUN} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
+CFLAGS = ${OPT} ${DEC} -D_NO_PROTO ${INCLUDES}
+FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 OBJS_TER = calc_field_coamps.o   \
 	     buoy_freq.o		\
@@ -96,15 +96,16 @@ OBJS_TER = calc_field_coamps.o   \
 	${F90} -c ${FFLAGS} $*.f -o $*.o
 .F.f:  
 #	${CPP} -P $*.F > $*.f
-	${F90} -c  ${FFLAGS} $*.F -o $*.o
+	${F90} -c ${FFLAGS} $*.F -o $*.o
 
 all: TRANS_TER
 
 TRANS_TER: ${OBJS_TER}
-	${LD} ${LDEC} ${LSUN} ${OBJS_TER} -o trans_coamps.o ${LIBS}
+	${LD} ${LDEC} ${OBJS_TER} -o trans_coamps.o ${LIBS}
+	cp trans_coamps.o ../
 
 clean:
 	${RM} ${OBJS_TER} trans_coamps.o
 
-${OBJS_TER}  : default.icl 
+${OBJS_TER}  : default.icl pointer.icl
 

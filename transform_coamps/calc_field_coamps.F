@@ -74,19 +74,35 @@ c
 c
 c  List of available fields
 c
-      case ('SOUND_OUT')
+      case ('SNDOUT_ENKF')
         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.(rcnt.ne.4.and.icnt.ne.1)) then
            write(*,'(2A)') 'Usage: ',
-     &      'SOUND_OUT[REAL IPT:REAL JPT: REAL z1:REAL Z2:INT TIME]'
+     &     'SNDOUT_ENKF[REAL IPT:REAL JPT: REAL z1:REAL Z2:INT TIME]'
            return
          else
-           call sound_out(rarg(1),rarg(2),rarg(3),rarg(4),iarg(1),
+           call sound_out(rarg(1),rarg(2),rarg(3),rarg(4),0.0,
+     &                iarg(1),1,
      &                ndims,dims,stag,min,max,missing,
      &                data_units,data_display_units,dim_names)
-c           calc_field = 1
            return
          end if
+
+      case ('SNDOUT_COAMPS_IDEAL')
+        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.(rcnt.ne.4.and.icnt.ne.1)) then
+           write(*,'(2A)') 'Usage: ',
+     &     'SNDOUT_COAMPS_IDEAL[REAL IPT:REAL JPT: ' //
+     &     'REAL z1:INT TIME:REAL ROTANG]'
+           return
+         else
+           call sound_out(rarg(1),rarg(2),rarg(3),0.0,rarg(4),
+     &                iarg(1),2,
+     &                ndims,dims,stag,min,max,missing,
+     &                data_units,data_display_units,dim_names)
+           return
+         end if
+c
 c
 c  Grid heights
 c
