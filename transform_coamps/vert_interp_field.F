@@ -67,15 +67,7 @@ c***********************************************************************
 c    no interpolation, assign fin to be fout
 c***********************************************************************
 c
-       do l=1,nt
-         do k=1,kk
-            do i=1,m
-               do j=1,n
-                  fout(i,j,k,l)=fin(i,j,k,l)
-               enddo
-            enddo
-         enddo
-       enddo
+         fout(:,:,:,:)=fin(:,:,:,:)
 c
 c***********************************************************************
 c  interpolate to height surfaces
@@ -83,7 +75,6 @@ c***********************************************************************
 c
       else if(ifin.eq.2) then
  
-	 
         call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,missing,value)
 c
 c***********************************************************************
@@ -92,7 +83,6 @@ c          pin:  total pressure
 c***********************************************************************
       else if(ifin.eq.3) then
            call s2pint(fin,fout,zin,zcoord,kk,kkf,mn,nt,missing,value)
-c           call maxmin(fin,m,n,kkf)
 c
 c***********************************************************************
 c          interpolate to theta surface
@@ -102,7 +92,6 @@ c
            call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,missing,value)
 
       endif
-	 
 
       return
       end
