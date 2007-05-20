@@ -1,4 +1,3 @@
-
 #include "pointer.icl"
 
       ive_ptr function massflx(i1,i2,j1,j2,k1,k2,
@@ -18,11 +17,11 @@
 
       massflx = 0
 
-	oned = .false.
-	if (j1.eq.j2) then
-		oned = .true.
-		j1 = j1-1
-	end if
+      oned = .false.
+      if (j1.eq.j2) then
+       oned = .true.
+       j1 = j1-1
+      end if
 
       fu = area_int_x('u',1,j1,j2,k1,k2,0,ndims,dims,
      >                         stag,min,max,miss,dunits,
@@ -32,8 +31,7 @@
       massflx = getmem(nt)
       
       if( lateral ) then
-      	
-	  if (oned) then
+        if (oned) then
           fvn = area_int_y('dvdy',1,i1,i2,k1,k2,j2,ndims,dims,
      >                         stag,min,max,miss,dunits,
      >                         disunits,dim_names)
@@ -41,7 +39,7 @@
           call massflx_lat_calc_oned(%val(massflx),%val(fu),
      >                     %val(fvn),0,1,nt,dx)
 
-	  else
+        else
           fvn = area_int_y('v',1,i1,i2,k1,k2,j2,ndims,dims,
      >                         stag,min,max,miss,dunits,
      >                         disunits,dim_names)
@@ -52,7 +50,7 @@
 
           call massflx_lat_calc(%val(massflx),%val(fu),
      >                     %val(fvn),%val(fvs),0,1,nt)
-	 endif
+        endif
       else
         fwt = area_int_z('w',1,i1,i2,j1,j2,k2,ndims,dims,
      >                         stag,min,max,miss,dunits,
