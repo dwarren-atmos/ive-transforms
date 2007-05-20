@@ -1197,22 +1197,22 @@ c     The default is the current window in a Lambert Conic
 c     Projection.
 c
       proj = 'LC'
-      !plon = 240.5
-      plon = -119.5
-      plat = 30.
       rota = 60.
+      plon = 240.5
+      plat = 30.
 c
 c     Setting limt to CL tells IVE to clip to the current window using
 c     phys_2_lonlat.
 c
       limit = 'CL'
-      exact_fit = 0
+      exact_fit = 1
+      !exact_fit = 0
       return
       end
 c
 c     -----------------------------------------------------------------
 c
-      ive_ptr function data_slicer_1d(endpt, ni, da)
+      ive_ptr function data_slicer_1d(endpt, ni, da, nda)
 c
 c     data_slicer_1d_ : This routine returns the computational points at
 c     which a 1d slice should be taken.
@@ -1220,7 +1220,7 @@ c
 c     Arguments:
 c     	endpt	real	input	2 endpoints of the line in physical space
 c     	ni	integer	output	Number of points
-c	da	integer	input	axis coordinate of average
+c	    da	integer	input	axis coordinate of average
 c     	nda	integer	output	Number of points in the da-direction.
 c
       real endpt(4,2)
@@ -1233,14 +1233,20 @@ c
       real cendpt(4,2), dv(4), dda, cpmin(4), cmin, cmax, ceil, floor
       ive_ptr pslice, slice, getmem
 
+      print *,'endpt,ni,da,nda,   1'
+      print *,endpt,ni,da,nda
+
       do i = 1, 4
          iflag(i) = 1
       enddo
+
       call phys_2_index(endpt, cendpt, iflag, 4, 2)
       ni = 0
+
       do i = 1, 4
          if (i .ne. da) ni = ni + abs(cendpt(i, 2) - cendpt(i, 1))
       enddo
+
       do i = 1, 4
          dv(i) = (endpt(i, 2) - endpt(i, 1))/(ni-1)
       enddo
@@ -1263,22 +1269,30 @@ c
       else
          dv(da) = 0
          call getiarr("cpmin", cpmin, 4, error)
+
          if (cendpt(da, 1) .lt. 0) then
             cmin = cpmin(da)
          else
             cmin = cendpt(da, 1)
          endif
+
          if (cendpt(da, 2) .lt. 0) then
             cmax = cpmin(da)
          else
             cmax = cendpt(da, 1)
          endif
+
          if (cmax .eq. cmin) then
             nda = 1
          else
             nda = ceil(cmax) - floor(cmin) + 1
             dda = (endpt(da,2) - endpt(da,1))/(nda-1)
          endif
+
+
+      print *,'endpt,ni,da,nda,   2'
+      print *,endpt,ni,da,nda
+
          pslice = getmem(ni*nda)
          slice = getmem(ni*nda)
          do i = 1, ni
@@ -1296,9 +1310,11 @@ c
          enddo
          j = ni*nda
       endif
+
       call phys_2_index(pslice, slice, iflag, 4, j)
       call freemem(pslice)
       data_slicer_1d = slice
+
       return
       end
 c

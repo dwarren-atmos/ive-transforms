@@ -29,7 +29,7 @@ else
    CC = icc
    DEC = 
    LDEC = -shared
-   LIBS = -lfftpack
+   LIBS = -lfftpack -lnetcdf
    OPT = -O2
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include

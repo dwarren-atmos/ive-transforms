@@ -1,6 +1,6 @@
 
       integer nxmax,nymax,nzmax
-      parameter (nxmax=201,nymax=201,nzmax=201)
+      parameter (nxmax=501,nymax=201,nzmax=201)
 
       real rdzc(nzmax),rdze(nzmax)
       real xlbnd(nxmax),xrbnd(nxmax),ylbnd(nymax),yrbnd(nymax)

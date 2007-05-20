@@ -50,7 +50,7 @@ c
 
 ! 2) Get Pressure field
       pppin = 0
-      pppin = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
+      pppin = getvar('PPP',ndims,dims,stag,min,max,miss,dunits,
      &                           disunits,dim_names,new)
 
       if (uin.eq.0 .or. vin.eq.0 .or. thein.eq.0 .or. pppin.eq.0) then 
@@ -139,7 +139,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       real :: uout(iz), vout(iz), pout(iz), tout(iz), zhgt, zbot, zfrac
       real :: zout(iz), horiz_interp_field, xx, yy, lon, lat
       logical :: fexists
-      character(len=17), parameter :: fout='./sound_bogus.out'
+      character(len=24), parameter :: fout='./observations_bogus.dat'
 
       ii = int(floor(ipt)); jj = int(floor(jpt));
 
