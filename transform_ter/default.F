@@ -622,17 +622,22 @@ c
 c check to see if vertical coordinate vector is evenly spaced.  If
 c    not, set delta = 0 to indicate uneven spacing. 
 c
-      k = 1
-      start = r_val(%val(coord(3)),1)
- 538  if (k.le.inmax(3)) then
-        if (requ(start+(k-1)*delta(3),r_val(%val(coord(3)),k))) then
-          k = k+1
-        else
-          delta(3) = 0.   
-          k = inmax(3)+1
-        end if
-        goto 538
-      end if
+      if (coord(3).eq.0) then
+         write(*,*) ' Warning:  could not find vertical coordinate ',
+     >        'vector.  Assuming even spacing in vertical.'
+      else
+         k = 1
+         start = r_val(%val(coord(3)),1)
+ 538     if (k.le.inmax(3)) then
+            if (requ(start+(k-1)*delta(3),r_val(%val(coord(3)),k))) then
+               k = k+1
+            else
+               delta(3) = 0.   
+               k = inmax(3)+1
+            end if
+            goto 538
+         end if
+      endif
 c
 c check to see if time coordinate vector is evenly spaced
 c

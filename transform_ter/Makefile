@@ -66,6 +66,7 @@ all: TRANS_TER
 
 TRANS_TER: ${OBJS_TER}
 	${LD} ${LDEC} ${LSUN} ${OBJS_TER} -o trans_ter.o ${LIBS}
+	cp trans_ter.o ../
 
 clean:
 	${RM} ${OBJS_TER} trans_ter.o
