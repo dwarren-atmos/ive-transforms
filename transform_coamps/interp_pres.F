@@ -1,7 +1,7 @@
 
 #include "pointer.icl"
 
-      ive_ptr function interp2pres(varnm,p0,ifin,
+      ive_ptr function interp_pres(varnm,p0,ifin,
      >			  ndims,dims,stag,min,max,miss,dunits,
      >			  disunits,dim_names)
 	implicit none
@@ -26,7 +26,7 @@ c
      >                          disunits,dim_names,new)
 	print *,r_val(%val(vartmp),202500),miss
 c
-c Get variable to interp2presolate
+c Get variable to interp_presolate
 c
       if (vartmp.eq.0) then
         write(6,*) 'Error:  cannot access variable ',
@@ -68,15 +68,15 @@ c
         return
       end if
 c
-	interp2pres = 0
-      interp2pres = getmem(nxp1*nyp1*nt)
-      if (interp2pres.eq.0) then
-        write(6,*) 'Error:  cannot allocate space for interp2pres.'
+	interp_pres = 0
+      interp_pres = getmem(nxp1*nyp1*nt)
+      if (interp_pres.eq.0) then
+        write(6,*) 'Error:  cannot allocate space for interp_pres.'
         return
       end if
 c
 	call vert_interp_field(%val(var),nxp1,nyp1,nz,nt,
-     >			%val(zbot_p),ifin,%val(interp2pres),
+     >			%val(zbot_p),ifin,%val(interp_pres),
      >			1,p0,2,miss,%val(pvar))
 c
 	call freemem(var)

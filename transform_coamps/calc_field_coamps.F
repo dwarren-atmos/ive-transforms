@@ -48,7 +48,7 @@ c
 c
       ive_ptr vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat
       ive_ptr massflx_top,massflx_max,rho_calc,omega,test
-      ive_ptr interp2pres,geopot,x_grid,y_grid,deriv_nsew
+      ive_ptr interp_pres,geopot,x_grid,y_grid,deriv_nsew
       ive_ptr geowind,urot2,windspeed,reldiff,time_diff
       ive_ptr variance, maxmin_reg, time_mean, the2temp
 c
@@ -474,13 +474,13 @@ c
 c
 c  Interpolate a field to a presure level
 c
-      case ('INTERP')
+      case ('INTERP_PRES')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real plevel]'
            return
          else
-           calc_field = interp2pres(carg(1),rarg(1),3,
+           calc_field = interp_pres(carg(1),rarg(1),3,
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
          return
