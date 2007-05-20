@@ -73,7 +73,8 @@ OBJS_TER = calc_field_coamps.o   \
 	     massflx_max.o 	\
 	     massflx_top.o	\
 	     rho.o			\
-	     interp.o		\
+	     interp_pres.o		\
+	     interp_height.o		\
 	     vert_interp_field.o	\
 	     horiz_interp_field.o	\
 	     s2pint.o		\

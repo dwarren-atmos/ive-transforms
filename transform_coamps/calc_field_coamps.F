@@ -51,6 +51,7 @@ c
       ive_ptr interp_pres,geopot,x_grid,y_grid,deriv_nsew
       ive_ptr geowind,urot2,windspeed,reldiff,time_diff
       ive_ptr variance, maxmin_reg, time_mean, the2temp
+      ive_ptr interp_height
 c
       call setstr(fld,name)
 c
@@ -466,6 +467,20 @@ c
            return
          else
            calc_field = variance(carg(1),
+     &                  ndims,dims,stag,min,max,missing,data_units,
+     &                  data_display_units,dim_names)
+         return
+         end if
+c
+c  Interpolate a field to a height above ground level
+c
+      case ('INTERP_HGT')
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
+           write(*,*) 'Usage: interp[string field: real z (agl)]'
+           return
+         else
+           calc_field = interp_height(carg(1),rarg(1),3,
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
          return
