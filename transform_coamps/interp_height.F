@@ -12,12 +12,12 @@ c
       real stag(4),min(4),max(4),miss
       character*(*) varnm,dunits,disunits,dim_names(4)
 
-      integer iu,iv,iw,it,strbeg,strend,nxp1,nyp1,nt,i,j,mn
+      integer iu,iv,iw,it,strbeg,strend,nxp1,nyp1,nt,i,k,mn
       real z0,r_val, sigm,zsfc
       character*(80) outdunits,outdisunits
       logical new
       ive_ptr vartmp,var
-      real, allocatable :: zvar(:,:,:)
+      real, allocatable :: zhgt(:,:,:)
 
       nxp1 = nx+1; nyp1 = ny+1;
       mn = nxp1*nyp1
@@ -25,8 +25,7 @@ c
       vartmp = getvar(varnm,ndims,dims,stag,min,max,miss,dunits,
      $                          disunits,dim_names,new)
       if (vartmp.eq.0) then
-        write(6,*) 'Error:  cannot access variable ',
-     $               varnm(strbeg(varnm):strend(varnm))
+        write(6,*) 'Error:  cannot access variable ',trim(varnm)
         return
       end if
 
@@ -51,31 +50,33 @@ c
 
       call var_at_t(%val(var),%val(vartmp),iu,iv,iw,nx,ny,nz,nt)
 
-      interp_height = 0 ; interp_height = getmem(nxp1*nyp1*nt)
+      interp_height = 0 ; interp_height = getmem(mn*nt)
       if (interp_height.eq.0) then
         write(6,*) 'Error:  cannot allocate space for interp_height.'
         return
       end if
 
        
-      allocate(zvar(mn,nz,nt))
-      do j=1,nz
-        sigm = r_val(%val(sgz),j)
+      allocate(zhgt(mn,nz,nt))
+      do k=1,nz
+        sigm = r_val(%val(sgz),k)
         do i=1,mn 
           zsfc = r_val(%val(zbot_p),i);
-          zvar(i,j,:) = (ztop - zsfc)/ztop * sigm
-      end do ; end do
+          zhgt(i,k,:) = (ztop - zsfc)/ztop * sigm
+        end do 
+      end do
 
       call vert_interp_field(%val(var),nxp1,nyp1,nz,nt,
      &          %val(zbot_p),ifin,%val(interp_height),
-     &          1,z0,2,miss,zvar)
-      deallocate(zvar)
+     &          1,z0,2,miss,zhgt)
+      deallocate(zhgt)
 
       call freemem(var)
       dims(1) = nxp1 ; dims(2) = nyp1 ; dims(3) = 1 ; dims(4) = nt
       dim_names(1) = 'nx' ; dim_names(2) = 'ny'
       dim_names(3) = 'one' ; dim_names(4) = 'time'
-      min(3) = 0 ;  max(3) = 0
+      min(3) = z0 ;  max(3) = z0
+      !min(3) = 0.0 ;  max(3) = 0.0
       dunits = outdunits ; disunits = outdisunits
 
       return

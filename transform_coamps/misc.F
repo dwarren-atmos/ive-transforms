@@ -19,7 +19,7 @@ c
           tmpvar = .5*(var(i-iu,j-iv,k,n) + var(i,j,k,n))
           var_t(i,j,k,n) = var_t(i,j,k,n) * tmpvar
       end do; end do;
-c
+
       if(iv.eq.1) then
         do i = 1,nx+1
             var_t(i,1,k,n) = 1.5*var_t(i,2,k,n) - 
@@ -36,6 +36,7 @@ c
      &          0.5*var_t(nx-1,j,k,n)
         enddo
       endif
+
       end do; end do;
 c
       return
