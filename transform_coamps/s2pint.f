@@ -1,5 +1,5 @@
       subroutine s2pint(din,dout,zin,zout,kin,kout,len,nt,
-     >			  missing,value)
+     >                  missing,value)
 
 c rcs keywords: $RCSfile: s2pint.f,v $ 
 c               $Revision: 1.1.1.1 $ $Date: 2001/04/10 21:59:36 $
@@ -14,7 +14,7 @@ c
       integer kout
       integer len
       integer nt
-	integer n
+      integer n
       integer missing
 c
       real din (len,kin,nt)
@@ -64,7 +64,7 @@ c          if (zout(ko).ge.zin(i,kin,n).or.zout(ko).le.zin(i,1,n))
         do ko=1,kout
           do i=1,len
             if ((zout(ko).lt.zin(i,ki-1,n)).and.
-     1			  (zout(ko).ge.zin(i,ki,n)))
+     1          (zout(ko).ge.zin(i,ki,n)))
      2       then
               temp=(alog(zout(ko))-alog(zin(i,ki-1,n)))
      1            /(alog(zin(i,ki,n))-alog(zin(i,ki-1,n)))

@@ -22,7 +22,7 @@ c     data_display_units
 c		character	Units to use to display field (output).
 c     dim_names character	Names of the dimensions in the field (output).
 c
-      integer :: ndims,dims(4) 
+      integer :: ndims,dims(4),i
       real    :: stag(4),min(4),max(4),missing
       character(len=*) :: name,data_units,data_display_units
      &                   ,dim_names(4)
@@ -474,22 +474,25 @@ c
 c
 c  Interpolate a field to a height above ground level
 c
-      case ('INTERP_HGT')
+      case ('INTERPZ')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real z (agl)]'
            return
          else
-           calc_field = interp_height(carg(1),rarg(1),3,
+           calc_field = interp_height(carg(1),rarg(1),2,
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
+           do i=1,4
+             print *,min(i),max(i)
+           end do
          return
          end if
 c
 c
 c  Interpolate a field to a presure level
 c
-      case ('INTERP_PRES')
+      case ('INTERPP')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real plevel]'

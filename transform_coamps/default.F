@@ -584,10 +584,12 @@ c
      >                               'for field.'
         stop
       end if
+
       inmax(1) = inmax1
       inmax(2) = inmax2
       inmax(3) = inmax3
       inmax(4) = inmax4
+
 c
 c translate variable domain limits if necessary (we assume a domain
 c   translation greater than (dx,dy))
@@ -596,6 +598,7 @@ c
         phmin(1) = phmin(1) + offset(1)
         phmax(1) = phmax(1) + offset(1)
       end if
+
       if ((abs(phmin(2)-plmin(2)).gt.dy).and.(inmax2.ne.1)) then
         phmin(2) = phmin(2) + offset(2)
         phmax(2) = phmax(2) + offset(2)
@@ -634,7 +637,7 @@ c
       else 
         write(*,*) 'Warning:  could not find vertical coordinate ',
      >               'vector.' 
-        stop
+        !stop
         coord(3) = 0
       endif
 c

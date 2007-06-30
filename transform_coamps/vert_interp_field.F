@@ -51,14 +51,13 @@ c
       real rlev1
       real rlev2
       real value
-      real zcoord(100)
+      real zcoord(kkf)
       real zsfc(m,n)
 
       character*1   cfluid
       character*4   cparm
       character*6   cparm_new
       character*2   lvltyp
-
 
       mn=m*n
       if(ifin.eq.1.or.ifin.eq.5) then
@@ -74,8 +73,7 @@ c  interpolate to height surfaces
 c***********************************************************************
 c
       else if(ifin.eq.2) then
- 
-        call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,missing,value)
+        call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,nt,missing,value)
 c
 c***********************************************************************
 c          interpolate to pressure surfaces
@@ -89,9 +87,10 @@ c          interpolate to theta surface
 c***********************************************************************
 c
       else if(ifin.eq.4) then
-           call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,missing,value)
+           call z2zint(fin,fout,zin,zcoord,kk,kkf,mn,nt,missing,value)
 
       endif
+
 
       return
       end
