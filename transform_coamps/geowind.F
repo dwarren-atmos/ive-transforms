@@ -1,8 +1,9 @@
 #include "pointer.icl"
+
       ive_ptr function geowind(wind,ndims,dims,stag,min,max,
-     >			miss,dunits,disunits,dim_names)
+     &                        miss,dunits,disunits,dim_names)
       implicit none
-c
+
 #include "default.icl"
 c
 c  Calculates the South-North and West-East (NSEW) derivatives for 
@@ -12,18 +13,18 @@ c
       real stag(4),min(4),max(4),miss
       character*(*) wind,dunits,disunits,dim_names(4)
 c
-	real r_val,pm,fm,rho_tmp,deriv_tmp
-	real slope,intercept
+	  real r_val,pm,fm,rho_tmp,deriv_tmp
+	  real slope,intercept
       integer ntotal,i,k,n,j
-	logical requ
-	character*(1) dir
+	  logical requ
+      character*(1) dir
       ive_ptr rho,deriv_PPP,deriv,rho_calc
 c
       rho = 0
-	deriv_PPP = 0
-	geowind = 0
+      deriv_PPP = 0
+      geowind = 0
 c
-	ntotal = (nx+1)*(ny+1)*nz*ntime
+      ntotal = (nx+1)*(ny+1)*nz*ntime
 c
 c  Set Direction of Derivative  
 c

@@ -1,6 +1,6 @@
 #include "pointer.icl"
 c 
-      ive_ptr function interp_height(varnm,z0,ifin,
+      ive_ptr function ens_cov(varnm1,varnm2,x0,y0,z0,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
@@ -8,12 +8,15 @@ c
 
 #include "default.icl"
 
-      integer :: ndims,dims(4),ifin
-      real :: stag(4),min(4),max(4),miss
-      character (len=*) :: varnm,dunits,disunits,dim_names(4)
+      real, intent(in) :: x0, y0, z0
+      character(len=*), intent(in) :: varnm1, varnm2
+
+      integer, intent(out) :: ndims,dims(4)
+      real, intent(out) :: stag(4),min(4),max(4),miss
+      character(len=*), intent(inout) :: dunits,disunits,dim_names(4)
 
       integer :: iu,iv,iw,it,strbeg,strend,nxp1,nyp1,nt,i,k,mn
-      real :: z0,r_val, sigm,zsfc
+      real :: r_val, sigm, zsfc
       character (len=80) :: outdunits,outdisunits
       logical :: new
       ive_ptr :: vartmp,var

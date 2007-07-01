@@ -3,8 +3,8 @@ c
 c  Calculates the Geopotential height of a passed pressure surface
 c
       ive_ptr function geopot(p0,
-     >  ndims,dims,stag,min,max,miss,dunits,
-     >  disunits,dim_names)
+     &  ndims,dims,stag,min,max,miss,dunits,
+     &  disunits,dim_names)
       implicit none
 c
 #include "default.icl"
@@ -22,9 +22,9 @@ c
 c
 c Get pressure field
 c
-	pvar = 0
+      pvar = 0
       pvar = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
-     >                          disunits,dim_names,new)
+     &                          disunits,dim_names,new)
       if (pvar.eq.0) then
         write(6,*) 'Error:  cannot access variable PPP'
         return
@@ -32,50 +32,37 @@ c
 c
       nt = dims(4)
 c
-	geopot = 0
+      geopot = 0
       geopot = getmem(nxp1*nyp1*nt)
       if (geopot.eq.0) then
         write(6,*) 'Error:  cannot allocate space for geopot.'
         return
       end if
 c
-	len = nxp1*nyp1
-	call calc_geopot(%val(geopot),p0,%val(pvar),%val(sgz),
-     >			  %val(zbot_p),ztop,miss,len,nz,nt)
+      len = nxp1*nyp1
+      call calc_geopot(%val(geopot),p0,%val(pvar),%val(sgz),
+     &                 %val(zbot_p),ztop,miss,len,nz,nt)
 c
-      dims(1) = nxp1
-	dims(2) = nyp1
-	dims(3) = 1
-	dims(4) = nt
-	dim_names(1) = 'nx'
-	dim_names(2) = 'ny'
-	dim_names(3) = 'one'
-	dim_names(4) = 'time'
-	min(3) = 0
-	max(3) = 0
-	dunits = 'm'
-	disunits = 'm'
+      dims(1) = nxp1 ; dims(2) = nyp1
+      dims(3) = 1 ; dims(4) = nt
+      dim_names(1) = 'nx' ; dim_names(2) = 'ny'
+      dim_names(3) = 'one' ; dim_names(4) = 'time'
+      min(3) = 0 ; max(3) = 0
+      dunits = 'm' ; disunits = 'm'
 c
       return
       end
 c
 c
       subroutine calc_geopot(fout,f0,fin,sgz,zsurf,ztop,missing,
-     >			  len,nz,nt)
+     &                       len,nz,nt)
 
-	integer len
-	integer nz
-	integer nt
-	real f0
-	real fin(len,nz,nt)
-	real fout(len,nt)
-	real sgz(nz)
-	real zsurf(len)
-	real ztop
-	real missing
+     integer len, nz, nt
+	 real f0, fin(len,nz,nt), fout(len,nt), sgz(nz), zsurf(len)
+    &     ztop, missing
 c
-  	integer i,k,n,k1,k2	
-	real temp,zfrac
+     integer i,k,n,k1,k2
+	 real temp, zfrac
 c
 	do n=1,nt ! outer time loop
 c
