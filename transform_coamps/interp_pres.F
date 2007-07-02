@@ -1,14 +1,14 @@
 
 #include "pointer.icl"
 
-      ive_ptr function interp_pres(varnm,p0,ifin,
+      ive_ptr function interp_pres(varnm,p0,
      >			  ndims,dims,stag,min,max,miss,dunits,
      >			  disunits,dim_names)
 	implicit none
 c	
 #include "default.icl"
 c
-      integer ndims,dims(4),ifin
+      integer ndims,dims(4)
       real stag(4),min(4),max(4),miss
       character*(*) varnm,dunits,disunits,dim_names(4)
 c      
@@ -17,6 +17,7 @@ c
       character*(80) outdunits,outdisunits
       logical new
       ive_ptr vartmp,pvar,var
+      integer, parameter :: infin = 3
 c
 	nxp1 = nx+1;
 	nyp1 = ny+1;

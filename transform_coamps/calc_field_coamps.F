@@ -51,7 +51,7 @@ c
       ive_ptr interp_pres,geopot,x_grid,y_grid,deriv_nsew
       ive_ptr geowind,urot2,windspeed,reldiff,time_diff
       ive_ptr variance, maxmin_reg, time_mean, the2temp
-      ive_ptr interp_height
+      ive_ptr interp_height, ens_cov
 c
       call setstr(fld,name)
 c
@@ -474,13 +474,13 @@ c
 c
 c  Interpolate a field to a height above ground level
 c
-      case ('INTERPZ')
+      case ('INTERPZAGL')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real z (agl)]'
            return
          else
-           calc_field = interp_height(carg(1),rarg(1),2,
+           calc_field = interp_height(carg(1),rarg(1),.true.,
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
            do i=1,4
@@ -498,7 +498,7 @@ c
            write(*,*) 'Usage: interp[string field: real plevel]'
            return
          else
-           calc_field = interp_pres(carg(1),rarg(1),3,
+           calc_field = interp_pres(carg(1),rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
          return
@@ -531,6 +531,31 @@ c
      &                ndims,dims,stag,min,max,missing,data_units,
      &                data_display_units,dim_names)
          return
+c
+c  Calculates the covariance between a point and a field
+c
+      case ('ENS_COV')
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
+           write(*,*) 'Usage: ',
+     &      'ens_cov[string var1: string var2: real x0: real y0: '
+     &              'real z0 : {lmapon T|F F} ]'
+           return
+         else
+           if(ccnt.eq.2) then
+             calc_field = ens_cov(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),.false.,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           else
+             calc_field = ens_cov(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),.true.,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           endif
+         return
+         end if
+c
 c
 c  Variable not found
 c

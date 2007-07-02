@@ -1,6 +1,6 @@
 #include "pointer.icl"
 c 
-      ive_ptr function interp_height(varnm,z0,ifin,
+      ive_ptr function interp_height(varnm,z0,lagl,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
@@ -8,9 +8,10 @@ c
 
 #include "default.icl"
 
-      integer :: ndims,dims(4),ifin
+      integer :: ndims,dims(4)
       real :: stag(4),min(4),max(4),miss
       character (len=*) :: varnm,dunits,disunits,dim_names(4)
+      logical :: lagl
 
       integer :: iu,iv,iw,it,strbeg,strend,nxp1,nyp1,nt,i,k,mn
       real :: z0,r_val, sigm,zsfc
@@ -18,6 +19,8 @@ c
       logical :: new
       ive_ptr :: vartmp,var
       real, allocatable :: zhgt(:,:,:)
+
+      integer, parameter :: ifin = 2
 
       nxp1 = nx+1; nyp1 = ny+1;
       mn = nxp1*nyp1
@@ -62,7 +65,11 @@ c
         sigm = r_val(%val(sgz),k)
         do i=1,mn 
           zsfc = r_val(%val(zbot_p),i);
-          zhgt(i,k,:) = (ztop - zsfc)/ztop * sigm
+          if(lagl) then
+            zhgt(i,k,:) = (ztop - zsfc)/ztop * sigm
+          else
+            zhgt(i,k,:) = (ztop - zsfc)/ztop * sigm + zsfc
+          endif
         end do 
       end do
 

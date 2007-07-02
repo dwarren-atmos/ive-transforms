@@ -1,41 +1,38 @@
-#include "pointer.icl"
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  This routine calculates the value at a spatial point for all times.
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      real function point_val(varnm,ipt,jpt,zlev,tpt
-     &                            ndims,dims,stag,min,max,miss,
-     &                            dunits,disunits,dim_names)
-#include "default.icl"
+      subroutine point_val(varout,varin,zbot,sigma,ztop,
+     &                        ir,jr,z0,ix,iy,iz,it)
 
-      integer, intent(in) :: ipt,jpt,tpt
-      real, intent(in) :: zlev
-      character(len=*), intent(in) :: varnm
+      integer, intent(in) ix,iy,iz
+      real, intent(in) :: ir,jr,z0
+      real, intent(in) :: varin(ix,iy,iz), zbot(ix,iy), sigma(iz)
+      real, intent(out) :: varout(it)
 
-      integer, intent(inout) :: ndims,dims(4)
-      real, intent(inout) :: stag(4),min(4),max(4),miss
-      character(len=*) , intent(inout) :: dunits,disunits,
-     &                                    dim_names(4)
+      real ::  varz(1,1,iz), phys_hgt(iz), zbot_pnt
+      integer :: k, n
 
-      integer :: k
-      logical :: new
-      ive_ptr :: var
+      integer, parameter :: ifin=2
+      real, parameter :: miss=-9999.0
 
+      point_val(:) = miss
+      zbot_pnt = horiz_interp_field(zbot,ir,jr,ix,iy)
+      phys_hgt = (ztop-zbot_pnt)/ztop * sigm(:) + zbot_pnt
 
-      var = getvar(trim(varnm),ndims,dims,stag,min,max,miss,dunits,
-     &                    disunits,dim_names,new)
-      if (var.eq.0) then
-        write(*,*) 'Error:  cannot get field ', trim(varnm)
-        return
-      end if
-      
-      call mean_calc(%val(maxmin_reg),%val(var),zlid,
-     &                  ipts,jpts,npts,%val(sgz),%val(zbot_u),ztop,
-     &                  dims(1),dims(2),dims(3),dims(4))
+      do n=1,it
 
-      do k = 1,3
-        dims(k)=1 ; stag(k)=0.0
-        min(k)=0.0 ;  max(k)=0.0
-        dim_names(k) = 'one'
+        ! First get the vertical profile at the desired point
+        do k=1,iz
+          varz(k) = horiz_interp_field(varin(:,:,k),ir,jr,ix,iy)
+        enddo
+
+        ! Second interpolate to the vertical level desired.
+        call vert_interp_field(varz,1,1,iz,1,zbot_pnt,ifin,
+     &                         point_val(n),1,z0,2,miss,phys_hgt)
       enddo
-
 
       return
       end
