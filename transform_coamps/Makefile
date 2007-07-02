@@ -72,7 +72,6 @@ OBJS_TER = calc_field_coamps.o   \
 	     massflx_lat.o 	\
 	     massflx_max.o 	\
 	     massflx_top.o	\
-		 point_val.o	\
 	     rho.o			\
 	     interp_pres.o		\
 	     interp_height.o		\
@@ -90,6 +89,8 @@ OBJS_TER = calc_field_coamps.o   \
 	     variance.o	\
 		 max_min.o \
 		 sound_out.o \
+		 point_val.o	\
+		 ens_cov.o	\
 	     z2zint.o
 # 
 .c.o:

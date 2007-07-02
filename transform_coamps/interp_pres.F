@@ -17,7 +17,7 @@ c
       character*(80) outdunits,outdisunits
       logical new
       ive_ptr vartmp,pvar,var
-      integer, parameter :: infin = 3
+      integer, parameter :: ifin = 3
 c
 	nxp1 = nx+1;
 	nyp1 = ny+1;
