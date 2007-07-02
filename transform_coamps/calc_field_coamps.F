@@ -538,7 +538,7 @@ c
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
            write(*,*) 'Usage: ',
-     &      'ens_cov[string var1: string var2: real x0: real y0: '
+     &      'ens_cov[string var1: string var2: real x0: real y0: ',
      &              'real z0 : {lmapon T|F F} ]'
            return
          else

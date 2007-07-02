@@ -31,7 +31,7 @@ c
 
       ! Get first variable now.
       var1 = 0
-      var1 = getvar(varnm,ndims,dims,stag,min,max,miss,dunits,
+      var1 = getvar(varnm1,ndims,dims,stag,min,max,miss,dunits,
      $                          disunits,dim_names,new)
       if (var1.eq.0) then
         write(6,*) 'Error:  cannot access variable ',trim(varnm1)
@@ -49,12 +49,12 @@ c
       endif
 
 
-      call point_val(%val(ens_cov),%val(var1),%val(zbot_u),%var(sgz),
+      call point_val(%val(ens_cov),%val(var1),%val(zbot_u),%val(sgz),
      &               ztop,ir,jr,z0,ix,iy,iz,Ne)
 
 
 
-      dims(1) = 1 ; dims(2) = 1 ; dims(3) = 1 ; dims(4) = nt
+      dims(1) = 1 ; dims(2) = 1 ; dims(3) = 1 ; dims(4) = Ne
       dim_names(1) = 'one' ; dim_names(2) = 'one'
       dim_names(3) = 'one' ; dim_names(4) = 'time'
       min(3) = z0 ;  max(3) = z0
