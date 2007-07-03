@@ -57,38 +57,37 @@ c
       subroutine calc_geopot(fout,f0,fin,sgz,zsurf,ztop,missing,
      &                       len,nz,nt)
 
-     integer len, nz, nt
-	 real f0, fin(len,nz,nt), fout(len,nt), sgz(nz), zsurf(len)
-    &     ztop, missing
+      integer len, nz, nt
+	  real f0, fin(len,nz,nt), fout(len,nt), sgz(nz), zsurf(len),
+     &     ztop, missing
 c
-     integer i,k,n,k1,k2
-	 real temp, zfrac
+      integer i,k,n,k1,k2
+	  real temp, zfrac
 c
-	do n=1,nt ! outer time loop
+      do n=1,nt ! outer time loop
 c
-c 	Assign missing date 
+c   Assign missing date 
 c
-	  do i=1,len
-	    if(f0.gt.fin(i,1,n).or.f0.lt.fin(i,nz,n)) then
-	 	fout(i,n) = missing
-	    end if
-   	  end do
+        do i=1,len
+          if(f0.gt.fin(i,1,n).or.f0.lt.fin(i,nz,n)) then
+            fout(i,n) = missing
+          end if
+        end do
 c
-	  do k=2,nz
-	    do i=1,len
-	      if ( f0.lt.fin(i,k-1,n).and.f0.ge.fin(i,k,n)) then
-	    	  zfrac = (ztop - zsurf(i))/ztop
-		  k1 = k-1
-		  k2 = k
-		  temp =  ( alog(f0) - alog(fin(i,k1,n)) )/
-     >	          ( alog(fin(i,k2,n)) - alog(fin(i,k1,n)) )
-	 	  temp = sgz(k1) + temp*( sgz(k2) - sgz(k1) ) 
-	        fout(i,n) = temp*zfrac + zsurf(i)
-  		end if
-	    end do
- 	  end do
-	end do
+        do k=2,nz
+          do i=1,len
+            if ( f0.lt.fin(i,k-1,n).and.f0.ge.fin(i,k,n)) then
+              zfrac = (ztop - zsurf(i))/ztop
+              k1 = k-1 ; k2 = k
+              temp =  ( alog(f0) - alog(fin(i,k1,n)) )/
+     &                ( alog(fin(i,k2,n)) - alog(fin(i,k1,n)) )
+              temp = sgz(k1) + temp*( sgz(k2) - sgz(k1) ) 
+              fout(i,n) = temp*zfrac + zsurf(i)
+            end if
+          end do
+        end do
+      end do
 
-	return
-	end
+      return
+      end subroutine
 
