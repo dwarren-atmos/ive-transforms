@@ -29,6 +29,7 @@ c
      $                          disunits,dim_names,new)
       if (vartmp.eq.0) then
         write(6,*) 'Error:  cannot access variable ',trim(varnm)
+        interp_height=0
         return
       end if
 
@@ -42,6 +43,7 @@ c
       var = 0 ; var = getmem(mn*nz*nt)
       if (var.eq.0) then
         write(6,*) 'Error:  cannot allocate space for var.'
+        interp_height=0
         return
       end if
 c
