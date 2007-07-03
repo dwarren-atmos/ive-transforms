@@ -18,6 +18,8 @@
       integer, parameter :: ifin=2
       real, parameter :: miss=-9999.0
 
+      real :: horiz_interp_field
+
       varout(:) = miss
       zbot_pnt = horiz_interp_field(zbot,ir,jr,ix,iy)
       phys_hgt = (ztop-zbot_pnt)/ztop * sigm(:) + zbot_pnt
