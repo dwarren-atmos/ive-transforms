@@ -203,21 +203,6 @@ c
         if (err) then
           return
         else if (rcnt.ne.1) then
-          write(6,*) 'Error:  expected one real arguments.'
-          return
-        else
-          calc_field = urot(rarg(1),ndims,dims,stag,min,max,missing,
-     &                data_units,data_display_units,dim_names)
-          return
-        end if
-c
-c  Rotate u wind through angle theta
-c
-      case ('2UROT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (rcnt.ne.1) then
           write(6,*) 'Error:  expected one real arguments.' 
           write(6,*) 'The angle of rotation.'
           return
@@ -228,21 +213,6 @@ c
         else
           calc_field = urot2(rarg(1),carg(1),carg(2),
      &                ndims,dims,stag,min,max,missing,
-     &                data_units,data_display_units,dim_names)
-          return
-        end if
-c
-c  Rotate v wind through angle theta
-c
-      case ('VROT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (rcnt.ne.1) then
-          write(6,*) 'Error:  expected one real arguments.'
-          return
-        else
-          calc_field = vrot(rarg(1),ndims,dims,stag,min,max,missing,
      &                data_units,data_display_units,dim_names)
           return
         end if
