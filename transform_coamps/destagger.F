@@ -2,7 +2,7 @@
 !
 !  Interpolates variable from stagerd mesh to thermo points  
 !
-!  var_t- output field at thermo points
+!  var_t- output field at thermo points (should be unity on input)
 !  var  - input field on stagard mesh
 !  iu   - 1 -> u momentum points
 !  iv   - 1 -> v momentum points
@@ -20,10 +20,13 @@
       integer, intent(in) :: iu,iv,iw,nx,ny,nz,nt
 	  real, intent(in) ::  var(nx+1-iu,ny+1-iv,nz+iw,nt)
 
-      real, intent(out) ::  var_t(nx+1,ny+1,nz,nt),tmpvar
-
+      real, intent(inout) ::  var_t(nx+1,ny+1,nz,nt)
+  
+      real :: tmpvar
       integer n,k,j,i
 c
+      var_t(:,:,:,:) = 1.0
+
       if (iv.eq.1.and.iu.eq.1) then
         write(6,*) 'Error:  You are not on the mesh'
         return
@@ -71,6 +74,7 @@ c
 c
       integer n,k,j,i
 c 
+      var_u(:,:,:,:) = 1.0
       do n=1,nt ; do k=1,nz ; do i=1,nx ; 
         do j=1+iv,ny+1-iv
           tmpvar = 
@@ -104,31 +108,37 @@ c
 
       implicit none
 
-      integer iu,iv,iw,nx,ny,nz,nt
-	  real var(nx+1-iu,ny+1-iv,nz+iw,nt)
-      real var_v(nx+1,ny,nz,nt),tmpvar
+      integer, intent(in) :: iu,iv,iw,nx,ny,nz,nt
+	  real, intent(in) :: var(nx+1-iu,ny+1-iv,nz+iw,nt)
+      real, intent(inout) :: var_v(nx+1,ny,nz,nt)
 
-      integer n,k,j,i
+      real :: tmpvar
+      integer :: n,k,j,i
 
+      var_v(:,:,:,:) = 1.0
       do n=1,nt ; do k=1,nz ; do j=1,ny
+
         do i=1+iu,nx+1-iu
           tmpvar = 
-     >       .25*(var(i,j,k,n) + var(i,j+1-iv,k,n)
-     >    +   var(i+iu,j,k,n) + var(i+iu,j+1-iv,k,n))
+     &       .25*(var(i,j,k,n) + var(i,j+1-iv,k,n)
+     &    +   var(i+iu,j,k,n) + var(i+iu,j+1-iv,k,n))
               var_v(i,j,k,n) = var_v(i,j,k,n) * tmpvar
         enddo
 c
         if (iu.eq.1) then
+
           var_v(1,j,k,n) = var_v(1,j,k,n)*
-     >           (3/2*(.5*(var(1,j,k,n)  
-     >          + var(1,j+1,k,n))) 
-     >          -  1/2*(.5*(var(2,j,k,n)  
-     >          + (2,j+1,k,n))))  
+     &           (3/2*(.5*(var(1,j,k,n)  
+     &                   + var(1,j+1,k,n))) 
+     &          -  1/2*(.5*(var(2,j,k,n)  
+     &                    + var(2,j+1,k,n))))  
+
           var_v(nx+1,j,k,n) = var_v(nx+1,j,k,n) *
-     >              (3/2*(.5*(var(nx,j,k,n)  
-     >            + var(nx,j+1,k,n))) 
-     >            - 1/2*(.5*(var(nx-1,j,k,n)  
-     >            + var(nx-1,j+1,k,n))))  
+     &              (3/2*(.5*(var(nx,j,k,n)  
+     &                      + var(nx,j+1,k,n))) 
+     &            -  1/2*(.5*(var(nx-1,j,k,n)  
+     &                      + var(nx-1,j+1,k,n))))  
+
         end if
       end do ; end do ; end do
 
@@ -152,6 +162,7 @@ c
       integer n,k,j,i
 	  real zfrac,tmpvar
 c
+      var_w(:,:,:,:) = 1.0
       if (iw.eq.0) then
 c
         do n=1,nt ; do i=1,nx+1 ; do j=1,ny+1

@@ -17,6 +17,7 @@ ifeq (${machine},alpha)
    CPP = /usr/lib/cpp
    LD = ld
    CC = c89
+   CPP = /usr/lib/cpp
    DEC =  -common -DSIXTY_FOUR_bptr 
    LDEC = -shared 
    LIBS = -L/usr/local/matlab4.2/extern/lib/alpha -lmat -lfftpack
@@ -26,6 +27,7 @@ ifeq (${machine},alpha)
 else
    LD=icc
    F90=ifort
+   CPP = /usr/bin/cpp
    FC=ifort
    CC = icc
    CPP = ${F90} -E
@@ -64,11 +66,9 @@ OBJS_F = 						\
 	     move_parcel.o			\
 	     omega.o				\
 	     units_smpfy.o			\
-	     uvrot.o				\
 	     uvrot2.o				\
 	     vert_grid.o			\
-	     x_grid.o				\
-	     y_grid.o				\
+	     xy_grid.o				\
 	     massflx_lat.o			\
 	     massflx_max.o			\
 	     massflx_top.o			\
