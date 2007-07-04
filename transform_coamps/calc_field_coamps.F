@@ -33,7 +33,7 @@ c
       character(len=80) :: fld,arg1,arg2,arg3,carg(10)
      &                    ,str1,tstfld,mkfield,fld_cut
       character(len=1) :: comp
-      logical isfunc,err,new,top
+      logical isfunc,err,new,top,lmap
 c
       common/t_cdfid/ idcdf
       integer idcdf
@@ -42,13 +42,14 @@ c
       integer id_out(10),x_dims(3,10,2),y_dims(3,10,2),z_dims(3,10,2),
      &           t_dims(1,10,2),numout(10)
       character (len=80) :: flnam(10)
+      character (len=1) :: ctmp
 
       real x,y,lat,lon
       integer npts
 c
       ive_ptr vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat
       ive_ptr massflx_top,massflx_max,rho_calc,omega,test
-      ive_ptr interp_pres,geopot,x_grid,y_grid,deriv_nsew
+      ive_ptr interp_pres,geopot,x_grid,y_grid
       ive_ptr geowind,urot2,windspeed,reldiff,time_diff
       ive_ptr variance, maxmin_reg, time_mean, the2temp
       ive_ptr interp_height, ens_cov, kgain
@@ -180,20 +181,6 @@ c
      &                   max,missing,data_units,data_display_units,
      &                   dim_names)
          return
-         end if
-c
-       case ('DLL')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err) then
-           return
-         else if (ccnt.ne.2) then
-           write(*,*) 'Error:  expected two string arguments.'
-           return
-         else
-           calc_field = deriv_nsew(carg(1),carg(2),ndims,dims,stag,min,
-     &                   max,missing,data_units,data_display_units,
-     &                   dim_names)
-           return
          end if
 c
 c  Rotate u wind through angle theta
@@ -509,20 +496,16 @@ c
          if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
            write(*,*) 'Usage: ',
      &      'ens_cov[string var1: string var2: real x0: real y0: ',
-     &              'real z0 : {lmapon T|F F} ]'
+     &              'real z0 : {lmap T|F} ]'
            return
          else
-           if(ccnt.eq.2) then
-             calc_field = ens_cov(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),.false.,
+           ctmp = 'F' ; lmap = .false.
+           if(ccnt.eq.3) ctmp = carg(3)
+           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+           calc_field = ens_cov(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),lmap,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-           else
-             calc_field = ens_cov(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),.true.,
-     &                    ndims,dims,stag,min,max,missing,data_units,
-     &                    data_display_units,dim_names)
-           endif
            return
          endif
 c
@@ -534,20 +517,16 @@ c
            write(*,*) 'Usage: ',
      &      'ens_cov[string var1: string var2: real R^2: ',
      &              'real x0: real y0: real z0: ',
-     &              'lmapon T|F F} ]'
+     &              '{lmap T|F} ]'
            return
          else
-           if(ccnt.eq.2) then
-             calc_field = kgain(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),rarg(4),.false.,
+           ctmp = 'F' ; lmap = .false.
+           if(ccnt.eq.3) ctmp = carg(3)
+           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+           calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-           else
-             calc_field = kgain(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),rarg(4),.true.,
-     &                    ndims,dims,stag,min,max,missing,data_units,
-     &                    data_display_units,dim_names)
-           endif
            return
          endif
 c

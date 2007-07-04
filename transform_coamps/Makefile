@@ -54,7 +54,6 @@ OBJS_F = 						\
  		 calc_field_coamps.o	\
 	     buoy_freq.o			\
 	     deriv.o				\
-	     deriv_nsew.o			\
 	     get_args.o				\
 	     geopot.o				\
 	     geowind.o				\

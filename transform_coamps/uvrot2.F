@@ -16,7 +16,7 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       character(len=*) :: varnm1,varnm2
       character(len=*) :: dunits,disunits,dim_names(4)
 c
-      integer iu,iv,ijk,i,nt
+      integer iu,iv,iw,ijk,i,nt
       real r_val
       logical new
       ive_ptr uvar,vvar,vvartmp
@@ -54,10 +54,9 @@ c
 c
 c  V at U points
 c
-      iu = 0;
-      iv = 1;
-      call varatu(%val(vvar),%val(vvartmp),
-     &            nx,ny,nz,nt,iu,iv)
+      iu = 0; iv = 1; iw = 0
+      call var_at_u(%val(vvar),%val(vvartmp),
+     &            iu,iv,iw,nx,ny,nz,nt)
 c
 c	call freemem(vvartmp)
 c
@@ -93,7 +92,7 @@ c
       real theta,stag(4),min(4),max(4),miss
       character*(*) dunits,disunits,dim_names(4)
 c
-      integer iu,iv,ijk,i,nt
+      integer iu,iv,iw,ijk,i,nt
       real r_val
       logical new
       ive_ptr uvar,vvar,vvartmp
@@ -131,9 +130,9 @@ c
 c
 c  V at U points
 c
-      iu = 0 ; iv = 1
-      call varatu(%val(vvar),%val(vvartmp),
-     &            nx,ny,nz,nt,iu,iv)
+      iu = 0 ; iv = 1 ; iw = 0
+      call var_at_u(%val(vvar),%val(vvartmp),iu,iv,iw,
+     &            nx,ny,nz,nt)
 c
       vrot2 = getmem(dims(1)*dims(2)*dims(3)*dims(4))
       if (vrot2.eq.0) then
@@ -151,5 +150,34 @@ c
 c
       return
       end
-c
-c ******************************************************
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculates a new wind direction that is rotated through the angle 
+!  theta
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine rot_calc(vari,urot,uvar,vvar,theta,
+     &                    nx,ny,nz,nt,iu,iv)
+      integer, intent(in) :: nx,ny,nz,nt,iu,iv
+      real, intent(in) :: theta, uvar(nx+1-iu,ny+1-iv,nz,nt)
+     &                  , vvar(nx+1-iu,ny+1-iv,nz,nt)
+      character(len=*), intent(in) :: vari
+      real, intent(out) :: urot(nx+1-iu,ny+1-iv,nz,nt)
+
+      integer :: i,j,k,n  
+      real :: A,B,theta_rad
+      real, parameter :: pi = 4.*atan(1.)
+
+      theta_rad = theta*pi/180 ! Convert theta to rads
+      
+      select case (vari)
+       case ('U')
+         A = cos(theta_rad) ; B = sin(theta_rad)
+       case ('V')
+         A =-sin(theta_rad) ; B = cos(theta_rad)
+      end select
+
+      urot(:,:,:,:) = A*uvar(:,:,:,:) + B*vvar(:,:,:,:)
+
+      return
+      end subroutine
