@@ -1,11 +1,12 @@
 #include "pointer.icl"
 c
-	ive_ptr function massflx_top(x1,x2,x3,x4,k2,top,
+      ive_ptr function massflx_top(x1,x2,x3,x4,k2,top,
      >		     ndims,dims,stag,min,max,miss,
      >		     dunits,disunits,dim_names)
-	implicit none
 c
-#include "default.icl"
+      use default_module
+
+      implicit none
 c
 	integer ndims,dims(4),k2
 	real x1(2),x2(2),x3(2),x4(2),stag(4),min(4),max(4),miss

@@ -4,7 +4,7 @@
       ive_ptr function buoy_freq(fld,ndims,dims,stag,min,max,
      >                 miss,dunits,disunits,dim_names,isqr)
 
-#include "default.icl"
+      use default_module
 
       integer ndims,dims(4),isqr
       real stag(4),min(4),max(4),miss

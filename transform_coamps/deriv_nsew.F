@@ -1,11 +1,12 @@
-
 #include "pointer.icl"
 
       ive_ptr function deriv_nsew(varnm,dir,ndims,dims,stag,min,max,
      >			miss,dunits,disunits,dim_names)
+
+      use default_module
+
       implicit none
 c
-#include "default.icl"
 c
 c  Calculates the South-North and West-East (NSEW) derivatives for 
 c  from the model coordinates

@@ -5,9 +5,9 @@ c
       ive_ptr function variance(fldnam,ndims,dims,stag,min,max,miss
      &                         ,dunits,disunits,dim_names)
 
-      IMPLICIT NONE
+      use default_module
 c
-#include "default.icl"
+      IMPLICIT NONE
 c
       integer :: ndims,dims(4)
       real :: stag(4),min(4),max(4),miss

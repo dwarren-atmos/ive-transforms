@@ -179,11 +179,11 @@ c
            calc_field = deriv(carg(1),carg(2),1,ndims,dims,stag,min,
      &                   max,missing,data_units,data_display_units,
      &                   dim_names)
-	     return
+         return
          end if
 c
        case ('DLL')
-	         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err) then
            return
          else if (ccnt.ne.2) then
@@ -580,6 +580,4 @@ c
 
     
       return
-      end
-
-
+      end function

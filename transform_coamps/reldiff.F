@@ -7,10 +7,10 @@ c
       ive_ptr function reldiff(fld1,fld2,ignore,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
+      use default_module
+
       implicit none
-c
-#include "default.icl"
-c
+
       integer ndims,dims(4)
       real stag(4),min(4),max(4),miss
       character*(*) fld1,fld2,dunits,disunits,dim_names(4)

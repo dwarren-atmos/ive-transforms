@@ -1,7 +1,7 @@
 
       subroutine translate_domain(delx,dely)
 
-#include "default.icl"
+      use default_module
 
       real delx,dely
 
@@ -83,7 +83,7 @@
 
       subroutine trans_switch(iflg)
 
-#include "default.icl"
+      use default_module
 
       integer iflg
 

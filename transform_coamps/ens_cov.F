@@ -4,9 +4,9 @@ c
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
-      implicit none
+      use default_module
 
-#include "default.icl"
+      implicit none
 
       real, intent(in) :: x0, y0, z0
       character(len=*), intent(in) :: varnm1, varnm2

@@ -6,9 +6,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       ive_ptr function omega(uvarnm,vvarnm,wvarnm,ndims,
      &                       dims,stag,min,max,miss,
      &                       dunits,disunits,dim_names)
+      use default_module
+
       implicit none
 c
-#include "default.icl"
 c
       integer ndims,dims(4)
 	  real stag(4),min(4),max(4),miss

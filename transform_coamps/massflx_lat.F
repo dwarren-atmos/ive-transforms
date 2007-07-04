@@ -1,11 +1,11 @@
 #include "pointer.icl"
 c
-	ive_ptr function massflx_lat(x1,x2,y1,y2,k1,k2,
-     >	           ndims,dims,stag,min,max,miss,
+      ive_ptr function massflx_lat(x1,x2,y1,y2,k1,k2,
+     >                 ndims,dims,stag,min,max,miss,
      >                 dunits,disunits,dim_names)
-	implicit none
-c
-#include "default.icl"
+      use default_module
+
+      implicit none
 c
 	integer ndims,dims(4)
 	real x1,x2,y1,y2,k1,k2,stag(4),min(4),max(4),miss

@@ -5,9 +5,10 @@ c
       subroutine sound_out(ipt,jpt,z1,z2,rotang,timelev,otype,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
-      implicit none
-#include "default.icl"
+      use default_module
 c
+      implicit none
+
       integer, intent(in) :: otype, timelev
       real, intent(in) :: z1, z2, ipt, jpt, rotang
       

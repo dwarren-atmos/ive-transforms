@@ -6,9 +6,9 @@ c
       ive_ptr function time_diff(fld1,time1,time2,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
-      implicit none
+      use default_module
 c
-#include "default.icl"
+      implicit none
 c
       integer ndims,dims(4), time1,time2
       real stag(4),min(4),max(4),miss

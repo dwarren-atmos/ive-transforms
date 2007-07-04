@@ -5,9 +5,10 @@ c
       ive_ptr function the2temp(fld_the,fld_pre,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
-      implicit none
-#include "default.icl"
+      use default_module
 c
+      implicit none
+
       character(len=*), intent(in) :: fld_the, fld_pre
       integer, intent(inout) :: ndims,dims(4)
       real, intent(inout) :: stag(4),min(4),max(4),miss
