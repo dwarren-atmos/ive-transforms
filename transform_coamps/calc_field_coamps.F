@@ -51,7 +51,7 @@ c
       ive_ptr interp_pres,geopot,x_grid,y_grid,deriv_nsew
       ive_ptr geowind,urot2,windspeed,reldiff,time_diff
       ive_ptr variance, maxmin_reg, time_mean, the2temp
-      ive_ptr interp_height, ens_cov
+      ive_ptr interp_height, ens_cov, kgain
 c
       call setstr(fld,name)
 c
@@ -523,8 +523,33 @@ c
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
            endif
-         return
-         end if
+           return
+         endif
+c
+c  Calculates the covariance between a point and a field
+c
+      case ('KGAIN')
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.4) then
+           write(*,*) 'Usage: ',
+     &      'ens_cov[string var1: string var2: real R^2: ',
+     &              'real x0: real y0: real z0: ',
+     &              'lmapon T|F F} ]'
+           return
+         else
+           if(ccnt.eq.2) then
+             calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),rarg(4),.false.,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           else
+             calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),rarg(4),.true.,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           endif
+           return
+         endif
 c
 c
 c  Variable not found

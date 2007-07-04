@@ -87,6 +87,7 @@ OBJS_F = 						\
 		 max_min.o 				\
 		 sound_out.o 			\
 		 point_val.o			\
+		 kgain.o				\
 		 ens_cov.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o s2pint.o uvg2uv.o z2zint.o

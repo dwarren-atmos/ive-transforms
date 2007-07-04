@@ -83,7 +83,7 @@ c
       enddo
 c
       return
-      end subroutine
+      end function
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
