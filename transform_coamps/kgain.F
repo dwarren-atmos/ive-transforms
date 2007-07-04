@@ -17,21 +17,25 @@ c
       character(len=*), intent(inout) :: dunits,disunits,dim_names(4)
 
       integer :: ix, iy, iz, Ne, mnk
-      integer :: iu, iv, iw, it
-      real :: ir, jr
+      integer :: iu, iv, iw, it,kk, iflag(2)
+      real :: ir, jr, phys(2), grid(2)
       character (len=80) :: outunits,outdisunits
       logical :: new
       ive_ptr :: xvar,xprior
 
       real, allocatable :: ye(:)
 
+      data iflag/1,1/
+
       ! Find location to interpolate to in the horizontal 
       if(mapon) then
-        call lonlat_2_phys(ir,jr,x0,y0,1)
+        call lonlat_2_phys(phys(1),phys(2),x0,y0,1)
+        call phys_2_index(phys,grid,iflag,2,1)
+        ir=grid(1) ; jr=grid(2)
       else
         ir=x0 ; jr=y0
       endif
-
+      print *,'IN KGAIN ir,jr',ir,jr
       ! Get first variable now.
       xvar = 0
       xvar = getvar(obs_name,ndims,dims,stag,min,max,miss,dunits,
@@ -41,12 +45,6 @@ c
         return
       end if
       ix = dims(1) ; iy = dims(2) ; iz = dims(3) ; Ne = dims(4)
-
-      kgain = 0 ; kgain = getmem(ix*iy*iz)
-      if(kgain.eq.0) then
-        write(*,*) 'Error:  Cannot allocate space for kgain'
-        return
-      endif
 
       call stagering_calc(iu,iv,iw,it,dims,plmin,min,dx,dy,twod)
 
@@ -74,11 +72,16 @@ c
         return
       end if
       outunits = trim(dunits) ; outdisunits = trim(disunits)
-      outunits = trim(dunits) ; outdisunits = trim(disunits)
       ix = dims(1) ; iy = dims(2) ; iz = dims(3) ; Ne = dims(4)
 
       mnk = ix*iy*iz
-      call kgain_calc(%val(kgain),ye,R2,%val(xprior),mnk,Ne)
+      kgain = 0 ; kgain = getmem(mnk)
+      if(kgain.eq.0) then
+        write(*,*) 'Error:  Cannot allocate space for kgain'
+        return
+      endif
+
+      call kgain_calc(%val(kgain),ye,%val(xprior),R2,mnk,Ne)
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
       dim_names(4) = 'one'
@@ -86,7 +89,11 @@ c
 
       return
       end
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculates the kalman gain
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine kgain_calc(kgain,ye,xprior,R2,mnk,Ne)
 
       integer, intent(in) :: mnk,Ne
