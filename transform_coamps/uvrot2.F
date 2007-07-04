@@ -7,9 +7,9 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       ive_ptr function urot2(theta,varnm1,varnm2,ndims,dims,stag,
      &                       min,max,miss,dunits,disunits,dim_names)
-      IMPLICIT NONE
+      use default_module
 
-#include "default.icl"
+      IMPLICIT NONE
 
       integer :: ndims,dims(4)
       real :: theta,stag(4),min(4),max(4),miss
@@ -83,10 +83,10 @@ c ************************************************************
 c
       ive_ptr function vrot2(theta,ndims,dims,stag,min,max,miss,
      &                        dunits,disunits,dim_names)
+      use default_module
+c
       implicit none
 
-#include "default.icl"
-c
 c  Rotates the u and v velocity by counter-clockwise by angle theta
 c
       integer ndims,dims(4)

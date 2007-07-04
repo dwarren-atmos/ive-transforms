@@ -5,9 +5,9 @@ c
       ive_ptr function geopot(p0,
      &  ndims,dims,stag,min,max,miss,dunits,
      &  disunits,dim_names)
-      implicit none
 c
-#include "default.icl"
+      use default_module
+      implicit none
 c
       integer ndims,dims(4)
       real p0,stag(4),min(4),max(4),miss

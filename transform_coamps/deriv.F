@@ -4,7 +4,7 @@
       ive_ptr function deriv(varnm,dir,ifac,ndims,dims,stag,min,max,
      >                        miss,dunits,disunits,dim_names)
 
-#include "default.icl"
+      use default_module
 
       integer ndims,dims(4),ifac
       real stag(4),min(4),max(4),miss

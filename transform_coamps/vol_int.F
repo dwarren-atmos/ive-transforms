@@ -3,7 +3,7 @@
       ive_ptr function vol_int(varnm,numvars,i1,i2,j1,j2,k1,k2,ndims,
      >          dims,stag,min,max,missing,dunits,disunits,dim_names)
 
-#include "default.icl"
+      use default_module
 *
 *  vol_int computes the volume integral of variable varnm.  The domain of
 *    integration is the rectangular region enclosed by i1*dx to i2*dx

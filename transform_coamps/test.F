@@ -1,9 +1,9 @@
 #include "pointer.icl"	
-	ive_ptr function test(ndims,dims,stag,min,max,miss,
-     >		     dunits,disunits,dim_names)
-	implicit none
+      ive_ptr function test(ndims,dims,stag,min,max,miss,
+     >                      dunits,disunits,dim_names)
+      use default_module
 c
-#include "default.icl"
+      implicit none
 c
 	integer ndims,dims(4)
 	real stag(4),min(4),max(4),miss

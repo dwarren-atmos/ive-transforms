@@ -1,12 +1,11 @@
-
 #include "pointer.icl"
 
       ive_ptr function interp_pres(varnm,p0,
-     >			  ndims,dims,stag,min,max,miss,dunits,
-     >			  disunits,dim_names)
-	implicit none
-c	
-#include "default.icl"
+     >        ndims,dims,stag,min,max,miss,dunits,
+     >        disunits,dim_names)
+c
+      use default_module
+      implicit none
 c
       integer ndims,dims(4)
       real stag(4),min(4),max(4),miss

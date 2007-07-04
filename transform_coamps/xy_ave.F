@@ -3,12 +3,12 @@
 
       ive_ptr function h_ave(whch,fld,n1,n2,ndims,dims,stag,min,
      >                     max,miss,dunits,disunits,dim_names)
+      use default_module
 *
 * h_ave calculates the volume average of fld i) over x as a function
 *   of y,z and t; or ii) over y as a function of x,z and t
 *
 
-#include "default.icl"
 
       integer n1,n2,ndims,dims(4)
       real stag(4),min(4),max(4),miss

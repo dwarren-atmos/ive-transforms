@@ -6,9 +6,10 @@ c
       ive_ptr function time_mean(fld,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
-      implicit none
-#include "default.icl"
+      use default_module
 c
+      implicit none
+
       character(len=*), intent(in) :: fld
       integer, intent(inout) :: ndims,dims(4)
       real, intent(inout) :: stag(4),min(4),max(4),miss

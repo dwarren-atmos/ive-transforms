@@ -1,6 +1,8 @@
       subroutine move_parcel(retpt,curpt,uwind,vwind,wwind,
      &                       delt,repeat,error)
 
+      use default_module
+
       implicit none
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
@@ -18,7 +20,6 @@
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#include "default.icl"
 
       real retpt(4), curpt(4), uwind, vwind, wwind, delt, repeat
       logical error

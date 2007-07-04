@@ -6,9 +6,9 @@ c
       ive_ptr function windspeed(xwind,ywind,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
-      implicit none
+      use default_module
 c
-#include "default.icl"
+      implicit none
 c
       integer ndims,dims(4)
       real stag(4),min(4),max(4),miss

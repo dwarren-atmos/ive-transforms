@@ -6,9 +6,9 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #include "pointer.icl"
       ive_ptr function urot(theta,ndims,dims,stag,min,max,miss,
      &                      dunits,disunits,dim_names)
-      IMPLICIT NONE
+      use default_module
 
-#include "default.icl"      
+      IMPLICIT NONE
 
 c
 c  Rotates the u and v velocity by counter-clockwise by angle theta
@@ -86,9 +86,9 @@ c ************************************************************
 c
       ive_ptr function vrot(theta,ndims,dims,stag,min,max,miss,
      &                        dunits,disunits,dim_names)
-      implicit none
+      use default_module
 c
-#include "default.icl"
+      implicit none
 c
 c  Rotates the u and v velocity by counter-clockwise by angle theta
 c

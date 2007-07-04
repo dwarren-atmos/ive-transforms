@@ -1,86 +1,12 @@
-c     $Id: default.F,v 1.8 1996/11/01 19:41:53 cepi Exp $
-c     $Log: default.F,v $
-c     Revision 1.8  1996/11/01 19:41:53  cepi
-c     Added checks to make sure we don't exceed array bounds when interpolating
-c     terrain.
-c     
-c     Revision 1.7  1996/11/01 19:08:15  cepi
-c     i)   Got rid of the vertical coordinate array for derivative pts.  From
-c          now on we'll assume that all fields are at either the w pts or the
-c          thermo pts (in the vertical, at least).  This means we'll have to
-c          fill out derived fields with missing values.
-c     ii)  Added units conversion for terrain heights.
-c     iii) Fixed terrain interpolations in get_ter_pt to use correct
-c          set of pts.
-c
-c     Revision 1.6  1996/10/18 22:02:39  harry
-c     Change float calls to real (which is the standard conversion function).
-c
-c     Revision 1.5  1996/10/18 21:35:05  harry
-c     Fix default.F to include the changes from cepi in version 1.2 that I
-c     accidentally lost in version 1.3.
-c
-c     Revision 1.4  1996/10/18 20:22:06  harry
-c     slope and intercept should be real*8.
-c
-c     Revision 1.3
-c     Fix bug in get_ter_pt
-c
-c     Revision 1.2  1996/07/22 22:48:37  cepi
-c     New version.  Modified way in which stretching is handled.  Minor
-c     correction to terrain interpolations.  Moved calc_field to a
-c     separate file.  Some other minor stuff.
-c     NOTE:  this version won't work with data files created before
-c            july 12 update of usrout.f
-c
-c     Revision 1.1  1996/07/08 20:48:59  harry
-c     Initial check in.
-c
-c     Revision 1.6  1995/12/15 23:55:03  harry
-c     Fix Fortran version for missing comma.
-c
-c     Revision 1.5  1995/12/15 23:49:01  harry
-c     Add the call to derivative in calc_field.
-c
-c Revision 1.4  1995/10/05  22:04:39  harry
-c Change transforms to reflect change in new_file transform.
-c
-c Revision 1.3  1995/09/05  20:35:06  harry
-c Modifications for new slicer.
-c
-c Revision 1.2  1994/08/30  17:26:49  harry
-c Add default.icl to new_file.
-c
-c Revision 1.1  1994/08/30  17:17:57  harry
-c Moves to trans_default directory
-c
-c Revision 1.5  1994/02/24  19:23:04  harry
-c Change dimension on dnames in calc_field.
-c
-c Revision 1.4  1994/02/18  00:31:30  harry
-c Change exact_times from integer to pointer.
-c
-c Revision 1.3  1994/02/17  22:20:18  harry
-c Eliminate unused variables, correct include files.
-c
-c Revision 1.2  1994/02/17  19:16:57  harry
-c Change type of calc_field from integer to pointer.
-c
-c Revision 1.1  1994/02/17  19:09:03  warren
-c moved getvar declaration to default.icl and declared it properly (pointer).
-c This means default.f -> default.F
-c
-c Revision 1.6  1994/02/17  19:04:21  harry
-c Change read_var calls to getvar.
-c
-c Revision 1.5  1994/01/07  18:53:04  harry
-c Add default_map and make minor corrections.
+#include "pointer.icl"
 c
 c
 c     This is a Fortran version of the default transforms for IVE.
 c     -----------------------------------------------------------------
 c
       subroutine new_file(ncid,exact_coord,n,coord_dep)
+
+      use DEFAULT_MODULE
 c
 c     new_file : This routine is called every time a file is read in.
 c     The routine can be used to read other information from the open
@@ -101,12 +27,13 @@ c				   x, y and z, then coord_dep(1,3),
 c				   coord_dep(2,3) and coord_dep(3,3)
 c				   will be one.  A coordinate is always 
 c				   assumed to be dependent on itself.
-#include "default.icl"
-#include "misc.icl"
-c#include "netcdf.inc"
 
-      integer ncid,n(4),coord_dep(4,4)
-      ive_ptr exact_coord(4)
+      use DEFAULT_MODULE
+
+#include "misc.icl"
+
+      integer :: ncid,n(4),coord_dep(4,4)
+      ive_ptr :: exact_coord(4)
 c
 c common block cdf_dimvar is set up by IVE to contain the values of a 
 c   variable with the same name as the dimension of the largest variable 
@@ -114,40 +41,40 @@ c   in the netCDF file.  If the size of the domain is set by attributes,
 c   or if a dimension variable does not exist, size will be zero, and 
 c   data will be NULL.
 c
-      ive_ptr data(4)
-      integer size(4)
+      ive_ptr :: data(4)
+      integer :: size(4)
       common/cdf_dimvar/data,size
 c
 c common block t_cdfid holds the netCDF id of the current input file
 c 
+      integer :: idcdf
       common/t_cdfid/idcdf
-      integer idcdf
 c
 c numfls keeps track of the number of output files produced by the
 c   the transforms for a given data set; here we just initialize 
 c   it to zero
 c     
+      integer :: numfls
       common/flcount/numfls
-      integer numfls
 
-      ive_ptr tlgz,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
-      ive_ptr ttgrid,theight
-      logical error,flag
-      real r_val,tgrid,stagger(4),min(4),max(4),missing
-      real*8 slope,intercept
-      integer i,j,ndims,dims(4),k,nxp1,nyp1,ierr
-      character*80 data_units,display_units,dim_names(4),dom_units(4)
+      ive_ptr :: tlgz,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
+      ive_ptr :: ttgrid,theight
+      logical :: error,flag
+      real :: r_val,tgrid,stagger(4),min(4),max(4),missing
+      real*8 :: slope,intercept
+      integer :: i,j,ndims,dims(4),k,nxp1,nyp1,ierr
+      character(len=80) :: data_units,display_units,
+     &                     dim_names(4),dom_units(4)
 
-      integer npts
-      real omega,lat,lon
-      real tfcor
-      parameter(omega = 0.00007292)
+      integer :: npts
+      real :: lat, lon, tfcor
+      real, parameter :: omega = 0.00007292
 
-      integer nf_get_att_int1, nf_get_att_real, nf_global, nf_noerr
-      character*80 nf_strerror
+      integer :: nf_get_att_int1, nf_get_att_real, nf_global, nf_noerr
+      character(len=80) :: nf_strerror
 
-      data lgz,wgz,sgz,time,zbot_p,zbot_u,zbot_v/0,0,0,0,0,0,0/
-      data fcor,grdrot/0,0/
+      lgz=0; wgz=0; sgz=0; time=0; zbot_p=0;
+      zbot_u=0; zbot_v=0; fcor=0; grdrot=0
 
       idcdf = ncid
       numfls = 0
@@ -373,7 +300,6 @@ c
       end if
 
       dx = delta(1)
-	
       nx = nint((plmax(1)-plmin(1))/dx) 
       if (twod.ne.1) then
         dy = delta(2)
@@ -490,7 +416,7 @@ c
 c
 c set up boundary arrays (subroutine in metrics.F; arrays in misc.icl)
 c
- 112  format(5x,A5,I3,5x,A8,I3)
+112   format(5x,A5,I3,5x,A8,I3)
 
       if ((nx.gt.nxmax).or.(ny.gt.nymax).or.(nz.gt.nzmax)) then
         write(6,*) 'Error:  not enough scratch space.'
@@ -524,12 +450,14 @@ c
       offset(2) = 0.
 
       return
-      end
+      end subroutine
 
 c
 c     -----------------------------------------------------------------
 c
       subroutine new_field(name, field, inmax1, inmax2, inmax3, inmax4)
+
+      use DEFAULT_MODULE
 c     
 c     new_field : This routine is called every time a new field is set.
 c     The routine can be used to store necessary information to perform
@@ -553,7 +481,7 @@ c				 will hold the data with the first
 c				 index varying most rapidly)
 c
 
-#include "default.icl"
+
 
       character*(*) name
       integer inmax1,inmax2,inmax3,inmax4
@@ -650,7 +578,7 @@ c
       else
          k = 1
          start = r_val(%val(coord(3)),1)
- 538     if (k.le.inmax(3)) then
+538      if (k.le.inmax(3)) then
             if (requ(start+(k-1)*delta(3),r_val(%val(coord(3)),k))) then
                k = k+1
             else
@@ -667,7 +595,7 @@ c
         coord(4) = time
         k = 1
         start = r_val(%val(coord(4)),1)
- 978    if (k.le.inmax(4)) then
+978     if (k.le.inmax(4)) then
           if (requ(start+(k-1)*delta(4),r_val(%val(coord(4)),k))) then
             k = k+1
           else
@@ -679,11 +607,13 @@ c
       end if
 
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine index_2_phys(phys, index, flag, ndims, npts)
+
+      use DEFAULT_MODULE
 
 c     
 c     index_2_phys : This routine translates array indices into physical
@@ -700,7 +630,6 @@ c				is not changed
 c     ndims	integer	input	Number of dimensions in each point.
 c     npts	integer	input	Number of points to convert.
 c
-#include "default.icl"
 
       integer npts, ndims, flag(ndims)
       real    phys(ndims, npts), index(ndims, npts)
@@ -750,11 +679,13 @@ c
          enddo
       enddo
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine phys_2_index(phys, index, flag, ndims, npts)
+
+      use DEFAULT_MODULE
 c     
 c     phys_2_index : This routine translates physical coordinates into 
 c     array indices.
@@ -772,7 +703,6 @@ c				is not changed
 c     ndims	integer	input	Number of dimensions in each point.
 c     npts	integer	input	Number of points to convert.
 c
-#include "default.icl"
 
       integer npts, ndims, flag(ndims)
       real    phys(ndims, npts), index(ndims, npts)
@@ -817,7 +747,7 @@ c                     else if (p .ge. phmax(j)) then
 c                        index(j,i) = inmax(j)
 c                     else
                        k = 2
- 10                    if ((p.gt.r_val(%val(coord(j)),k)).and.
+10                     if ((p.gt.r_val(%val(coord(j)),k)).and.
      >                           (k.lt.inmax(j))) then
                          k = k+1
                          goto 10
@@ -861,11 +791,13 @@ c                  if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
          enddo
       enddo
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine horiz_ter(topo, nxw, nyw, stagi, stagj, zero, error)
+
+      use DEFAULT_MODULE
 c
 c     horiz_ter : This routine fills an array with terrain heights in the
 c     windowed domain for horizontal cross sections.
@@ -879,7 +811,6 @@ c     stagj	real		Grid staggering along y dimension.
 c     zero	real		Minimum terrain height.
 c     error	integer		Error flag 0 => no errors (output).
 c
-#include "default.icl"
 
       integer nxw, nyw, error, i, j, iflag(4)
       real    topo(nxw, nyw), stagi(nxw), stagj(nyw), zero
@@ -917,12 +848,14 @@ c
          enddo
       endif
 
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine vert_ter (xter, yter, topoht, nter, pt1, pt2,
      &                  zero)
+
+      use DEFAULT_MODULE
 c-----------------------------------------------------------------------
 c     Purpose:
 c
@@ -942,7 +875,6 @@ c                               window. This value is used as the minimum
 c                               terrain height, rather than 0.0.
 c-----------------------------------------------------------------------
 c
-#include "default.icl"
 c
 c     Argument declarations.
 c
@@ -958,7 +890,7 @@ c
       integer   i, iflag
       real      phypt, min, max
       dimension iflag(MAXDIM), phypt(MAXDIM),
-     &		min(MAXDIM), max(MAXDIM)
+     &          min(MAXDIM), max(MAXDIM)
 c      ive_ptr getmem
 c
       integer stepby
@@ -1054,7 +986,7 @@ c
       endif
 c
       return
-      end
+      end subroutine
 c
       subroutine put_ter(xter, yter, topoht, i, pt, value)
 c
@@ -1068,12 +1000,13 @@ c
       topoht(i) = value
 c
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine phys_2_lonlat(x, y, lon, lat, npts)
-#include "default.icl"
+
+      use DEFAULT_MODULE
 c     
 c     phys_2_lonlat : This routine converts physical coordinates to longitude-
 c     latitude coordinates.
@@ -1120,12 +1053,13 @@ c
      2                 ,lat,lon)
 c
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
       subroutine lonlat_2_phys(x, y, lon, lat, npts)
-#include "default.icl"
+
+      use DEFAULT_MODULE
 c     
 c     lonlat_2_phys : This routine converts longitude-latitude coordinates
 c     to physical coordinates.
@@ -1167,7 +1101,7 @@ c
       end do
 c
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
@@ -1352,7 +1286,7 @@ c
 
       data_slicer_2d = pslicer2d(corner, ii, jj, ni, nj, da, nda)
       return
-      end
+      end function
 c
 c     -----------------------------------------------------------------
 c
@@ -1369,7 +1303,7 @@ c
       character*(256) line
 
       return
-      end
+      end subroutine
 c
 c     -----------------------------------------------------------------
 c
@@ -1397,7 +1331,7 @@ c
 
       r_val = array(j)
       return
-      end
+      end function
 c
 c *******************************************
 c
@@ -1493,7 +1427,7 @@ c **********************************************
 c
       logical function requ(val1,val2)
 
-      real val1,val2,eps,diff,big	
+      real val1,val2,eps,diff,big
 
       parameter (eps=1.e-4)
 
@@ -1528,17 +1462,17 @@ c
       outstr(1:iend-ibeg+2) = instr(ibeg:iend)//char(0)
 c
       return
-      end
+      end subroutine
 c
-	subroutine ref_latlon(iref,jref,dx,dy)
+      subroutine ref_latlon(iref,jref,dx,dy)
 c
 c  Index of reference lat/lon for lambert conic projection
 c	
 c grid 3 resolution is 3km, grid2 is 9 km and grid1 27 km
 c
-	integer ii21,jj21,ii32,jj32,irefi,jrefi,iref,jref
-	real dx,dy
-	
+      integer ii21,jj21,ii32,jj32,irefi,jrefi,iref,jref
+      real dx,dy
+
       data irefi/46/
       data jrefi/46/
       data ii21/28/
@@ -1546,16 +1480,16 @@ c
       data ii32/41/
       data jj32/41/
 c
-	if (dx.eq.27000) then
-	  iref = irefi
-	  jref = jrefi
-	elseif (dx.eq.9000) then
+      if (dx.eq.27000) then
+        iref = irefi
+        jref = jrefi
+      elseif (dx.eq.9000) then
         iref=(irefi-ii21)*3+1
         jref=(jrefi-jj21)*3+1
-	elseif (dx.eq.3000) then
+      elseif (dx.eq.3000) then
         iref=(irefi-ii21)*9-(ii32-1)*3+1
         jref=(jrefi-jj21)*9-(jj32-1)*3+1
-	end if
+      end if
 c
-	return
-	end
+      return
+      end subroutine

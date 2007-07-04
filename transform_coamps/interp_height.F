@@ -4,9 +4,9 @@ c
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
-      implicit none
+      use default_module
 
-#include "default.icl"
+      implicit none
 
       integer :: ndims,dims(4)
       real :: stag(4),min(4),max(4),miss

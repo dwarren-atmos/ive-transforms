@@ -3,7 +3,7 @@
       ive_ptr function maxmin_reg(varnm,zlid,
      &                            ndims,dims,stag,min,max,miss,
      &                            dunits,disunits,dim_names)
-#include "default.icl"
+      use default_module
 
       real, intent(in) :: zlid
       character(len=*), intent(in) :: varnm

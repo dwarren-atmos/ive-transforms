@@ -8,13 +8,14 @@
 # Add support for SGI IRIX.
 #
 
-LD = ld
-F90 = f90
-CC = cc
-CPP = /usr/lib/cpp
+MODLIB	= ./
 
 machine := ${shell /usr/bin/arch}
 ifeq (${machine},alpha)
+   F90 = f90
+   CC = cc
+   CPP = /usr/lib/cpp
+   LD = ld
    CC = c89
    DEC =  -common -DSIXTY_FOUR_bptr 
    LDEC = -shared 
@@ -27,6 +28,7 @@ else
    F90=ifort
    FC=ifort
    CC = icc
+   CPP = ${F90} -E
    DEC = 
    LDEC = -shared
    LIBS = -lfftpack -lnetcdf
@@ -34,81 +36,80 @@ else
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include
 endif
-#
+
 RM = -/bin/rm -f
 RCSRM = -/usr/local/bin/rcsclean
-#
+
 DEBUG = 
 CFLAGS = ${OPT} ${DEC} -D_NO_PROTO ${INCLUDES}
 FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
-OBJS_TER = calc_field_coamps.o   \
-	     buoy_freq.o		\
-         default.o          \
-	     deriv.o		\
-	     deriv_nsew.o		\
-	     hm2uv.o		\
-	     get_args.o		\
-	     geopot.o		\
-	     geowind.o		\
-	     grid.o		 	\
-	     grdij.o		\
-	     ij2ll.o		\
-	     ive_funcs.o        \
-	     list.o             \
-	     ll2ij.o		\
-	     map_factors.o	\
-	     mkfield.o		\
-	     metrics.o		\
-	     misc.o			\
-	     move_parcel.o	\
-	     omega.o		\
-	     units_smpfy.o	\
-	     uvrot.o		\
-	     uvrot2.o		\
-	     vert_grid.o		\
-	     x_grid.o		\
-	     y_grid.o		\
-	     massflx_lat.o 	\
-	     massflx_max.o 	\
-	     massflx_top.o	\
-	     rho.o			\
-	     interp_pres.o		\
+#
+MODS	=	default_module.o
+
+OBJS_F = 						\
+		 default.o				\
+ 		 calc_field_coamps.o	\
+	     buoy_freq.o			\
+	     deriv.o				\
+	     deriv_nsew.o			\
+	     get_args.o				\
+	     geopot.o				\
+	     geowind.o				\
+	     ive_funcs.o			\
+	     list.o     			\
+	     mkfield.o				\
+	     metrics.o				\
+	     destagger.o			\
+	     move_parcel.o			\
+	     omega.o				\
+	     units_smpfy.o			\
+	     uvrot.o				\
+	     uvrot2.o				\
+	     vert_grid.o			\
+	     x_grid.o				\
+	     y_grid.o				\
+	     massflx_lat.o			\
+	     massflx_max.o			\
+	     massflx_top.o			\
+	     rho.o					\
+	     interp_pres.o			\
 	     interp_height.o		\
 	     vert_interp_field.o	\
 	     horiz_interp_field.o	\
-	     s2pint.o		\
-	     stagering_calc.o	\
-	     test.o			\
-	     uvg2uv.o		\
-	     windspeed.o	\
-	     reldiff.o	\
-	     time_diff.o	\
-	     time_mean.o	\
-	     the2temp.o	\
-	     variance.o	\
-		 max_min.o \
-		 sound_out.o \
-		 point_val.o	\
-		 ens_cov.o	\
-	     z2zint.o
-# 
-.c.o:
-	${CC}  -c ${CFLAGS} $*.c -o $*.o
-.f.o:
-	${F90} -c ${FFLAGS} $*.f -o $*.o
-.F.f:  
-#	${CPP} -P $*.F > $*.f
-	${F90} -c ${FFLAGS} $*.F -o $*.o
+	     test.o					\
+	     windspeed.o			\
+	     reldiff.o				\
+	     time_diff.o			\
+	     time_mean.o			\
+	     the2temp.o				\
+	     variance.o				\
+		 max_min.o 				\
+		 sound_out.o 			\
+		 point_val.o			\
+		 ens_cov.o
+
+OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o s2pint.o uvg2uv.o z2zint.o
 
 all: TRANS_TER
 
-TRANS_TER: ${OBJS_TER}
-	${LD} ${LDEC} ${OBJS_TER} -o trans_coamps.o ${LIBS}
+MODS: ${MODS}
+OBJS_F: ${OBJS_F}
+OBJS_f: ${OBJS_f}
+
+TRANS_TER: ${MODS} ${OBJS_f} ${OBJS_F}
+	${LD} ${LDEC} ${OBJS_f} ${OBJS_F} ${MODS} -o trans_coamps.o ${LIBS}
 	cp trans_coamps.o ../
 
 clean:
-	${RM} ${OBJS_TER} trans_coamps.o
+	${RM} ${OBJS_F} ${OBJS_f} ${MODS} *.mod trans_coamps.o
 
-${OBJS_TER}  : default.icl pointer.icl
+${OBJS_F}  : pointer.icl ${MODS}
+${MODS}  : pointer.icl
 
+.f.o:
+	$(F90) $(FFLAGS) -module $(MODLIB) -c $<
+.F.o:
+	$(F90) -module $(MODLIB) $(FFLAGS) -c $<
+.c.o:
+	${CC}  -c ${CFLAGS} $*.c -o $*.o
