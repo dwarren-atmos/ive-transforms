@@ -46,12 +46,12 @@ c
       real x,y,lat,lon
       integer npts
 c
-      integer(ive_ptr) vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat
-      integer(ive_ptr) massflx_top,massflx_max,rho_calc,omega,test
-      integer(ive_ptr) interp_pres,geopot,x_grid,y_grid
-      integer(ive_ptr) geowind,urot2,windspeed,reldiff,time_diff
-      integer(ive_ptr) variance, maxmin_reg, time_mean, the2temp
-      integer(ive_ptr) interp_height, ens_cov, kgain
+      integer(ive_ptr) vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat,
+     &                 massflx_top,massflx_max,rho_calc,omega,test,
+     &                 interp_pres,geopot,x_grid,y_grid,
+     &                 geowind,urot2,windspeed,reldiff,time_diff,
+     &                 variance, maxmin_reg, time_mean, the2temp,
+     &                 interp_height, ens_cov, kgain
 c
       call setstr(fld,name)
 c
@@ -61,7 +61,6 @@ c
       if(iend.lt.0) then
         fld_cut = trim(fld)
       else
-c        fld_cut(1:iend) = fld(1:iend)
         fld_cut = fld(1:iend)
       end if
 
@@ -428,15 +427,15 @@ c
          return
          end if
 c
-c  Interpolate a field to a height above ground level
+c  Interpolate a field to a height (z0<=0 --> abs(z0) agl )
 c
-      case ('INTERPZAGL')
+      case ('INTERPZ')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real z (agl)]'
            return
          else
-           calc_field = interp_height(carg(1),rarg(1),.true.,
+           calc_field = interp_height(carg(1),rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
            do i=1,4
