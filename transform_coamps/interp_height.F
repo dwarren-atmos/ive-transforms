@@ -1,6 +1,6 @@
 
 c 
-      integer(ive_ptr) function interp_height(varnm,z0,lagl,
+      integer(ive_ptr) function interp_height(varnm,z0,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
@@ -32,6 +32,10 @@ c
         interp_height=0
         return
       end if
+
+      lagl=.false.
+      if(z0.le.0) lagl=.true.
+      z0 = abs(z0) 
 
       nt = dims(4)
       outdunits = dunits ; outdisunits = disunits
