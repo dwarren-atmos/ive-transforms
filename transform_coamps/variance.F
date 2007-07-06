@@ -1,9 +1,8 @@
-#include "pointer.icl"
 c
 c  Calculates the variance over the time dimension
 c
-      ive_ptr function variance(fldnam,ndims,dims,stag,min,max,miss
-     &                         ,dunits,disunits,dim_names)
+      integer(ive_ptr) function variance(fldnam,ndims,dims,stag,min,max,
+     &                         miss,dunits,disunits,dim_names)
 
       use default_module
 c
@@ -15,7 +14,7 @@ c
       
       integer :: nt,mnk
       logical :: new
-      ive_ptr fldval
+      integer(ive_ptr) fldval
 c
 c Get pressure field
 c

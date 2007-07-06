@@ -1,6 +1,6 @@
-#include "pointer.icl"
 
-      ive_ptr function maxmin_reg(varnm,zlid,
+
+      integer(ive_ptr) function maxmin_reg(varnm,zlid,
      &                            ndims,dims,stag,min,max,miss,
      &                            dunits,disunits,dim_names)
       use default_module
@@ -18,7 +18,7 @@ c      integer, parameter :: npts = 218
       integer, parameter :: npts = 155
       integer :: ipts(npts), jpts(npts), k
       logical :: new
-      ive_ptr :: var
+      integer(ive_ptr) :: var
 
       data ipts/
      &      77,78,79,80,81,78,79,80,81,82,78,79,80,81,82,78,79,80,81,82,

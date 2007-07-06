@@ -1,6 +1,6 @@
-#include "pointer.icl"
 
-      ive_ptr function interp_pres(varnm,p0,
+
+      integer(ive_ptr) function interp_pres(varnm,p0,
      >        ndims,dims,stag,min,max,miss,dunits,
      >        disunits,dim_names)
 c
@@ -15,7 +15,7 @@ c
       real p0,r_val
       character*(80) outdunits,outdisunits
       logical new
-      ive_ptr vartmp,pvar,var
+      integer(ive_ptr) vartmp,pvar,var
       integer, parameter :: ifin = 3
 c
 	nxp1 = nx+1;

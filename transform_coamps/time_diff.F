@@ -1,9 +1,9 @@
-#include "pointer.icl"
+
 c
 c   Calculates the difference between two time levels in a variable
 c   fld(time1) - fld(time2)
 c
-      ive_ptr function time_diff(fld1,time1,time2,
+      integer(ive_ptr) function time_diff(fld1,time1,time2,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -18,7 +18,7 @@ c
       integer ix,iy,iz,it
       real ignore
       logical new
-      ive_ptr var1
+      integer(ive_ptr) var1
 c
 c Get wind fields
 c

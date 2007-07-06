@@ -1,7 +1,7 @@
 
-#include "pointer.icl"
 
-      ive_ptr function h_ave(whch,fld,n1,n2,ndims,dims,stag,min,
+
+      integer(ive_ptr) function h_ave(whch,fld,n1,n2,ndims,dims,stag,min,
      >                     max,miss,dunits,disunits,dim_names)
       use default_module
 *
@@ -17,7 +17,7 @@
       integer strbeg,strend,iu,iv,iw,istrt,istop,jstrt,jstop,k
       real r_val
       logical new,err,requ
-      ive_ptr getmem,v_sgz,var,gz,sgz_tmp
+      integer(ive_ptr) getmem,v_sgz,var,gz,sgz_tmp
 
       h_ave = 0
 

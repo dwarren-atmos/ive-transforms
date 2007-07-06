@@ -1,6 +1,6 @@
 
-#include "pointer.icl"
-      ive_ptr function vol_int(varnm,numvars,i1,i2,j1,j2,k1,k2,ndims,
+
+      integer(ive_ptr) function vol_int(varnm,numvars,i1,i2,j1,j2,k1,k2,ndims,
      >          dims,stag,min,max,missing,dunits,disunits,dim_names)
 
       use default_module
@@ -19,7 +19,7 @@
       real zstrt,zstop,r_val
       character*(80) tmp,tmp2
       logical err,new,units_err,requ
-      ive_ptr getmem,var,var_t
+      integer(ive_ptr) getmem,var,var_t
 
       vol_int = 0
 

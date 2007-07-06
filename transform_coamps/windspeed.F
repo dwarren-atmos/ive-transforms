@@ -1,9 +1,9 @@
 
-#include "pointer.icl"
+
 c
 c  Calculates the windspeed at mass points
 c
-      ive_ptr function windspeed(xwind,ywind,
+      integer(ive_ptr) function windspeed(xwind,ywind,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -16,7 +16,7 @@ c
 c      
       integer strbeg,strend,nxp1,nyp1,nt
       logical new
-      ive_ptr uvar,vvar
+      integer(ive_ptr) uvar,vvar
 c
       nxp1 = nx+1;
       nyp1 = ny+1;

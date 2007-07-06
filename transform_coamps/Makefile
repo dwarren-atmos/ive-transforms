@@ -47,7 +47,8 @@ CFLAGS = ${OPT} ${DEC} -D_NO_PROTO ${INCLUDES}
 FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 #
-MODS	=	default_module.o
+MODS	=	default_module.o   	\
+			misc_module.o
 
 OBJS_F = 						\
 		 default.o				\
@@ -89,12 +90,11 @@ OBJS_F = 						\
 		 kgain.o				\
 		 ens_cov.o
 
-OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o s2pint.o uvg2uv.o z2zint.o
+OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
 all: TRANS_TER
 
-MODS: ${MODS}
-OBJS_F: ${OBJS_F}
+OBJS_F: ${OBJS_F} ${MODS}
 OBJS_f: ${OBJS_f}
 
 TRANS_TER: ${MODS} ${OBJS_f} ${OBJS_F}
@@ -104,8 +104,7 @@ TRANS_TER: ${MODS} ${OBJS_f} ${OBJS_F}
 clean:
 	${RM} ${OBJS_F} ${OBJS_f} ${MODS} *.mod trans_coamps.o
 
-${OBJS_F}  : pointer.icl ${MODS}
-${MODS}  : pointer.icl
+${OBJS_F}  : ${MODS}
 
 .f.o:
 	$(F90) $(FFLAGS) -module $(MODLIB) -c $<

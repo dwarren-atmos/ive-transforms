@@ -1,9 +1,6 @@
-
-
-#include "pointer.icl"
-
-      ive_ptr function vert_grid(whch,ndims,dims,stag,min,max,
-     >			  miss,dunits,disunits,dim_names)
+      integer(ive_ptr) function vert_grid(whch,ndims,dims,stag,min,max,
+     >                                   miss,dunits,disunits,dim_names)
+      use default_module
 *
 *  grid returns the index space vertical coordinate for each node
 *    on the appropriate grid (w or thermodynamic).  As such, a plot of
@@ -16,7 +13,7 @@
 
       integer i,j,k,iptr
       logical new
-      ive_ptr ptr,getvar,getmem
+      integer(ive_ptr) ptr
 
       vert_grid = 0
 

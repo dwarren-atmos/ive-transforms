@@ -1,8 +1,8 @@
-#include "pointer.icl"
+
 c
 c converts theta to temperature
 c
-      ive_ptr function the2temp(fld_the,fld_pre,
+      integer(ive_ptr) function the2temp(fld_the,fld_pre,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -16,7 +16,7 @@ c
 c      
       integer :: ix,iy,iz,it
       logical :: new
-      ive_ptr :: ppp, the
+      integer(ive_ptr) :: ppp, the
 
 c Get Theta field
       the = 0

@@ -1,7 +1,7 @@
 
-#include "pointer.icl"
 
-      ive_ptr function buoy_freq(fld,ndims,dims,stag,min,max,
+
+      integer(ive_ptr) function buoy_freq(fld,ndims,dims,stag,min,max,
      >                 miss,dunits,disunits,dim_names,isqr)
 
       use default_module
@@ -11,7 +11,7 @@
       character*(*) dunits,disunits,dim_names(4),fld      
 
       logical new
-      ive_ptr thet
+      integer(ive_ptr) thet
 
       buoy_freq = 0
 

@@ -1,5 +1,5 @@
-#include "pointer.icl"	
-      ive_ptr function test(ndims,dims,stag,min,max,miss,
+	
+      integer(ive_ptr) function test(ndims,dims,stag,min,max,miss,
      >                      dunits,disunits,dim_names)
       use default_module
 c
@@ -11,7 +11,7 @@ c
 c
 	integer ntotal,i
 	logical new
-	ive_ptr uvar
+	integer(ive_ptr) uvar
 c
 c
 c  Get U variable

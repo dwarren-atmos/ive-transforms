@@ -1,10 +1,8 @@
-
-#include "pointer.icl"
-
-      ive_ptr function deriv(varnm,dir,ifac,ndims,dims,stag,min,max,
-     >                        miss,dunits,disunits,dim_names)
+      integer(ive_ptr) function deriv(varnm,dir,ifac,ndims,dims,stag,
+     &                        min,max,miss,dunits,disunits,dim_names)
 
       use default_module
+
 
       integer ndims,dims(4),ifac
       real stag(4),min(4),max(4),miss
@@ -14,8 +12,7 @@
       real r_val
       character*(80) tmp
       character*(2) dimu
-c      ive_ptr var,getmem
-      ive_ptr var
+      integer(ive_ptr) :: var
       logical new,err,requ
 
       deriv = 0
@@ -74,9 +71,6 @@ c      ive_ptr var,getmem
       else if (requ(plmin(3),min(3))) then
         iw = 1
       end if
-c	write(*,*) plmin(1),min(1)-dx/2,iu,nx+1-iu
-c	write(*,*) plmin(2),min(2)-dy/2,iv,ny+1-iv
-c	write(*,*) plmin(3),min(3),iw,nz+iw
 c
       if (ifac.eq.1) then
 
@@ -87,11 +81,11 @@ c
      >              %val(dqdx_zt),%val(dqdy_xy),%val(dqdy_zt),
      >              %val(dqdz),dx,dy,%val(time),nx,ny,nz,nt,idir,
      >              iu,iv,iw)
-	  else
+      else
           call diff1(%val(var),%val(deriv),%val(dqdx_xy),
      >             %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zw),
      >             %val(dqdz),dx,dy,%val(time),nx,ny,nz,nt,idir,
-     >		 iu,iv,iw)
+     >             iu,iv,iw)
         end if
 
         if (idir.ne.4) then
@@ -120,17 +114,17 @@ c
 *--------------------------------------------------------------------
         
       subroutine diff1_wpts(var,deriv,dqdx_xy,dqdx_zt,dqdy_xy,
-     >                 dqdy_zt,dqdz,dx,dy,time,nx,ny,nz,nt,idir,
-     >		     iu,iv,iw)
+     >                 dqdy_zt,dqdz,dx,dy,time,ix,iy,iz,nt,idir,
+     >                 iu,iv,iw)
 
-      include 'misc.icl'
+      use misc_module
 
-      integer nx,ny,nz,nt,idir,iu,iv,iw
-      real var(nx+1-iu,ny+1-iv,nz+1,nt)
-	real deriv(nx+1-iu,ny+1-iv,nz+1,nt)
-      real dqdx_xy(nx+1,ny+1,3),dqdx_zt(nz+1)
-      real dqdy_xy(nx+1,ny+1,3),dqdy_zt(nz+1)
-      real dqdz(nx+1,ny+1,3),dx,dy,time(nt)
+      integer ix,iy,iz,nt,idir,iu,iv,iw
+      real var(ix+1-iu,iy+1-iv,iz+1,nt)
+	  real deriv(ix+1-iu,iy+1-iv,iz+1,nt)
+      real dqdx_xy(ix+1,iy+1,3),dqdx_zt(iz+1)
+      real dqdy_xy(ix+1,iy+1,3),dqdy_zt(iz+1)
+      real dqdz(ix+1,iy+1,3),dx,dy,time(nt)
 
       integer i,j,k,n,m,ip1,im1,jp1,jm1,kp1,km1
       real rdx,rdy,da,db,ta,tb,dta,dtb      
@@ -149,11 +143,11 @@ c
         do m=1,4
           if (m.eq.1) i = 1
           if (m.eq.2) i = 2
-          if (m.eq.3) i = nx-iu
-          if (m.eq.4) i = nx+1-iu
-          ip1 = min0(i+1,nx+1-iu)
+          if (m.eq.3) i = ix-iu
+          if (m.eq.4) i = ix+1-iu
+          ip1 = min0(i+1,ix+1-iu)
           im1 = max0(i-1,1)
-        do j=1,ny+1-iv
+        do j=1,iy+1-iv
 
           k = 1 
           deriv(i,j,k,n) = 0.5*rdx
@@ -162,14 +156,14 @@ c
      >                   + dqdx_xy(i,j,1)
      >      * rdzc(k)*dqdx_zt(k)*(var(i,j,k+1,n)-var(i,j,k,n))
 
-          k = nz+iw 
+          k = iz+iw 
           deriv(i,j,k,n) = 0.5*rdx
      >       *( xrbnd(i)*(var(ip1,j,k,n)-var(i,j,k,n))
      >        + xlbnd(i)*(var(i,j,k,n)-var(im1,j,k,n)) )
      >                   + dqdx_xy(i,j,1)
      >      * rdzc(k-1)*dqdx_zt(k-1)*(var(i,j,k,n)-var(i,j,k-1,n))
 
-          do k=2,nz-1+iw
+          do k=2,iz-1+iw
             deriv(i,j,k,n) = 0.5*rdx
      >         *( xrbnd(i)*(var(ip1,j,k,n)-var(i,j,k,n))
      >          + xlbnd(i)*(var(i,j,k,n)-var(im1,j,k,n)) )
@@ -183,8 +177,8 @@ c
 *
 * interior
 *
-        do j=1,ny+1-iv
-        do i=3,nx-1-iu
+        do j=1,iy+1-iv
+        do i=3,ix-1-iu
 
           k = 1 
           deriv(i,j,k,n) = 4./6.*rdx*(var(i+1,j,k,n)-var(i-1,j,k,n))
@@ -192,13 +186,13 @@ c
      >                   + dqdx_xy(i,j,1)
      >      * rdzc(k)*dqdx_zt(k)*(var(i,j,k+1,n)-var(i,j,k,n))
 
-          k = nz+iw 
+          k = iz+iw 
           deriv(i,j,k,n) = 4./6.*rdx*(var(i+1,j,k,n)-var(i-1,j,k,n))
      >                 - 1./12.*rdx*(var(i+2,j,k,n)-var(i-2,j,k,n))
      >                   + dqdx_xy(i,j,1)
      >      * rdzc(k-1)*dqdx_zt(k-1)*(var(i,j,k,n)-var(i,j,k-1,n))
 
-          do k=2,nz-1+iw
+          do k=2,iz-1+iw
             deriv(i,j,k,n) = 4./6.*rdx*(var(i+1,j,k,n)-var(i-1,j,k,n))
      >                   - 1./12.*rdx*(var(i+2,j,k,n)-var(i-2,j,k,n))
      >                     + 0.5*dqdx_xy(i,j,1)
@@ -224,11 +218,11 @@ c
         do m=1,4
           if (m.eq.1) j = 1
           if (m.eq.2) j = 2
-          if (m.eq.3) j = ny-iv
-          if (m.eq.4) j = ny+1-iv
-          jp1 = min0(j+1,ny+1-iv)
+          if (m.eq.3) j = iy-iv
+          if (m.eq.4) j = iy+1-iv
+          jp1 = min0(j+1,iy+1-iv)
           jm1 = max0(j-1,1)
-        do i=1,nx+1-iu
+        do i=1,ix+1-iu
          
           k = 1 
           deriv(i,j,k,n) = 0.5*rdy
@@ -237,14 +231,14 @@ c
      >                   + dqdy_xy(i,j,1)
      >      * rdzc(k)*dqdy_zt(k)*(var(i,j,k+1,n)-var(i,j,k,n))
 
-          k = nz+iw 
+          k = iz+iw 
           deriv(i,j,k,n) = 0.5*rdy
      >       *( yrbnd(j)*(var(i,jp1,k,n)-var(i,j,k,n))
      >        + ylbnd(j)*(var(i,j,k,n)-var(i,jm1,k,n)) )
      >                   + dqdy_xy(i,j,1)
      >      * rdzc(k-1)*dqdy_zt(k-1)*(var(i,j,k,n)-var(i,j,k-1,n))
 
-          do k=2,nz-1+iw
+          do k=2,iz-1+iw
             deriv(i,j,k,n) = 0.5*rdy
      >       *( yrbnd(j)*(var(i,jp1,k,n)-var(i,j,k,n))
      >        + ylbnd(j)*(var(i,j,k,n)-var(i,jm1,k,n)) )
@@ -258,8 +252,8 @@ c
 *
 * interior
 *
-        do j=3,ny-1-iv
-        do i=1,nx+1-iu
+        do j=3,iy-1-iv
+        do i=1,ix+1-iu
 
           k = 1 
           deriv(i,j,k,n) = 4./6.*rdy*(var(i,j+1,k,n)-var(i,j-1,k,n))
@@ -267,13 +261,13 @@ c
      >                   + dqdy_xy(i,j,1)
      >      * rdzc(k)*dqdy_zt(k)*(var(i,j,k+1,n)-var(i,j,k,n))
 
-          k = nz+iw 
+          k = iz+iw 
           deriv(i,j,k,n) = 4./6.*rdy*(var(i,j+1,k,n)-var(i,j-1,k,n))
      >                 - 1./12.*rdy*(var(i,j+2,k,n)-var(i,j-2,k,n))
      >                   + dqdy_xy(i,j,1)
      >      * rdzc(k-1)*dqdy_zt(k-1)*(var(i,j,k,n)-var(i,j,k-1,n))
 
-          do k=2,nz-i+iw
+          do k=2,iz-i+iw
             deriv(i,j,k,n) = 4./6.*rdy*(var(i,j+1,k,n)-var(i,j-1,k,n))
      >                   - 1./12.*rdy*(var(i,j+2,k,n)-var(i,j-2,k,n))
      >                     + 0.5*dqdy_xy(i,j,1)
@@ -293,18 +287,18 @@ c
       else if (idir.eq.3) then
         
         do n=1,nt
-        do j=1,ny+1-iv
-        do i=1,nx+1-iu
+        do j=1,iy+1-iv
+        do i=1,ix+1-iu
 
           k = 1
           deriv(i,j,k,n) = dqdz(i,j,1)
      >               * rdzc(k)*(var(i,j,k+1,n)-var(i,j,k,n))
 
-          k = nz+iw
+          k = iz+iw
           deriv(i,j,k,n) = dqdz(i,j,1)
      >             * rdzc(k-1)*(var(i,j,k,n)-var(i,j,k-1,n))
 
-          do k=2,nz-1+iw
+          do k=2,iz-1+iw
             deriv(i,j,k,n) = 0.5*dqdz(i,j,1)
      >         *( rdzc(k)*(var(i,j,k+1,n)-var(i,j,k,n))
      >        + rdzc(k-1)*(var(i,j,k,n)-var(i,j,k-1,n)) )      
@@ -318,9 +312,9 @@ c
 *
       else if (idir.eq.4) then
 
-        do k=1,nz+iw
-        do j=1,ny+1-iv
-        do i=1,nx+1-iu 
+        do k=1,iz+iw
+        do j=1,iy+1-iv
+        do i=1,ix+1-iu 
 
           deriv(i,j,k,1) = (var(i,j,k,2)-var(i,j,k,1))
      >                        / (time(2)-time(1))
@@ -372,17 +366,17 @@ c
 *--------------------------------------------------------------------
 
       subroutine diff1(var,deriv,dqdx_xy,dqdx_zw,dqdy_xy,
-     >                 dqdy_zw,dqdz,dx,dy,time,nx,ny,nz,nt,idir,
+     >                 dqdy_zw,dqdz,dx,dy,time,ix,iy,iz,nt,idir,
      >		     iu,iv,iw)	
 
-      include 'misc.icl'
+      use misc_module
 
-      integer nx,ny,nz,nt,idir,iu,iv,iw
-      real var(nx+1-iu,ny+1-iv,nz+iw,nt)
-	real deriv(nx+1-iu,ny+1-iv,nz+iw,nt)
-      real dqdx_xy(nx+1,ny+1,3),dqdx_zw(nz+1)
-      real dqdy_xy(nx+1,ny+1,3),dqdy_zw(nz+1)
-      real dqdz(nx+1,ny+1,3),dx,dy,time(nt)
+      integer ix,iy,iz,nt,idir,iu,iv,iw
+      real var(ix+1-iu,iy+1-iv,iz+iw,nt)
+	real deriv(ix+1-iu,iy+1-iv,iz+iw,nt)
+      real dqdx_xy(ix+1,iy+1,3),dqdx_zw(iz+1)
+      real dqdy_xy(ix+1,iy+1,3),dqdy_zw(iz+1)
+      real dqdz(ix+1,iy+1,3),dx,dy,time(nt)
 
       integer i,j,k,n,m,ip1,im1,jp1,jm1,kp1,km1,idqdx,ii,jj
       real rdx,rdy,da,db,ta,tb,dta,dtb      
@@ -404,8 +398,8 @@ c
 c
 c east and west boundaries
 c
-        do k=1,nz+iw
-          kp1 = min0(k+1,nz+iw)
+        do k=1,iz+iw
+          kp1 = min0(k+1,iz+iw)
           km1 = max0(k-1,1)
         do m=1,4
           if (m.eq.1) then
@@ -415,15 +409,15 @@ c
 	      i = 2 
 		ii = 2
           elseif (m.eq.3) then 
-	      i = nx-iu 
-		ii = nx
+	      i = ix-iu 
+		ii = ix
 	    elseif (m.eq.4) then
-	      i = nx+1-iu
-	      ii = nx+1
+	      i = ix+1-iu
+	      ii = ix+1
 	    end if	
-          ip1 = min0(i+1,nx+1-iu)
+          ip1 = min0(i+1,ix+1-iu)
           im1 = max0(i-1,1)
-        do j=1,ny+1-iv
+        do j=1,iy+1-iv
           
           deriv(i,j,k,n) = 0.5*rdx
      >       *( xrbnd(ii)*(var(ip1,j,k,n)-var(i,j,k,n))
@@ -440,11 +434,11 @@ c
 c
 c interior
 c
-        do k=1,nz+iw      
-          kp1 = min0(k+1,nz+iw)
+        do k=1,iz+iw      
+          kp1 = min0(k+1,iz+iw)
           km1 = max0(k-1,1)
-        do j=1,ny+1-iv
-        do i=3,nx-1-iu
+        do j=1,iy+1-iv
+        do i=3,ix-1-iu
 
           deriv(i,j,k,n) = 4./6.*rdx*(var(i+1,j,k,n)-var(i-1,j,k,n))
      >                 - 1./12.*rdx*(var(i+2,j,k,n)-var(i-2,j,k,n))
@@ -470,8 +464,8 @@ c
 *
 * north and south boundaries
 *
-        do k=1,nz+iw
-          kp1 = min0(k+1,nz+iw)
+        do k=1,iz+iw
+          kp1 = min0(k+1,iz+iw)
           km1 = max0(k-1,1)
         do m=1,4
           if (m.eq.1) then
@@ -481,15 +475,15 @@ c
 	      j = 2 
 		jj = 2
           elseif (m.eq.3) then 
-	      j = ny-iv 
-		jj = ny
+	      j = iy-iv 
+		jj = iy
 	    elseif (m.eq.4) then
-	      j = ny+1-iv
-	      jj = ny+1
+	      j = iy+1-iv
+	      jj = iy+1
 	    end if	
-          jp1 = min0(j+1,ny+1-iv)
+          jp1 = min0(j+1,iy+1-iv)
           jm1 = max0(j-1,1)
-        do i=1,nx+1-iu
+        do i=1,ix+1-iu
           
           deriv(i,j,k,n) = 0.5*rdy
      >       *( yrbnd(jj)*(var(i,jp1,k,n)-var(i,j,k,n))
@@ -506,11 +500,11 @@ c
 *
 * interior
 *
-        do k=1,nz+iw
-          kp1 = min0(k+1,nz+iw)
+        do k=1,iz+iw
+          kp1 = min0(k+1,iz+iw)
           km1 = max0(k-1,1)
-        do j=3,ny-1-iv
-        do i=1,nx+1-iu
+        do j=3,iy-1-iv
+        do i=1,ix+1-iu
 
           deriv(i,j,k,n) = 4./6.*rdy*(var(i,j+1,k,n)-var(i,j-1,k,n))
      >                 - 1./12.*rdy*(var(i,j+2,k,n)-var(i,j-2,k,n))
@@ -533,11 +527,11 @@ c
       else if (idir.eq.3) then
         
         do n=1,nt
-        do k=1,nz+iw
-          kp1 = min0(k+1,nz+iw)
+        do k=1,iz+iw
+          kp1 = min0(k+1,iz+iw)
           km1 = max0(k-1,1)
-        do j=1,ny+1-iv
-        do i=1,nx+1-iu
+        do j=1,iy+1-iv
+        do i=1,ix+1-iu
 
           deriv(i,j,k,n) = 0.5*dqdz(i,j,idqdx)
      >      *( rdze(kp1)*zrbnd(k)*(var(i,j,kp1,n)-var(i,j,k,n))
@@ -552,9 +546,9 @@ c
 *
       else if (idir.eq.4) then
 
-        do k=1,nz+iw
-        do j=1,ny+1-iv
-        do i=1,nx+1-iu 
+        do k=1,iz+iw
+        do j=1,iy+1-iv
+        do i=1,ix+1-iu 
 
           deriv(i,j,k,1) = (var(i,j,k,2)-var(i,j,k,1))
      >                        / (time(2)-time(1))

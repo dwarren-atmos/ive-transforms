@@ -1,14 +1,12 @@
-#include "pointer.icl"
-c 
-      ive_ptr function kgain(obs_name,upd_name,R2,x0,y0,z0,mapon,
-     &         ndims,dims,stag,min,max,miss,dunits,
-     &         disunits,dim_names)
+      integer(ive_ptr) function kgain(obs_name,upd_name,R,x0,y0,z0,
+     &                                mapon,ndims,dims,stag,min,max,
+     &                                miss,dunits,disunits,dim_names)
 
       use default_module
 
       implicit none
 
-      real, intent(in) :: x0, y0, z0, R2
+      real, intent(in) :: x0, y0, z0, R
       character(len=*), intent(in) :: obs_name, upd_name 
       logical :: mapon
 
@@ -21,7 +19,7 @@ c
       real :: ir, jr, phys(2), grid(2)
       character (len=80) :: outunits,outdisunits
       logical :: new
-      ive_ptr :: xvar,xprior
+      integer(ive_ptr) :: xvar,xprior
 
       real, allocatable :: ye(:)
 
@@ -35,7 +33,6 @@ c
       else
         ir=x0 ; jr=y0
       endif
-      print *,'IN KGAIN ir,jr',ir,jr
       ! Get first variable now.
       xvar = 0
       xvar = getvar(obs_name,ndims,dims,stag,min,max,miss,dunits,
@@ -81,7 +78,7 @@ c
         return
       endif
 
-      call kgain_calc(%val(kgain),ye,%val(xprior),R2,mnk,Ne)
+      call kgain_calc(%val(kgain),ye,%val(xprior),R,mnk,Ne)
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
       dim_names(4) = 'one'
@@ -94,21 +91,22 @@ c
 !  Calculates the kalman gain
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      subroutine kgain_calc(kgain,ye,xprior,R2,mnk,Ne)
+      subroutine kgain_calc(kgain,ye,xprior,R,mnk,Ne)
 
       integer, intent(in) :: mnk,Ne
-      real, intent(in) :: ye(Ne), xprior(mnk,Ne), R2
+      real, intent(in) :: ye(Ne), xprior(mnk,Ne), R
       real, intent(out) :: kgain(mnk)
 
       integer :: i,n
       real :: mean_fac,cov_fac,ye_var,cov,kdenom
       real :: ye_pert(Ne), xprior_pert(Ne)
-      real :: ye_mean, xprior_mean
+      real :: ye_mean, xprior_mean, R2
 
       mean_fac = 1.0/real(Ne)
       cov_fac = 1.0/real(Ne-1)
 
       kgain(:) = 0.0
+      R2 = R**2
 
       ye_mean = sum(ye(:))*mean_fac
       ye_pert(:) = ye(:) - ye_mean

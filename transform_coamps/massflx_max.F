@@ -1,7 +1,7 @@
-#include "pointer.icl"
-	ive_ptr function massflx_max(
+      integer(ive_ptr) function massflx_max(
      >		     ndims,dims,stag,min,max,miss,
      >		     dunits,disunits,dim_names)
+      use default_module
 	implicit none
 c
 	integer ndims,dims(4),indx,k1,k2
@@ -11,8 +11,8 @@ c	real x1(2),x2(2),x3(2),x4(2)
 c
 	integer nt,j
 	logical new
-	ive_ptr f1,f2,f3,f4,ftop,getmem,getvar
-	ive_ptr massflx_lat,massflx_top
+	integer(ive_ptr) f1,f2,f3,f4,ftop
+	integer(ive_ptr) massflx_lat,massflx_top
 c
       massflx_max = 0
 c

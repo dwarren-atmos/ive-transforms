@@ -1,10 +1,9 @@
-#include "pointer.icl"
-    
-      ive_ptr function calc_field(name,ndims,dims,stag,min,max,
+      integer(ive_ptr) function calc_field(name,ndims,dims,stag,min,max,
      &             missing,data_units,data_display_units,dim_names)
+      use default_module
 c     
 c     calc_field : This routine is used to calculate user-derived field.
-c     The return value of the routine is a ive_ptr to the field values.
+c     The return value of the routine is a integer(ive_ptr) to the field values.
 c     NULL return => cannot calculate.
 c     
 c     Arguments:
@@ -47,12 +46,12 @@ c
       real x,y,lat,lon
       integer npts
 c
-      ive_ptr vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat
-      ive_ptr massflx_top,massflx_max,rho_calc,omega,test
-      ive_ptr interp_pres,geopot,x_grid,y_grid
-      ive_ptr geowind,urot2,windspeed,reldiff,time_diff
-      ive_ptr variance, maxmin_reg, time_mean, the2temp
-      ive_ptr interp_height, ens_cov, kgain
+      integer(ive_ptr) vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat
+      integer(ive_ptr) massflx_top,massflx_max,rho_calc,omega,test
+      integer(ive_ptr) interp_pres,geopot,x_grid,y_grid
+      integer(ive_ptr) geowind,urot2,windspeed,reldiff,time_diff
+      integer(ive_ptr) variance, maxmin_reg, time_mean, the2temp
+      integer(ive_ptr) interp_height, ens_cov, kgain
 c
       call setstr(fld,name)
 c
