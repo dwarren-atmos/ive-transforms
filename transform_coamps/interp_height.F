@@ -1,6 +1,6 @@
-#include "pointer.icl"
+
 c 
-      ive_ptr function interp_height(varnm,z0,lagl,
+      integer(ive_ptr) function interp_height(varnm,z0,lagl,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
@@ -17,7 +17,7 @@ c
       real :: z0,r_val, sigm,zsfc
       character (len=80) :: outdunits,outdisunits
       logical :: new
-      ive_ptr :: vartmp,var
+      integer(ive_ptr) :: vartmp,var
       real, allocatable :: zhgt(:,:,:)
 
       integer, parameter :: ifin = 2

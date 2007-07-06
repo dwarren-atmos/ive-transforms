@@ -1,6 +1,6 @@
-#include "pointer.icl"
 
-      ive_ptr function geowind(wind,ndims,dims,stag,min,max,
+
+      integer(ive_ptr) function geowind(wind,ndims,dims,stag,min,max,
      &                        miss,dunits,disunits,dim_names)
       use default_module
       implicit none
@@ -18,7 +18,7 @@ c
       integer ntotal,i,k,n,j
 	  logical requ
       character*(1) dir
-      ive_ptr rho,deriv_PPP,deriv,rho_calc
+      integer(ive_ptr) rho,deriv_PPP,deriv,rho_calc
 c
       rho = 0
       deriv_PPP = 0

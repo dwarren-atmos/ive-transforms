@@ -1,4 +1,3 @@
-#include "pointer.icl"
 c
 c converts theta to temperature
 c
@@ -20,7 +19,8 @@ c
       integer :: ix,iy,iz,it,i,memdim,memdimU,memdimV
       real :: r_val, vartmp
       logical :: new
-      ive_ptr :: ppp, the, temp, u, v, uin, vin, thein, pppin,utmp,vtmp
+      integer(ive_ptr) :: ppp, the, temp, u, v, 
+     &                    uin, vin, thein, pppin,utmp,vtmp
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !

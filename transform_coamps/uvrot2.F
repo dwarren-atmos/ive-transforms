@@ -3,10 +3,11 @@ c
 c  Rotates the u and v velocity by counter-clockwise by angle theta
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-#include "pointer.icl"
 
-      ive_ptr function urot2(theta,varnm1,varnm2,ndims,dims,stag,
-     &                       min,max,miss,dunits,disunits,dim_names)
+
+      integer(ive_ptr) function urot2(theta,varnm1,varnm2,ndims,dims,
+     &                                stag,min,max,miss,
+     &                                dunits,disunits,dim_names)
       use default_module
 
       IMPLICIT NONE
@@ -19,7 +20,7 @@ c
       integer iu,iv,iw,ijk,i,nt
       real r_val
       logical new
-      ive_ptr uvar,vvar,vvartmp
+      integer(ive_ptr) uvar,vvar,vvartmp
 c
       urot2 = 0
       vvar = 0
@@ -80,8 +81,9 @@ c
 c
 c ************************************************************
 c
-      ive_ptr function vrot2(theta,ndims,dims,stag,min,max,miss,
-     &                        dunits,disunits,dim_names)
+      integer(ive_ptr) function vrot2(theta,ndims,dims,stag,
+     &                                min,max,miss,
+     &                                dunits,disunits,dim_names)
       use default_module
 c
       implicit none
@@ -95,7 +97,7 @@ c
       integer iu,iv,iw,ijk,i,nt
       real r_val
       logical new
-      ive_ptr uvar,vvar,vvartmp
+      integer(ive_ptr) uvar,vvar,vvartmp
 c
       vrot2 = 0
       iu = 1 ; iv = 0

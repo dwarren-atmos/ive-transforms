@@ -1,9 +1,9 @@
-#include "pointer.icl"
+
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-      ive_ptr function omega(uvarnm,vvarnm,wvarnm,ndims,
+      integer(ive_ptr) function omega(uvarnm,vvarnm,wvarnm,ndims,
      &                       dims,stag,min,max,miss,
      &                       dunits,disunits,dim_names)
       use default_module
@@ -18,8 +18,8 @@ c
 c
       integer ntotal,utotal,vtotal,i
 	  logical new
-      ive_ptr uvartmp,vvartmp,uvarin,vvarin,wvarin
-      ive_ptr uvar,vvar,wvar
+      integer(ive_ptr) uvartmp,vvartmp,uvarin,vvarin,wvarin
+      integer(ive_ptr) uvar,vvar,wvar
       character(len=10) :: freevar
 c
 c     new = .true.

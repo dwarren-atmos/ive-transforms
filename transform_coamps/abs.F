@@ -1,8 +1,6 @@
-
-#include "pointer.icl"
-
-      ive_ptr function abs_ive(varnm,ndims,dims,stag,min,max,miss,
-     >                        dunits,disunits,dim_names)
+      integer(ive_ptr) function abs_ive(varnm,ndims,dims,stag,min,max,
+     &                          miss,dunits,disunits,dim_names)
+      use default_module
 *
 *  abs_ive returns the absolute value of field varnm
 *
@@ -12,7 +10,7 @@
 
       integer strbeg,strend
       logical new
-      ive_ptr var,getvar,getmem
+      integer(ive_ptr) var,getvar,getmem
 
       abs_ive = 0
 

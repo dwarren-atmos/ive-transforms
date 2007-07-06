@@ -1,6 +1,6 @@
-#include "pointer.icl"
+
 c 
-      ive_ptr function ens_cov(varnm1,varnm2,x0,y0,z0,mapon,
+      integer(ive_ptr) function ens_cov(varnm1,varnm2,x0,y0,z0,mapon,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
 
@@ -21,7 +21,7 @@ c
       real :: ir, jr
       character (len=80) :: outunits,outdisunits
       logical :: new
-      ive_ptr :: var1,var2
+      integer(ive_ptr) :: var1,var2
 
       real, allocatable :: var1pt(:)
 

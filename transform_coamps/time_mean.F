@@ -1,9 +1,9 @@
-#include "pointer.icl"
+
 c
 c   Calculates the time mean of a field
 c   (ASSUMES EVENLY SPACED TIME INTERVALS)
 c
-      ive_ptr function time_mean(fld,
+      integer(ive_ptr) function time_mean(fld,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -17,7 +17,7 @@ c
 c      
       integer :: ix,iy,iz,it
       logical :: new
-      ive_ptr :: var
+      integer(ive_ptr) :: var
 c
 c Get wind fields
 c

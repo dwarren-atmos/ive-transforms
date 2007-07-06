@@ -156,7 +156,7 @@ c
 
       subroutine bnd_arrays(sgz,wgz,nx,ny,nz)
 
-#include "misc.icl"
+      use misc_module
 
       integer nx,ny,nz
       real sgz(nz),wgz(nz+1)

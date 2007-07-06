@@ -1,6 +1,6 @@
-#include "pointer.icl"
+
 c
-      ive_ptr function massflx_lat(x1,x2,y1,y2,k1,k2,
+      integer(ive_ptr) function massflx_lat(x1,x2,y1,y2,k1,k2,
      &                 ndims,dims,stag,min,max,miss,
      &                 dunits,disunits,dim_names)
       use default_module
@@ -19,7 +19,7 @@ c
 c
 	  logical new
 c
-      ive_ptr uvar,vvar,rho,rho_calc
+      integer(ive_ptr) uvar,vvar,rho,rho_calc
 c
       massflx_lat = 0
 c

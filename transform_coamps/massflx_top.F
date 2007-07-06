@@ -1,6 +1,6 @@
-#include "pointer.icl"
+
 c
-      ive_ptr function massflx_top(x1,x2,x3,x4,k2,top,
+      integer(ive_ptr) function massflx_top(x1,x2,x3,x4,k2,top,
      >		     ndims,dims,stag,min,max,miss,
      >		     dunits,disunits,dim_names)
 c
@@ -17,7 +17,7 @@ c
 	parameter(nmax = 1000)
 	integer indx(4,2),windex(nmax,2),wcnt,ktop,j
 	logical new
-	ive_ptr wvar,rho,rho_calc,omega
+	integer(ive_ptr) wvar,rho,rho_calc,omega
 c
       massflx_top = 0
       massflx_top = getmem(ntime)

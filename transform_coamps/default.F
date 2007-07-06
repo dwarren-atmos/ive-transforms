@@ -1,4 +1,3 @@
-#include "pointer.icl"
 c
 c
 c     This is a Fortran version of the default transforms for IVE.
@@ -15,7 +14,7 @@ c     values the time slider can be set to.
 c     
 c     Arguments:
 c     ncid	  integer   input  Id of currently opened netCDF file.
-c     exact_coord ive_ptr   output Pointer to array of discrete coord values
+c     exact_coord integer(ive_ptr)   output Pointer to array of discrete coord values
 c				   that the window sliders should use.
 c     n		  integer   output Number of values in exact_coord.  If this
 c				   is 0 => ignore values in exact_coord
@@ -29,11 +28,10 @@ c				   will be one.  A coordinate is always
 c				   assumed to be dependent on itself.
 
       use DEFAULT_MODULE
-
-#include "misc.icl"
+      use MISC_MODULE
 
       integer :: ncid,n(4),coord_dep(4,4)
-      ive_ptr :: exact_coord(4)
+      integer(ive_ptr) :: exact_coord(4)
 c
 c common block cdf_dimvar is set up by IVE to contain the values of a 
 c   variable with the same name as the dimension of the largest variable 
@@ -41,7 +39,7 @@ c   in the netCDF file.  If the size of the domain is set by attributes,
 c   or if a dimension variable does not exist, size will be zero, and 
 c   data will be NULL.
 c
-      ive_ptr :: data(4)
+      integer(ive_ptr) :: data(4)
       integer :: size(4)
       common/cdf_dimvar/data,size
 c
@@ -57,8 +55,8 @@ c
       integer :: numfls
       common/flcount/numfls
 
-      ive_ptr :: tlgz,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
-      ive_ptr :: ttgrid,theight
+      integer(ive_ptr) :: tlgz,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v
+      integer(ive_ptr) :: tztop,ttgrid,theight
       logical :: error,flag
       real :: r_val,tgrid,stagger(4),min(4),max(4),missing
       real*8 :: slope,intercept
@@ -493,7 +491,6 @@ c
       integer i,j,min(4),max(4),dims(4),nd,error,ndims
       integer k,iflg, strbeg,strend
       logical flag,requ
-c      ive_ptr getmem
 c
 c save the physical and index limits in the common block in
 c   default.icl for use in later calculations by other transform
@@ -863,9 +860,9 @@ c        This routine finds the terrain height and location under each
 c        point in a vertical slab.
 c
 c     Arguments:
-c	xter	ive_ptr	output	Pointer to array of x-locations for topo_ht
-c	yter	ive_ptr	output	Pointer to array of y-locations for topo_ht
-c	topoht	ive_ptr	output	Pointer to array containing 
+c	xter	integer(ive_ptr)	output	Pointer to array of x-locations for topo_ht
+c	yter	integer(ive_ptr)	output	Pointer to array of y-locations for topo_ht
+c	topoht	integer(ive_ptr)	output	Pointer to array containing 
 c				the terrain heights.
 c	nter	int	output	Number of points in topo_ht (output)
 c	pt1	real	output	Minimum physical coordinates for slice.
@@ -880,7 +877,7 @@ c     Argument declarations.
 c
       integer   nter
       real      pt1(4), pt2(4), zero
-      ive_ptr   xter, yter, topoht
+      integer(ive_ptr)   xter, yter, topoht
 c
 c
 c     Local variable declarations.
@@ -891,7 +888,6 @@ c
       real      phypt, min, max
       dimension iflag(MAXDIM), phypt(MAXDIM),
      &          min(MAXDIM), max(MAXDIM)
-c      ive_ptr getmem
 c
       integer stepby
       real    value
@@ -1149,7 +1145,8 @@ c
 c
 c     -----------------------------------------------------------------
 c
-      ive_ptr function data_slicer_1d(endpt, ni, da, nda)
+      integer(ive_ptr) function data_slicer_1d(endpt, ni, da, nda)
+      use default_module
 c
 c     data_slicer_1d_ : This routine returns the computational points at
 c     which a 1d slice should be taken.
@@ -1168,7 +1165,7 @@ c     number of computational points represented by the slice.
 c
       integer iflag(4), i, j, k, error
       real cendpt(4,2), dv(4), dda, cpmin(4), cmin, cmax, ceil, floor
-      ive_ptr pslice, slice, getmem
+      integer(ive_ptr) pslice, slice
 
       print *,'endpt,ni,da,nda,   1'
       print *,endpt,ni,da,nda
@@ -1257,7 +1254,9 @@ c
 c
 c     -----------------------------------------------------------------
 c
-      ive_ptr function data_slicer_2d(corner, ii, jj, ni, nj, da, nda)
+      integer(ive_ptr) function data_slicer_2d(corner, ii, jj, ni, 
+     &                                         nj, da, nda)
+      use default_module
 c
 c     data_slicer_2d_ : This routine returns the computational points at
 c     which a 2d slice should be taken.
@@ -1282,7 +1281,7 @@ c
 c     Call the internal routine that does 2d physical slicing for
 c     vectors.
 c
-      ive_ptr pslicer2d
+      integer(ive_ptr) pslicer2d
 
       data_slicer_2d = pslicer2d(corner, ii, jj, ni, nj, da, nda)
       return
@@ -1314,10 +1313,10 @@ c
 c
 c     This routine is used to return the value stored in an 1d real array.
 c     Since Fortran cannot be used to directly access memory given
-c     a ive_ptr, this function can be used to dereference the pointer
+c     a integer(ive_ptr), this function can be used to dereference the pointer
 c     and extract a value from the corresponding array as follows:
 c
-c     If p is the ive_ptr to some data array X, you get the j th data 
+c     If p is the integer(ive_ptr) to some data array X, you get the j th data 
 c     value in X (i.e. X(j)) with the following call:
 c
 c     r_val(%val(p), j)
@@ -1339,10 +1338,10 @@ c
 c
 c     This routine is used to store a value in a 1d real array.
 c     Since Fortran cannot be used to directly access memory given
-c     a ive_ptr, this function can be used to dereference the pointer
+c     a integer(ive_ptr), this function can be used to dereference the pointer
 c     and extract a value from the corresponding array as follows:
 c
-c     If p is the ive_ptr to some data array X, you set the j th data
+c     If p is the integer(ive_ptr) to some data array X, you set the j th data
 c     value in X (i.e. X(j)) to val with the following call:
 c
 c     call s_val(%val(p), j, val)

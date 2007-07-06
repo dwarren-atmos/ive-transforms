@@ -1,7 +1,4 @@
-#include "pointer.icl"
       MODULE DEFAULT_MODULE
-c
-c          COMMON BLOCK FOR USE WITH THE DEFAULT TRANSFORMS
 c
 c          coord  an array containing the memory address of each array
 c                 holding the "dimension variables" The use
@@ -17,13 +14,22 @@ c                 each dimension
 c          delta  the uniform physical-space grid interval (if one exists) 
 c                 along dimension
 c
-      ive_ptr :: getvar, getmem, coord(4), time, wgz, sgz, lgz
-      ive_ptr :: zbot_p, zbot_u, zbot_v
-      ive_ptr :: fcor
-      ive_ptr :: dqdx_xy, dqdx_zt, dqdx_zw
-      ive_ptr :: dqdy_xy, dqdy_zt, dqdy_zw
-      ive_ptr :: dqdz, dzdq
-      ive_ptr :: hmap, grdrot
+     
+! Was previously in pointer.icl
+#  ifdef SIXTY_FOUR_bptr
+      integer, parameter :: ive_ptr=8
+#  else
+      integer, parameter :: ive_ptr=4
+#  endif
+
+! Was previously in default.icl
+      integer(ive_ptr) :: getvar, getmem, coord(4), time, wgz, sgz, lgz
+      integer(ive_ptr) :: zbot_p, zbot_u, zbot_v
+      integer(ive_ptr) :: fcor
+      integer(ive_ptr) :: dqdx_xy, dqdx_zt, dqdx_zw
+      integer(ive_ptr) :: dqdy_xy, dqdy_zt, dqdy_zw
+      integer(ive_ptr) :: dqdz, dzdq
+      integer(ive_ptr) :: hmap, grdrot
 
       integer :: trans_z,trans_on
       integer :: nx,ny,nz,twod
@@ -40,9 +46,5 @@ c
       real :: get_ter_pt
 
       external :: getvar, getmem, get_ter_pt
-
-
-      !data lgz,wgz,sgz,time,zbot_p,zbot_u,zbot_v/0,0,0,0,0,0,0/
-      !data fcor,grdrot/0,0/
 
       END MODULE

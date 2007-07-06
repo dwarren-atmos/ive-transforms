@@ -1,4 +1,4 @@
-#include "pointer.icl"
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !   slp_ben - function that calculates the sea-level pressure using
@@ -17,7 +17,7 @@
 !     adapted for ive AUG 2006 AReinecke
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      ive_ptr function slp_ben(
+      integer(ive_ptr) function slp_ben(
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -32,7 +32,7 @@ c
       integer ix,iy,iz,it
       real ignore
       logical new
-      ive_ptr pres, tmpk, qvap
+      integer(ive_ptr) pres, tmpk, qvap
 c
 c Get wind fields
 c

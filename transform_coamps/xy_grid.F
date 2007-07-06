@@ -1,32 +1,32 @@
-#include "pointer.icl"
+      integer(ive_ptr) function x_grid(whch,ndims,dims,stag,min,max,
+     &                                 miss,dunits,disunits,dim_names)
 
-      ive_ptr function x_grid(whch,ndims,dims,stag,min,max,
-     >			  miss,dunits,disunits,dim_names)
-*
-*  grid returns the index space vertical coordinate for each node
-*    on the appropriate grid (w or thermodynamic).  As such, a plot of
-*    grid with contour interval of unity shows the physical space
-*    surfaces corresponding to the nodal surfaces in computational space.
-*
+      use default_module
+c
+c  grid returns the index space vertical coordinate for each node
+c    on the appropriate grid (w or thermodynamic).  As such, a plot of
+c    grid with contour interval of unity shows the physical space
+c    surfaces corresponding to the nodal surfaces in computational space.
+c
       integer ndims,dims(4)
       real stag(4),min(4),max(4),miss
       character*(*) dunits,disunits,dim_names(4),whch
 
       integer i,j,k,iptr
       logical new
-      ive_ptr ptr,getvar,getmem
+      integer(ive_ptr) ptr
 
       x_grid = 0
 
       ptr = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
-     >                    disunits,dim_names,new) 
+     &                    disunits,dim_names,new) 
       if (ptr.eq.0) then
         write(*,*) 'Error:  could not find pressure field'
         return
       end if
  
       dims(4) = 1
-	dims(3) = 1
+      dims(3) = 1
       stag(4) = 0.
       min(4) = 0.
       max(4) = 0.
@@ -56,35 +56,36 @@
       return
       end
 
-#include "pointer.icl"
 
-      ive_ptr function y_grid(whch,ndims,dims,stag,min,max,
-     >			  miss,dunits,disunits,dim_names)
-*
-*  grid returns the index space vertical coordinate for each node
-*    on the appropriate grid (w or thermodynamic).  As such, a plot of
-*    grid with contour interval of unity shows the physical space
-*    surfaces corresponding to the nodal surfaces in computational space.
-*
+
+      integer(ive_ptr) function y_grid(whch,ndims,dims,stag,min,max,
+     &                                 miss,dunits,disunits,dim_names)
+      use default_module
+c
+c  grid returns the index space vertical coordinate for each node
+c    on the appropriate grid (w or thermodynamic).  As such, a plot of
+c    grid with contour interval of unity shows the physical space
+c    surfaces corresponding to the nodal surfaces in computational space.
+c
       integer ndims,dims(4)
       real stag(4),min(4),max(4),miss
       character*(*) dunits,disunits,dim_names(4),whch
 
       integer i,j,k,iptr
       logical new
-      ive_ptr ptr,getvar,getmem
+      integer(ive_ptr) ptr
 
       y_grid = 0
 
       ptr = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
-     >                    disunits,dim_names,new) 
+     &                    disunits,dim_names,new) 
       if (ptr.eq.0) then
         write(*,*) 'Error:  could not find pressure field'
         return
       end if
  
       dims(4) = 1
-	dims(3) = 1
+      dims(3) = 1
       stag(4) = 0.
       min(4) = 0.
       max(4) = 0.

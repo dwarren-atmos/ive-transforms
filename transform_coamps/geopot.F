@@ -1,8 +1,8 @@
-#include "pointer.icl"
+
 c
 c  Calculates the Geopotential height of a passed pressure surface
 c
-      ive_ptr function geopot(p0,
+      integer(ive_ptr) function geopot(p0,
      &  ndims,dims,stag,min,max,miss,dunits,
      &  disunits,dim_names)
 c
@@ -15,7 +15,7 @@ c
 c      
       integer strbeg,strend,nxp1,nyp1,nt,len
       logical new
-      ive_ptr pvar
+      integer(ive_ptr) pvar
 c
       nxp1 = nx+1;
       nyp1 = ny+1;

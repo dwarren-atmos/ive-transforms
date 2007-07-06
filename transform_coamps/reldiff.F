@@ -1,10 +1,10 @@
-#include "pointer.icl"
+
 c
 c  Calculates the relative difference between field 1 and 2
 c  reldiff = (fld1 - fld2)/fld2
 c  if fld2 < ignore label missing
 c
-      ive_ptr function reldiff(fld1,fld2,ignore,
+      integer(ive_ptr) function reldiff(fld1,fld2,ignore,
      >                  ndims,dims,stag,min,max,miss,dunits,
      >                  disunits,dim_names)
       use default_module
@@ -19,7 +19,7 @@ c
       integer nx1,ny1,nz1,nt1,nx2,ny2,nz2,nt2,len
       real ignore
       logical new
-      ive_ptr var1,var2
+      integer(ive_ptr) var1,var2
 c
 c Get wind fields
 c

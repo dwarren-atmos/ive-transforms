@@ -1,9 +1,7 @@
-
-#include "pointer.icl"
-
-      ive_ptr function rho_calc(ndims,dims,stag,min,max,miss,dunits,
-     >                           disunits,dim_names)
-	implicit none
+      integer(ive_ptr) function rho_calc(ndims,dims,stag,min,max,
+     &                           miss,dunits,disunits,dim_names)
+      use default_module
+      implicit none
 c
 c  Calculates total density.  Kind of prosaic.
 c 
@@ -11,7 +9,7 @@ c
       real stag(4),min(4),max(4),miss
       character*(*) dunits,disunits,dim_names(4)
       logical new
-      ive_ptr p,thet,getvar,getmem
+      integer(ive_ptr) p,thet
 c
       p = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
      >          disunits,dim_names,new)
