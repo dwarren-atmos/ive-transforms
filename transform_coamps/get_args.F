@@ -1,4 +1,3 @@
-
       subroutine get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
 *
 *  get_args searches the command string fld for the arguments of a
@@ -15,7 +14,7 @@
       integer i1,iend,k,bcnt,str2int
       real str2real
       character*80 cstr
-      logical delimit,charstr,realstr
+      logical delimit,charstr,realstr,lendbrk,lbegbrk
 
       err = .false.
       do k=1,10
@@ -30,9 +29,10 @@
       call setstr(cstr,fld)
       iend = index(cstr,char(0)) - 1
       if (cstr(iend:iend).ne.']') then
-        write(*,*) 'Error:  no ending bracket.'
-        err = .true.
-        return
+        lendbrk=.false.
+c        write(*,*) 'Error:  no ending bracket.'
+c        err = .true.
+c        return
       end if
 *
 *  Find open bracket.
@@ -45,6 +45,17 @@
       end if
 
       if (k.eq.iend) then
+        lbegbrk=.false.
+c        write(*,*) 'Error:  no opening bracket.'
+c        err = .true.
+c        return
+      end if
+
+      if(lbegbrk.and..not.lendbrk) then
+        write(*,*) 'Error:  no ending bracket.'
+        err = .true.
+        return
+      else if(.not.lbegbrk.and.lendbrk) then
         write(*,*) 'Error:  no opening bracket.'
         err = .true.
         return

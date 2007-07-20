@@ -1,5 +1,6 @@
       integer(ive_ptr) function kgain(obs_name,upd_name,R,x0,y0,z0,
-     &                                mapon,ndims,dims,stag,min,max,
+     &                                mapon,calc_type,
+     &                                ndims,dims,stag,min,max,
      &                                miss,dunits,disunits,dim_names)
 
       use default_module
@@ -7,7 +8,8 @@
       implicit none
 
       real, intent(in) :: x0, y0, z0, R
-      character(len=*), intent(in) :: obs_name, upd_name 
+      character(len=*), intent(in) :: calc_type
+      character(len=*), intent(in) :: obs_name, upd_name
       logical :: mapon
 
       integer, intent(out) :: ndims,dims(4)
@@ -18,12 +20,25 @@
       integer :: iu, iv, iw, it,kk, iflag(2)
       real :: ir, jr, phys(2), grid(2)
       character (len=80) :: outunits,outdisunits
-      logical :: new
+      logical :: new, lkgain, lcov, lcor
       integer(ive_ptr) :: xvar,xprior
 
       real, allocatable :: ye(:)
 
       data iflag/1,1/
+
+      select case (trim(calc_type))
+
+      case('kgain','k','gain','KGAIN')
+        lkgain = .true. ; lcov = .false. ; lcor = .false.
+      case('cov','covariance','ENS_COV')
+        lkgain = .false. ; lcov = .true. ; lcor = .false.
+      case('cor','correlation','ENS_COR')
+        lkgain = .false. ; lcov = .false. ; lcor = .true.
+      case default
+        print *,'UNKOWN FIELD TO CALCULATE, RETURNING'
+        kgain = 0
+      end select
 
       ! Find location to interpolate to in the horizontal 
       if(mapon) then
@@ -78,7 +93,13 @@
         return
       endif
 
-      call kgain_calc(%val(kgain),ye,%val(xprior),R,mnk,Ne)
+      if(lkgain) then
+        call kgain_calc(%val(kgain),ye,%val(xprior),R,mnk,Ne)
+      elseif(lcov) then
+        call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
+      elseif(lcor) then
+        call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
+      end if
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
       dim_names(4) = 'one'
@@ -86,6 +107,7 @@
 
       return
       end
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !  Calculates the kalman gain
@@ -102,8 +124,7 @@
       real :: ye_pert(Ne), xprior_pert(Ne)
       real :: ye_mean, xprior_mean, R2
 
-      mean_fac = 1.0/real(Ne)
-      cov_fac = 1.0/real(Ne-1)
+      mean_fac = 1.0/real(Ne) ; cov_fac = 1.0/real(Ne-1)
 
       kgain(:) = 0.0
       R2 = R**2
@@ -124,3 +145,46 @@
       return
       end
         
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculates covariance or correlation between a point and a field
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine covcor_calc(covcor,ye,xe,mnk,Ne,lcor)
+
+      integer, intent(in) :: mnk,Ne
+      real, intent(in) :: ye(Ne), xe(mnk,Ne)
+      logical, intent(in) :: lcor
+
+      real, intent(out) :: covcor(mnk)
+
+      integer :: i,n
+      real :: ye_std,xe_std
+      real :: ye_pert(Ne), xe_pert(Ne)
+      real :: ye_mean, xe_mean,mean_fac,cov_fac
+
+      mean_fac = 1.0/real(Ne) ; cov_fac = 1.0/real(Ne-1)
+
+      covcor(:) = 0.0
+
+      ye_mean = sum(ye(:))*mean_fac
+      ye_pert(:) = ye(:) - ye_mean
+      ye_std = sqrt(sum(ye_pert(:)*ye_pert(:)))
+
+      if(lcor) then
+        do i=1,mnk
+          xe_mean = sum(xe(i,:))*mean_fac
+          xe_pert(:) = xe(i,:) - xe_mean
+          xe_std = sqrt(sum(xe_pert(:)*xe_pert(:)))
+          covcor(i) = sum(ye_pert(:)*xe_pert(:))/(xe_std*ye_std)
+        enddo
+      else
+        do i=1,mnk
+          xe_mean = sum(xe(i,:))*mean_fac
+          xe_pert(:) = xe(i,:) - xe_mean
+          covcor(i) = sum(ye_pert(:)*xe_pert(:))*cov_fac
+        enddo
+      endif
+
+      return
+      end

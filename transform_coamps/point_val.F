@@ -32,7 +32,7 @@
 
       if(lagl) z00 = z00 + zbot_pnt
 
-      print '(A,1x,3(F8.2,1x))','Interpolating field to:',ir,jr,z00
+      !print '(A,1x,3(F8.2,1x))','Interpolating field to:',ir,jr,z00
 
       do n=1,it
 

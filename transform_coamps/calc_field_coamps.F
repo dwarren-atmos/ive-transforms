@@ -59,25 +59,36 @@ c
       data_units(1:len(data_units)) = ' '
       data_display_units(1:len(data_display_units)) = ' '
       iend = index(fld,'[',.true.) - 1
+
+
       if(iend.lt.0) then
         fld_cut = trim(fld)
       else
         fld_cut = fld(1:iend)
       end if
 
+      if(iend.ge.0) then
+        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+        if (err) return
+      end if
+
+      !print *,'IN CALC FIELD: ',iend,trim(fld_cut),'.'
+      !print *,'IN FIELD: ',len(fld),trim(fld),'.'
+
+      calc_field = 1
       select case (trim(fld_cut))
 c
 c  List of available fields
 c
       case ('LIST')
         call list
-        calc_field = 1
+        return
 c
 c  List of available fields
 c
       case ('SNDOUT_ENKF')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.(rcnt.ne.4.and.icnt.ne.1)) then
+         call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,1,0,err)
+         if (err) then
            write(*,'(2A)') 'Usage: ',
      &     'SNDOUT_ENKF[REAL IPT:REAL JPT: REAL z1:REAL Z2:INT TIME]'
            return
@@ -90,10 +101,10 @@ c
          end if
 
       case ('SNDOUT_COAMPS_IDEAL')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.(rcnt.ne.4.and.icnt.ne.1)) then
-           write(*,'(2A)') 'Usage: ',
-     &     'SNDOUT_COAMPS_IDEAL[REAL IPT:REAL JPT: ' //
+         call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,1,0,err)
+         if (err) then
+           write(*,'(3A)') 'Usage: ',
+     &     'SNDOUT_COAMPS_IDEAL[REAL IPT:REAL JPT: ',
      &     'REAL z1:INT TIME:REAL ROTANG]'
            return
          else
@@ -108,24 +119,21 @@ c
 c  Grid heights
 c
       case ('GRID')
-       call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+       call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+       if(err) return
+
        calc_field = vert_grid(carg(1),ndims,dims,stag,min,max,missing,
      &                 data_units,data_display_units,dim_names)
 c
 c  Translate domain
 c
       case ('TRANSLATE')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (rcnt.ne.2) then
-          write(6,*) 'Error:  expected two real arguments.'
-          return
-        else
-          call translate_domain(rarg(1),rarg(2))
-          calc_field = 1
-          return
-        end if
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,0,err)
+        if(err) return
+
+        call translate_domain(rarg(1),rarg(2))
+        calc_field = 1
+        return
 c
 c  Turn vertical coordinate transformation on or off
 c
@@ -139,29 +147,10 @@ c
         calc_field = 1
         return
 c
-c  Test field
-c
-      case ('TEST')
-c        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-c        if (err) then
-c          return
-c        else
-c          tstfld = 'test'
-c          WRITE(*,*) mkfield(tstfld,carg,iarg,rarg,ccnt,icnt,rcnt,4)
-        x = 122850
-        y = 193200
-        npts = 1
-c
-          return
-c        end if
-c
 c  Derivative (fourth order diff)
 c
        case ('D')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err) then
-           return
-         else if (ccnt.ne.2) then
+         if (ccnt.ne.2) then
            write(*,*) 'Error:  expected two string arguments.'
            return
          else
@@ -174,10 +163,7 @@ c
 c  Rotate u wind through angle theta
 c
       case ('UROT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (rcnt.ne.1) then
+        if (rcnt.ne.1) then
           write(6,*) 'Error:  expected one real arguments.' 
           write(6,*) 'The angle of rotation.'
           return
@@ -195,10 +181,7 @@ c
 c  Calculate Windspeed
 c
       case ('WSPD')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (ccnt.ne.2) then
+        if (ccnt.ne.2) then
           write(6,*) 'Error:  expected two character args.'
           return
         else
@@ -211,10 +194,7 @@ c
 c  Calculate relative diff (fld1 - fld2) / fld2
 c
       case ('RELDIFF')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (ccnt.ne.2.and.rcnt.ne.1) then
+        if (ccnt.ne.2.and.rcnt.ne.1) then
           write(6,*) 'Error:  expected two character args and 1 real.'
           return
         else
@@ -228,10 +208,7 @@ c
 ! timediff = fld(t1) - fld(t2)
 !
       case ('TIMEDIFF')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (ccnt.ne.1.and.icnt.ne.2) then
+        if (ccnt.ne.1.and.icnt.ne.2) then
           write(6,*) 'Error:  expected one character args and 2 ints.'
           return
         else
@@ -244,10 +221,7 @@ c
 !  Calculate the time mean (assuming equally spaced time intervals)
 !
       case ('TIMEMEAN')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (ccnt.ne.1) then
+        if (ccnt.ne.1) then
           write(6,*) 'USAGE: TIMEMEAN[CHAR FLD]'
           return
         else
@@ -268,7 +242,6 @@ c
 c  OMEGA
 c
       case ('OMEGA')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
         if(ccnt.ne.3) then
           print *,'ERROR: USAGE omega[U,V,W]'
           return
@@ -282,10 +255,7 @@ c
 c  Buoyancy frequency
 c    
       case ('NSPEC')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (ccnt.ne.1) then
+        if (ccnt.ne.1) then
           write(6,*) 'Error:  expected two character args.'
           return
         else
@@ -308,10 +278,7 @@ c
 c  MASS FLUX
 c
       case ('MASSFLX_LAT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          return
-        else if (rcnt.ne.4) then
+        if (rcnt.ne.4) then
           write(6,*) 'Error:  expected four real arguments.'
           return
         else if (icnt.ne.2) then
@@ -326,11 +293,7 @@ c
         end if
 c
       case ('MASSFLX_TOP')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-          write(6,*) 'Error:  Unknown'
-          return
-        else if (rcnt.ne.8) then
+        if (rcnt.ne.8) then
           write(6,*) 'Error:  expected eight real arguments.'
           return
         else if (icnt.ne.1) then
@@ -346,11 +309,7 @@ c
       end if
 c
       case ('MASSFLX_BOT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-        write(6,*) 'Error:  Unknown'
-          return
-        else if (rcnt.ne.8) then
+        if (rcnt.ne.8) then
           write(6,*) 'Error:  expected eight real arguments.'
           return
         else if (icnt.ne.1) then
@@ -372,11 +331,7 @@ c
       return
 
       case ('MAX_SPEC')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) then
-        write(6,*) 'Error:  Unknown'
-          return
-        else if (rcnt.ne.1) then
+        if (rcnt.ne.1) then
           write(6,*) 'Error:  expected 1 real argument.'
           return
         else if (ccnt.ne.1) then
@@ -392,8 +347,7 @@ c
 c  Calculates the temperature from theta and pressure
 c
       case ('THE2TEMP')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.ne.2) then
+         if (ccnt.ne.2) then
            write(*,*) 'Usage: THE2TEMP[THETA FIELD:PRESSURE FIELD]'
            return
          else
@@ -406,8 +360,7 @@ c
 c  Calculates the variance of the time dimension of a field
 c
       case ('VARIANCE')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.ne.1) then
+         if (ccnt.ne.1) then
            write(*,*) 'Usage: variance[fldname]'
            return
          else
@@ -420,8 +373,7 @@ c
 c  Interpolate a field to a height (z0<=0 --> abs(z0) agl )
 c
       case ('INTERPZ')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
+         if (ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real z (agl)]'
            return
          else
@@ -438,8 +390,7 @@ c
 c  Interpolate a field to a presure level
 c
       case ('INTERPP')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.ne.1.or.rcnt.ne.1) then
+         if (ccnt.ne.1.or.rcnt.ne.1) then
            write(*,*) 'Usage: interp[string field: real plevel]'
            return
          else
@@ -450,8 +401,7 @@ c
          end if
 c
       case ('GEOPOT')
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.rcnt.ne.1) then
+         if (rcnt.ne.1) then
            write(*,*) 'Usage: geopot[real plevel]'
            return
          else
@@ -464,14 +414,12 @@ c
 c  U and V components of the geostrophic wind
 c
       case ('UG')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          calc_field = geowind('U',
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
          return
 c
       case ('VG')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          calc_field = geopot('V',
      &                ndims,dims,stag,min,max,missing,data_units,
      &                data_display_units,dim_names)
@@ -480,65 +428,49 @@ c
 c  Calculates the kalman gain between a point and a field
 c
       case ('KGAIN')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.4) then
-           write(*,*) 'Usage: ',
-     &      'KGAIN[string var1: string var2: real R^2: ',
-     &              'real x0: real y0: real z0: ',
-     &              '{lmap T|F} ]'
-           return
-         else
-           ctmp = 'F' ; lmap = .false.
-           if(ccnt.eq.3) ctmp = carg(3)
-           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
-           calc_field = kgain(carg(1),carg(2),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,2,err)
+        if(err) return
+        
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.3) ctmp = carg(3)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+        calc_field = kgain(carg(1),carg(2),
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-           return
-         endif
+        return
 c
 c  Calculates the covariance between a point and a field
 c
       case ('ENS_COV')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
-           write(*,*) 'Usage: ',
-     &      'ENS_COV[string var1: string var2: ',
-     &              'real x0: real y0: real z0: ',
-     &              '{lmap T|F} ]'
-           return
-         else
-           ctmp = 'F' ; lmap = .false.
-           if(ccnt.eq.3) ctmp = carg(3)
-           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
-           calc_field = kgain(carg(1),carg(2),0.0,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,2,err)
+        if(err) return
+
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.3) ctmp = carg(3)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+
+        calc_field = kgain(carg(1),carg(2),0.0,
      &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-           return
-         endif
+        return
 c
 c  Calculates the covariance between a point and a field
 c
       case ('ENS_COR')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
-           write(*,*) 'Usage: ',
-     &      'ENS_COR[string var1: string var2: ',
-     &              'real x0: real y0: real z0: ',
-     &              '{lmap T|F} ]'
-           return
-         else
-           ctmp = 'F' ; lmap = .false.
-           if(ccnt.eq.3) ctmp = carg(3)
-           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
-           calc_field = kgain(carg(1),carg(2),0.0,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,2,err)
+        if(err) return
+
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.3) ctmp = carg(3)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+        calc_field = kgain(carg(1),carg(2),0.0,
      &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-           return
-         endif
+        return
+
 c
 c  Variable not found
 c
@@ -564,3 +496,39 @@ c
     
       return
       end function
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  This Subroutine checks for the correct usage of the ive function
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      subroutine calc_field_message(fld_cut,rcnt,icnt,ccnt
+     &                             ,rcnt_exp,icnt_exp,ccnt_exp,err)
+
+      integer, intent(in) :: rcnt,icnt,ccnt,rcnt_exp,icnt_exp,ccnt_exp
+      character(len=*), intent(in) :: fld_cut
+      logical, intent(inout) :: err
+      
+      err = .false.
+
+      if(rcnt.ne.rcnt_exp.or.icnt.ne.icnt_exp.or.ccnt.lt.ccnt_exp) then
+        print '(A,1x,A,A1)','-Incorrect usage of',trim(fld_cut),'.'
+        err=.true.
+      end if
+
+      if(rcnt.ne.rcnt_exp) then
+        print '(A,1x,I1,1x,A,1x,I1,A1)',
+     &    '---Expecting',rcnt_exp,'real argument received',rcnt,'.'
+      end if
+
+      if(icnt.ne.icnt_exp) then
+        print '(A,1x,I1,1x,A,1x,I1,A1)',
+     &    '---Expecting',icnt_exp,'integer argument received',icnt,'.'
+      end if
+
+      if(ccnt.lt.ccnt_exp) then
+        print '(A,1x,I1,1x,A,1x,I1,A1)',
+     &    '---Expecting',ccnt_exp,'character argument received',ccnt,'.'
+      end if
+
+      end subroutine
