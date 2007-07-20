@@ -1,5 +1,6 @@
       integer(ive_ptr) function calc_field(name,ndims,dims,stag,min,max,
      &             missing,data_units,data_display_units,dim_names)
+
       use default_module
 c     
 c     calc_field : This routine is used to calculate user-derived field.
@@ -110,17 +111,6 @@ c
        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
        calc_field = vert_grid(carg(1),ndims,dims,stag,min,max,missing,
      &                 data_units,data_display_units,dim_names)
-c      else if (isfunc(fld,'GRID',arg1,arg2,arg3)) then
-c        calc_field = vert_grid(arg1,ndims,dims,stag,min,max,missing,
-c     &                 data_units,data_display_units,dim_names)
-c
-c      else if (isfunc(fld,'XGRID',arg1,arg2,arg3)) then
-c        calc_field = x_grid(arg1,ndims,dims,stag,min,max,missing,
-c     &                 data_units,data_display_units,dim_names)
-c
-c      else if (isfunc(fld,'YGRID',arg1,arg2,arg3)) then
-c        calc_field = y_grid(arg1,ndims,dims,stag,min,max,missing,
-c     &                 data_units,data_display_units,dim_names)
 c
 c  Translate domain
 c
@@ -487,33 +477,13 @@ c
      &                data_display_units,dim_names)
          return
 c
-c  Calculates the covariance between a point and a field
-c
-      case ('ENS_COV')
-         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
-           write(*,*) 'Usage: ',
-     &      'ens_cov[string var1: string var2: real x0: real y0: ',
-     &              'real z0 : {lmap T|F} ]'
-           return
-         else
-           ctmp = 'F' ; lmap = .false.
-           if(ccnt.eq.3) ctmp = carg(3)
-           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
-           calc_field = ens_cov(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),lmap,
-     &                    ndims,dims,stag,min,max,missing,data_units,
-     &                    data_display_units,dim_names)
-           return
-         endif
-c
-c  Calculates the covariance between a point and a field
+c  Calculates the kalman gain between a point and a field
 c
       case ('KGAIN')
          call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
          if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.4) then
            write(*,*) 'Usage: ',
-     &      'ens_cov[string var1: string var2: real R^2: ',
+     &      'KGAIN[string var1: string var2: real R^2: ',
      &              'real x0: real y0: real z0: ',
      &              '{lmap T|F} ]'
            return
@@ -522,12 +492,53 @@ c
            if(ccnt.eq.3) ctmp = carg(3)
            if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
            calc_field = kgain(carg(1),carg(2),
-     &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,
+     &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
            return
          endif
 c
+c  Calculates the covariance between a point and a field
+c
+      case ('ENS_COV')
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
+           write(*,*) 'Usage: ',
+     &      'ENS_COV[string var1: string var2: ',
+     &              'real x0: real y0: real z0: ',
+     &              '{lmap T|F} ]'
+           return
+         else
+           ctmp = 'F' ; lmap = .false.
+           if(ccnt.eq.3) ctmp = carg(3)
+           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+           calc_field = kgain(carg(1),carg(2),0.0,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           return
+         endif
+c
+c  Calculates the covariance between a point and a field
+c
+      case ('ENS_COR')
+         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+         if (err.or.ccnt.lt.2.or.ccnt.gt.3.or.rcnt.ne.3) then
+           write(*,*) 'Usage: ',
+     &      'ENS_COR[string var1: string var2: ',
+     &              'real x0: real y0: real z0: ',
+     &              '{lmap T|F} ]'
+           return
+         else
+           ctmp = 'F' ; lmap = .false.
+           if(ccnt.eq.3) ctmp = carg(3)
+           if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+           calc_field = kgain(carg(1),carg(2),0.0,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+           return
+         endif
 c
 c  Variable not found
 c
