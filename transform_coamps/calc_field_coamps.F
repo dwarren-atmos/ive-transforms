@@ -428,7 +428,7 @@ c
 c  Calculates the kalman gain between a point and a field
 c
       case ('KGAIN')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,2,err)
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,0,2,err)
         if(err) return
         
         ctmp = 'F' ; lmap = .false.
