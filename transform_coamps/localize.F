@@ -44,7 +44,7 @@
         ix = nx+1 ; iy = ny+1 ; iz = nz+1
         dim_names(1) = 'nx' ; dim_names(2) = 'ny'
         dim_names(3) = 'nzp1' ; 
-        min(3) = 0.0 ; max(4) = ztop
+        min(3) = 0.0 ; max(3) = ztop
       end select
 
       mnk = ix*iy*iz
