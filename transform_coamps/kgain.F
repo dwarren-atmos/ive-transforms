@@ -102,7 +102,7 @@
       end if
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
-      dim_names(4) = 'one'
+      dim_names(4) = 'one' ; max(4) = 0.0 ; min(4) = 0.0
       dunits = outunits ; disunits = outdisunits
 
       return
