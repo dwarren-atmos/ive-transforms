@@ -52,7 +52,7 @@ c
      &                 interp_pres,geopot,x_grid,y_grid,
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
-     &                 interp_height, ens_cov, kgain
+     &                 interp_height, kgain, gc_local
 c
       call setstr(fld,name)
 c
@@ -438,6 +438,10 @@ c
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
+        print *,ndims,missing
+        do i = 1,4
+          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
+        end do
         return
 c
 c  Calculates the covariance between a point and a field
@@ -469,6 +473,23 @@ c
      &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
+        return
+
+c
+c  Calculates gaspari-coehn localization radius
+c
+      case ('GCLOC')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,0,err)
+        if(err) return
+
+        calc_field = gc_local(rarg(1),rarg(2),rarg(3),
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+
+        print *,ndims,missing
+        do i = 1,4
+          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
+        end do
         return
 
 c

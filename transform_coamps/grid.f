@@ -16,83 +16,42 @@ c***********************************************************************
 c           parameters:
 c***********************************************************************
 c
-      integer igrid
-      integer iref
-      integer istr1
-      integer istr2
-      integer jref
-      integer m
-      integer n
+      integer igrid ,iref ,istr1 ,istr2 ,jref ,m ,n
 c
-      real delx
-      real delx2
-      real dely
-      real dely2
-      real distx  (m,n)
-      real disty  (m,n)
-      real dxav1  (m,n)
-      real dxav2  (m,n)
-      real dxm    (m,n)
-      real dxu    (m,n)
-      real dxv    (m,n)
-      real dyav1  (m,n)
-      real dyav2  (m,n)
-      real dym    (m,n)
-      real dyu    (m,n)
-      real dyv    (m,n)
-      real f      (m,n)
+      real delx ,delx2 ,dely ,dely2
+      real distx(m,n), disty(m,n)
+      real dxav1(m,n) ,dxav2(m,n)
+      real dxm(m,n), dxu(m,n), dxv(m,n)
+      real dyav1(m,n), dyav2(m,n)
+      real dym(m,n) ,dyu(m,n) ,dyv(m,n)
+      real f(m,n)
       real flat
       real gcon
-      real grdi   (m,n)
-      real grdj   (m,n)
-      real grdlat (m,n)
-      real grdlon (m,n)
-      real hx     (m,n)
-      real hy     (m,n)
-      real reflat
-      real reflon
-      real grdrot (m,n)
-      real stdlon
-      real stdlt1
-      real stdlt2
-      real strgrd
-      real xpos   (m,n)
-      real ypos   (m,n)
+      real grdi(m,n) ,grdj(m,n) ,grdlat(m,n),grdlon(m,n)
+      real hx(m,n) ,hy(m,n)
+      real reflat ,reflon
+      real grdrot(m,n)
+      real stdlon ,stdlt1 ,stdlt2 ,strgrd
+      real xpos(m,n) ,ypos(m,n)
 c
 c***********************************************************************
 c          local variables and dynamic storage:
 c***********************************************************************
 c
-      integer i
+      integer i , j
       integer ihem
-      integer istr3
-      integer istr4
-      integer j
-      integer jstr1
-      integer jstr2
-      integer jstr3
-      integer jstr4
-      integer m1
-      integer mn
-      integer n1
+      integer istr3 , istr4 , jstr1 , jstr2 , jstr3 , jstr4
+      integer m1 , mn , n1
 c
       real angle
-      real cn1
-      real cn2
-      real cn3
-      real cn4
-      real cn5
-      real cn6
-      real con1
-      real con2
+      real cn1 , cn2 , cn3 , cn4 , cn5 , cn6
+      real con1 , con2
       real d2r
       real deg
       real ogcon
       real omega4
       real onedeg
-      real pi
-      real pi2
-      real      pi4
+      real pi , pi2 , pi4
       real r2d
       real radius
       real rih

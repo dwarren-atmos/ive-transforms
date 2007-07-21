@@ -8,7 +8,7 @@
 # Add support for SGI IRIX.
 #
 
-MODLIB	= ./
+MODLIB	= ./mods
 
 machine := ${shell /usr/bin/arch}
 ifeq (${machine},alpha)
@@ -48,6 +48,7 @@ FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 #
 MODS	=	default_module.o   	\
+            module_mapping.o   	\
 			misc_module.o
 
 OBJS_F = 						\
@@ -88,7 +89,7 @@ OBJS_F = 						\
 		 sound_out.o 			\
 		 point_val.o			\
 		 kgain.o				\
-		 ens_cov.o
+		 localize.o			
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
