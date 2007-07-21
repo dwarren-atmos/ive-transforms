@@ -24,18 +24,19 @@
 
       print *,olat,olon,locrad
 
-      dim_names(3) = 'nz' ; 
-      max(1) = real(nx-1)*dx ; max(2) = real(nx)*dy ; min(:) = 0.0
-      min(1:2) = 0.0 ; min(3) = sgz_min ; min(4) = 0.0
+      dim_names(3) = 'nz' ; dim_names(4) = 'one'
+      max(1) = real(nx-1)*dx ; max(2) = real(nx)*dy 
+      max(3) = sgz_max ; max(4) = 0.0
+      min(1) = 0.0 ; min(2) = 0.0 ; min(3) = sgz_min ; min(4) = 0.0
       select case (stagpts)
       case ('U')
         ix = nx ; iy = ny+1 ; iz = nz
         dim_names(1) = 'nxm1' ; dim_names(2) = 'ny'  
-        min(1) = 0.5*dx ; max = real(ix-1)*dx
+        min(1) = 0.5*dx ; max(1) = real(ix-1)*dx
       case ('V')
         ix = nx+1 ; iy = ny ; iz = nz
         dim_names(1) = 'nx' ; dim_names(2) = 'nym1'
-        min(2) = 0.5*dy ; max = real(iy-1)*dy
+        min(2) = 0.5*dy ; max(2) = real(iy-1)*dy
       case ('T')
         ix = nx+1 ; iy = ny+1 ; iz = nz
         dim_names(1) = 'nx' ; dim_names(2) = 'ny'
@@ -43,12 +44,10 @@
         ix = nx+1 ; iy = ny+1 ; iz = nz+1
         dim_names(1) = 'nx' ; dim_names(2) = 'ny'
         dim_names(3) = 'nzp1' ; 
+        min(3) = 0.0 ; max(4) = ztop
       end select
 
-
-
-
-      mnk = ix*iy
+      mnk = ix*iy*iz
       gc_local = 0 ; gc_local = getmem(mnk)
       if(gc_local.eq.0) then
         write(*,*) 'Error:  Cannot allocate space for kgain'
@@ -64,19 +63,18 @@
 
         gc_tmp = gc_local_calc(dist, locrad)
 
-        !do kk=1,iz
-          iptr = (ii-1)*ix + jj
+        do kk=1,iz
+          iptr = ((ii-1)*iy + jj)*iz + kk 
           call s_val(%val(gc_local),iptr,gc_tmp)
-        !end do
+        end do
       end do ; end do 
         print *, iptr,mnk,gc_tmp
 
       ndims = 4
       dims(1) = ix ; dims(2) = iy ; dims(3) = ix ; dims(4) = 1
-      dim_names(4) = 'one'
-      max(3:4) = 0.0 ; min(:) = 0.0 ; stag(:) = 0.0
-      miss = -9999.0
 
+
+      miss = -9999.0
       dunits = ' ' ; disunits = ' '
 
       return
