@@ -100,6 +100,7 @@ c
         stop
       end if
       call getrarr("grid_delta",delta,4,error)
+      print *,'DELTA(3)',delta(3)
       if (error) then
         write(6,*) 'Error:  could not get grid spacing in new_file.'
         stop
@@ -157,6 +158,7 @@ c
 
       tsgz = getvar('sgz',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
+      print *,'get sgz max(3): ',max(3)
       if (tsgz.eq.0) then
         sgz = 0
         write(6,*) 'Error:  could not find vertical coordinate ',

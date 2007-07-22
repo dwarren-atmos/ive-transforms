@@ -1,4 +1,4 @@
-      integer(ive_ptr) function gc_local(olat,olon,locrad,stagpts,
+      integer(ive_ptr) function localize(olat,olon,locrad,stagpts,
      &                                ndims,dims,stag,min,max,
      &                                miss,dunits,disunits,dim_names)
 
@@ -14,68 +14,45 @@
       real, intent(out) :: stag(4),min(4),max(4),miss
       character(len=*), intent(inout) :: dunits,disunits,dim_names(4)
 
-      integer :: ix, iy, iz, Ne, mnk
+      integer :: ix, iy, iz, it, Ne, mnk
       integer :: ii, jj, kk, iptr, iflag(2)
-      real :: phys(2), grid(2), xlon, xlat, dist, gc_tmp
+      real :: phys(2), grid(2), xlon, xlat, dist, local_tmp
 
       real, external :: gc_local_calc
 
       data iflag/1,1/
 
-      print *,olat,olon,locrad
 
-      dim_names(3) = 'nz' ; dim_names(4) = 'one'
-      max(1) = real(nx-1)*dx ; max(2) = real(nx)*dy 
-      max(3) = sgz_max ; max(4) = 0.0
-      min(1) = 0.0 ; min(2) = 0.0 ; min(3) = sgz_min ; min(4) = 0.0
-      select case (stagpts)
-      case ('U')
-        ix = nx ; iy = ny+1 ; iz = nz
-        dim_names(1) = 'nxm1' ; dim_names(2) = 'ny'  
-        min(1) = 0.5*dx ; max(1) = real(ix-1)*dx
-      case ('V')
-        ix = nx+1 ; iy = ny ; iz = nz
-        dim_names(1) = 'nx' ; dim_names(2) = 'nym1'
-        min(2) = 0.5*dy ; max(2) = real(iy-1)*dy
-      case ('T')
-        ix = nx+1 ; iy = ny+1 ; iz = nz
-        dim_names(1) = 'nx' ; dim_names(2) = 'ny'
-      case ('W')
-        ix = nx+1 ; iy = ny+1 ; iz = nz+1
-        dim_names(1) = 'nx' ; dim_names(2) = 'ny'
-        dim_names(3) = 'nzp1' ; 
-        min(3) = 0.0 ; max(3) = ztop
-      end select
+      call set_var_meta(stagpts
+     &                 ,ndims,dims,stag,min,max
+     &                 ,miss,dim_names)
+      ix = dims(1) ; iy = dims(2) ; iz = dims(3)
+
+      print *,'max/min(3)',max(3),min(3)
+
+      max(4) = 0.0 ; dim_names(4) = 'one' ; dims(4) = 1
+      disunits = ' ' ; dunits = ' '
 
       mnk = ix*iy*iz
-      gc_local = 0 ; gc_local = getmem(mnk)
-      if(gc_local.eq.0) then
-        write(*,*) 'Error:  Cannot allocate space for kgain'
+      localize = 0 ; localize = getmem(mnk)
+      if(localize.eq.0) then
+        write(*,*) 'Error:  Cannot allocate space for localize'
         return
       endif
 
       do ii=1,ix ; do jj=1,iy
 
-        grid(2) = real(ii) ; grid(1) = real(jj)
+        grid(1) = real(ii) ; grid(2) = real(jj)
         call index_2_phys(phys,grid,iflag,2,1)
         call phys_2_lonlat(phys(1),phys(2),xlon,xlat,1)
         dist = earth_dist(olon, olat, xlon, xlat)
-
-        gc_tmp = gc_local_calc(dist, locrad)
+        local_tmp = gc_local_calc(dist, locrad)
 
         do kk=1,iz
-          iptr = ((ii-1)*iy + jj)*iz + kk 
-          call s_val(%val(gc_local),iptr,gc_tmp)
+          call set_ptr(%val(localize),local_tmp,ii,jj,kk,1,ix,iy,iz,1)
         end do
+
       end do ; end do 
-        print *, iptr,mnk,gc_tmp
-
-      ndims = 4
-      dims(1) = ix ; dims(2) = iy ; dims(3) = ix ; dims(4) = 1
-
-
-      miss = -9999.0
-      dunits = ' ' ; disunits = ' '
 
       return
       end
@@ -110,4 +87,20 @@
 
       return
       end function
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Sets the i,j,k,n value of a pointer
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine set_ptr(varout,varin,ii,jj,kk,nn,ix,iy,iz,it)
+
+      integer, intent(in) :: ii,jj,kk,nn,ix,iy,iz,it
+      real, intent(in) :: varin
+      real, intent(inout) :: varout(ix,iy,iz,it)
+
+      varout(ii,jj,kk,nn) = varin
+
+      return
+      end subroutine
 
