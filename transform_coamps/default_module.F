@@ -47,6 +47,13 @@ c
 
       external :: getvar, getmem, get_ter_pt
 
+      integer, parameter :: MAX_LEN = 80, dim_len = 4
+      TYPE meta_ive 
+        integer :: ndims, dims(dim_len) 
+        real :: stag(dim_len), max_val(dim_len), min_val(dim_len), miss
+        character(len=MAX_LEN) :: dunits, disunits, dim_names(dim_len)
+      END TYPE
+
       CONTAINS
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -54,44 +61,50 @@ c
 !  Sets the meta data associated with an ive variable
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      subroutine set_var_meta(stagpts
-     &                 ,ndims,dims,stag,min,max
-     &                 ,miss,dim_names)
+      subroutine set_var_meta(stagpts,meta)
+c     &                 ,ndims,dims,stag,min,max
+c     &                 ,miss,dim_names)
 
       !USE DEFAULT_MODULE
 
       character(len=*), intent(in) :: stagpts
 
-      integer, intent(out) :: ndims, dims(4)
-      real, intent(out) :: stag(4), min(4), max(4), miss
-      character(len=*), intent(out) :: dim_names(4)
+      type(meta_ive), intent(out) :: meta
+
+      !integer, intent(out) :: ndims, dims(4)
+      !real, intent(out) :: stag(4), min(4), max(4), miss
+      !character(len=*), intent(out) :: dim_names(4)
 
       real :: r_val
 
       ! SET THE DEFAULTS OF ALL OUTPUT VARIABLES
-      dim_names(1) = 'nx' ; dim_names(2) = 'ny'
-      dim_names(3) = 'nz' ; dim_names(4) = 'time'
-      dims(1) = nx+1 ; dims(2) = ny+1 ; dims(3) = nz ; dims(4) = ntime
+      meta%dim_names(1) = 'nx' ; meta%dim_names(2) = 'ny'
+      meta%dim_names(3) = 'nz' ; meta%dim_names(4) = 'time'
+      meta%dims(1) = nx+1 ; meta%dims(2) = ny+1 
+      meta%dims(3) = nz ; meta%dims(4) = ntime
 
-      max(1) = real(nx)*dx ; max(2) = real(ny)*dy
-      !max(3) = sgz_max ; max(4) = r_val(%val(time),ntime)
-      min(3) = sgz_min ; max(3) = (ztop)/real(nz+1)*real(nz) 
+      meta%max(1) = real(nx)*dx ; max(2) = real(ny)*dy
+      meta%min(3) = sgz_min ; meta%max(3) = (ztop)/real(nz+1)*real(nz) 
+      !meta%max(3) = sgz_max 
       max(4) = r_val(%val(time),ntime)
       min(:) = 0.0 ! set default min value to 0
-      stag(:) = 0.0 ; ndims = 4 ; miss = -9999.0 
+      metat%stag(:) = 0.0 ; meta%ndims = 4 ; meta%miss = -9999.0 
 
       select case (trim(stagpts))
       case ('U')
-        dims(1) = nx ; dim_names(1) = 'nxm1' ; stag(1) = 0.0
-        min(1) = 0.5*dx ; max(1) = (real(nx)-0.5)*dx
+        meta%dims(1) = nx ; meta%dim_names(1) = 'nxm1' 
+        meta%min(1) = 0.5*dx ; meta%max(1) = (real(nx)-0.5)*dx
+        meta%stag(1) = 0.0
 
       case ('V')
-        dims(2) = ny ; dim_names(2) = 'nym1' ; stag(2) = 0.0
-        min(2) = 0.5*dy ; max(2) = (real(ny)-0.5)*dy
+        meta%dims(2) = ny ; meta%dim_names(2) = 'nym1'
+        meta%min(2) = 0.5*dy ; meta%max(2) = (real(ny)-0.5)*dy
+        meta%stag(2) = 0.0
 
       case ('W')
-        dims(3) = nz + 1 ; dim_names(3) = 'nzp1' ;  stag(3) = 0.0
-        min(3) = 0.0 ; max(4) = ztop
+        meta%dims(3) = nz + 1 ; meta%dim_names(3) = 'nzp1' 
+        meta%min(3) = 0.0 ; meta%max(4) = ztop
+        meta%stag(3) = 0.0
 
       end select
 
