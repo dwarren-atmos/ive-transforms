@@ -487,7 +487,7 @@ c     &                    data_display_units,dim_names)
         ! TEMPORARY UNTIL type(meta_ive) is fully implemented
         ndims = meta%ndims ; dims(:) = meta%dims(:) 
         stag(:) = meta%stag(:) ; min(:) = meta%max(:) 
-        min(:) = meta%min(:) ; missing = meta%missing
+        min(:) = meta%min(:) ; missing = meta%miss
         data_units(:) = meta%dunits(:) 
         data_display_units(:) = meta%disunits(:) 
         dim_names(:) = meta%dim_names(:) 

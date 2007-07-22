@@ -50,7 +50,7 @@ c
       integer, parameter :: MAX_LEN = 80, dim_len = 4
       TYPE meta_ive 
         integer :: ndims, dims(dim_len) 
-        real :: stag(dim_len), max_val(dim_len), min_val(dim_len), miss
+        real :: stag(dim_len), max(dim_len), min(dim_len), miss
         character(len=MAX_LEN) :: dunits, disunits, dim_names(dim_len)
       END TYPE
 
@@ -83,12 +83,12 @@ c     &                 ,miss,dim_names)
       meta%dims(1) = nx+1 ; meta%dims(2) = ny+1 
       meta%dims(3) = nz ; meta%dims(4) = ntime
 
-      meta%max(1) = real(nx)*dx ; max(2) = real(ny)*dy
+      meta%max(1) = real(nx)*dx ; meta%max(2) = real(ny)*dy
       meta%min(3) = sgz_min ; meta%max(3) = (ztop)/real(nz+1)*real(nz) 
       !meta%max(3) = sgz_max 
-      max(4) = r_val(%val(time),ntime)
-      min(:) = 0.0 ! set default min value to 0
-      metat%stag(:) = 0.0 ; meta%ndims = 4 ; meta%miss = -9999.0 
+      meta%max(4) = r_val(%val(time),ntime)
+      meta%min(:) = 0.0 ! set default min value to 0
+      meta%stag(:) = 0.0 ; meta%ndims = 4 ; meta%miss = -9999.0 
 
       select case (trim(stagpts))
       case ('U')
