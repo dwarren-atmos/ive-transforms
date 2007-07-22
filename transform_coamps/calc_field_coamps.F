@@ -52,7 +52,7 @@ c
      &                 interp_pres,geopot,x_grid,y_grid,
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
-     &                 interp_height, kgain, gc_local
+     &                 interp_height, kgain, localize
 c
       call setstr(fld,name)
 c
@@ -71,9 +71,6 @@ c
         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
         if (err) return
       end if
-
-      !print *,'IN CALC FIELD: ',iend,trim(fld_cut),'.'
-      !print *,'IN FIELD: ',len(fld),trim(fld),'.'
 
       calc_field = 1
       select case (trim(fld_cut))
@@ -479,14 +476,12 @@ c
 c  Calculates gaspari-coehn localization radius
 c
       case ('GCLOC')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,0,err)
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,1,err)
         if(err) return
 
-        calc_field = gc_local(rarg(1),rarg(2),rarg(3),
+        calc_field = localize(rarg(1),rarg(2),rarg(3),trim(carg(1)),
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-
-        print *,ndims,missing
         do i = 1,4
           print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
         end do

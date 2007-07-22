@@ -6,10 +6,11 @@
 *    the presence of a decimal distinguishes a real argument from
 *    an integer argument.
 *
-      integer iarg(10),rcnt,icnt,ccnt
-      real rarg(10)
-      character*(*) fld,carg(10)
-      logical err
+      integer, parameter :: argmax=10
+      integer :: iarg(argmax),rcnt,icnt,ccnt
+      real :: rarg(argmax)
+      character(len=*) :: fld,carg(argmax)
+      logical :: err
 
       integer i1,iend,k,bcnt,str2int
       real str2real
@@ -104,7 +105,7 @@ c        return
         if (charstr(cstr(i1+1:k-1))) then
 
           ccnt = ccnt+1
-          if (ccnt.gt.10) then
+          if (ccnt.gt.argmax) then
             write(*,*) 'Ooops!  Too many string arguments!'
             err = .true.
             return
@@ -114,7 +115,7 @@ c        return
         else if (realstr(cstr(i1+1:k-1))) then
 
           rcnt = rcnt+1
-          if (rcnt.gt.10) then
+          if (rcnt.gt.argmax) then
             write(*,*) 'Ooops!  Too many real arguments!'
             err = .true.
             return
@@ -126,7 +127,7 @@ c        return
         else 
 
           icnt = icnt+1
-          if (icnt.gt.10) then
+          if (icnt.gt.argmax) then
             write(*,*) 'Ooops!  Too many integer arguments!'
             err = .true.
             return

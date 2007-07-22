@@ -47,4 +47,54 @@ c
 
       external :: getvar, getmem, get_ter_pt
 
+      CONTAINS
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Sets the meta data associated with an ive variable
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine set_var_meta(stagpts
+     &                 ,ndims,dims,stag,min,max
+     &                 ,miss,dim_names)
+
+      !USE DEFAULT_MODULE
+
+      character(len=*), intent(in) :: stagpts
+
+      integer, intent(out) :: ndims, dims(4)
+      real, intent(out) :: stag(4), min(4), max(4), miss
+      character(len=*), intent(out) :: dim_names(4)
+
+      real :: r_val
+
+      ! SET THE DEFAULTS OF ALL OUTPUT VARIABLES
+      dim_names(1) = 'nx' ; dim_names(2) = 'ny'
+      dim_names(3) = 'nz' ; dim_names(4) = 'time'
+      dims(1) = nx+1 ; dims(2) = ny+1 ; dims(3) = nz ; dims(4) = ntime
+
+      max(1) = real(nx)*dx ; max(2) = real(ny)*dy
+      !max(3) = sgz_max ; max(4) = r_val(%val(time),ntime)
+      min(3) = sgz_min ; max(3) = (ztop)/real(nz+1)*real(nz) 
+      max(4) = r_val(%val(time),ntime)
+      min(:) = 0.0 ! set default min value to 0
+      stag(:) = 0.0 ; ndims = 4 ; miss = -9999.0 
+
+      select case (trim(stagpts))
+      case ('U')
+        dims(1) = nx ; dim_names(1) = 'nxm1' ; stag(1) = 0.0
+        min(1) = 0.5*dx ; max(1) = (real(nx)-0.5)*dx
+
+      case ('V')
+        dims(2) = ny ; dim_names(2) = 'nym1' ; stag(2) = 0.0
+        min(2) = 0.5*dy ; max(2) = (real(ny)-0.5)*dy
+
+      case ('W')
+        dims(3) = nz + 1 ; dim_names(3) = 'nzp1' ;  stag(3) = 0.0
+        min(3) = 0.0 ; max(4) = ztop
+
+      end select
+
+      return
+      end subroutine
       END MODULE
