@@ -1,6 +1,6 @@
-      integer(ive_ptr) function localize(olat,olon,locrad,stagpts,
-     &                                ndims,dims,stag,min,max,
-     &                                miss,dunits,disunits,dim_names)
+      integer(ive_ptr) function localize(olat,olon,locrad,stagpts,meta)
+c     &                                ndims,dims,stag,min,max,
+c     &                                miss,dunits,disunits,dim_names)
 
       use default_module
       use module_mapping
@@ -10,9 +10,10 @@
       real, intent(in) :: olat, olon, locrad
       character(len=1), intent(in) :: stagpts
 
-      integer, intent(out) :: ndims,dims(4)
-      real, intent(out) :: stag(4),min(4),max(4),miss
-      character(len=*), intent(inout) :: dunits,disunits,dim_names(4)
+      type(meta_ive), intent(out) :: meta
+!      integer, intent(out) :: ndims,dims(4)
+!      real, intent(out) :: stag(4),min(4),max(4),miss
+!      character(len=*), intent(inout) :: dunits,disunits,dim_names(4)
 
       integer :: ix, iy, iz, it, Ne, mnk
       integer :: ii, jj, kk, iptr, iflag(2)
@@ -23,15 +24,15 @@
       data iflag/1,1/
 
 
-      call set_var_meta(stagpts
-     &                 ,ndims,dims,stag,min,max
-     &                 ,miss,dim_names)
-      ix = dims(1) ; iy = dims(2) ; iz = dims(3)
+      call set_var_meta(stagpts,meta)
+c     &                 ,ndims,dims,stag,min,max
+c     &                 ,miss,dim_names)
+      ix = meta%dims(1) ; iy = meta%dims(2) ; iz = meta%dims(3)
 
-      print *,'max/min(3)',max(3),min(3)
+      print *,'max/min(3)',meta%max(3),meta%min(3)
 
-      max(4) = 0.0 ; dim_names(4) = 'one' ; dims(4) = 1
-      disunits = ' ' ; dunits = ' '
+      meta%max(4)=0.0 ; meta%dim_names(4)='one' ; meta%dims(4)=1
+      meta%disunits = ' ' ; meta%dunits = ' '
 
       mnk = ix*iy*iz
       localize = 0 ; localize = getmem(mnk)

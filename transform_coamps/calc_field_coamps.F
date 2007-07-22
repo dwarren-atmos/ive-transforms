@@ -22,6 +22,7 @@ c     data_display_units
 c		character	Units to use to display field (output).
 c     dim_names character	Names of the dimensions in the field (output).
 c
+      type(meta_ive) :: meta
       integer :: ndims,dims(4),i
       real    :: stag(4),min(4),max(4),missing
       character(len=*) :: name,data_units,data_display_units
@@ -479,9 +480,19 @@ c
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,1,err)
         if(err) return
 
-        calc_field = localize(rarg(1),rarg(2),rarg(3),trim(carg(1)),
-     &                    ndims,dims,stag,min,max,missing,data_units,
-     &                    data_display_units,dim_names)
+        calc_field = localize(rarg(1),rarg(2),rarg(3),carg(1),meta)
+c     &                    ndims,dims,stag,min,max,missing,data_units,
+c     &                    data_display_units,dim_names)
+
+        ! TEMPORARY UNTIL type(meta_ive) is fully implemented
+        ndims = meta%ndims ; dims(:) = meta%dims(:) 
+        stag(:) = meta%stag(:) ; min(:) = meta%max(:) 
+        min(:) = meta%min(:) ; missing = meta%missing
+        data_units(:) = meta%dunits(:) 
+        data_display_units(:) = meta%disunits(:) 
+        dim_names(:) = meta%dim_names(:) 
+
+        
         do i = 1,4
           print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
         end do
