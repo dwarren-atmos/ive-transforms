@@ -434,6 +434,7 @@ c
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
+     &                    0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         print *,ndims,missing
@@ -453,7 +454,7 @@ c
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
 
         calc_field = kgain(carg(1),carg(2),0.0,
-     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         return
@@ -468,7 +469,7 @@ c
         if(ccnt.eq.3) ctmp = carg(3)
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),0.0,
-     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         return
@@ -493,6 +494,27 @@ c     &                    data_display_units,dim_names)
         dim_names(:) = meta%dim_names(:) 
 
         
+        do i = 1,4
+          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
+        end do
+        return
+c
+c  Calculates the hierarchical localization factor
+c
+      case ('HIERLOC')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,1,2,err)
+        if(err) return
+        
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.3) ctmp = carg(3)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+        calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
+     &                    iarg(1),
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+        print *,ndims,missing
+
         do i = 1,4
           print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
         end do
