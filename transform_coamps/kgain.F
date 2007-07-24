@@ -1,5 +1,5 @@
       integer(ive_ptr) function kgain(obs_name,upd_name,R,x0,y0,z0,
-     &                                mapon,calc_type,
+     &                                mapon,calc_type,Nbin,
      &                                ndims,dims,stag,min,max,
      &                                miss,dunits,disunits,dim_names)
 
@@ -8,6 +8,7 @@
       implicit none
 
       real, intent(in) :: x0, y0, z0, R
+      integer, intent(in) :: Nbin 
       character(len=*), intent(in) :: calc_type
       character(len=*), intent(in) :: obs_name, upd_name
       logical :: mapon
@@ -20,7 +21,7 @@
       integer :: iu, iv, iw, it,kk, iflag(2)
       real :: ir, jr, phys(2), grid(2)
       character (len=80) :: outunits,outdisunits
-      logical :: new, lkgain, lcov, lcor
+      logical :: new, lkgain, lcov, lcor, lhier
       integer(ive_ptr) :: xvar,xprior
 
       real, allocatable :: ye(:)
@@ -31,10 +32,16 @@
 
       case('kgain','k','gain','KGAIN')
         lkgain = .true. ; lcov = .false. ; lcor = .false.
+        lhier = .false.
       case('cov','covariance','ENS_COV')
         lkgain = .false. ; lcov = .true. ; lcor = .false.
+        lhier = .false.
       case('cor','correlation','ENS_COR')
         lkgain = .false. ; lcov = .false. ; lcor = .true.
+        lhier = .false.
+      case('hier','hier_loc','hloc','HIERLOC')
+        lkgain = .false. ; lcov = .false. ; lcor = .false. 
+        lhier = .true.
       case default
         print *,'UNKOWN FIELD TO CALCULATE, RETURNING'
         kgain = 0
@@ -99,6 +106,8 @@
         call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
       elseif(lcor) then
         call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
+      elseif(lhier) then
+        call hierloc_calc(%val(kgain),ye,%val(xprior),mnk,Ne,Nbin)
       end if
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
@@ -185,6 +194,65 @@
           covcor(i) = sum(ye_pert(:)*xe_pert(:))*cov_fac
         enddo
       endif
+
+      return
+      end
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculates hierarchial localization factor 
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine hierloc_calc(hloc,ye,xe,mnk,Ne,Nbin)
+
+      integer, intent(in) :: mnk,Ne,Nbin
+      real, intent(in) :: ye(Ne), xe(mnk,Ne)
+
+      real, intent(out) :: hloc(mnk)
+
+      integer :: i,n,Nmem,bin
+      real :: ye_mean, xe_mean,mean_fac,cov_fac,kdenom
+      real :: beta(mnk), beta_sum(mnk), beta_var(mnk)
+
+      integer, allocatable :: pnt_mem(:)
+      real, allocatable :: ye_bin(:), ye_pert(:)
+     &                     xe_bin(:,:), xe_pert(:)
+
+      Nmem = int(Ne/Nbin)  
+      allocate(pnt_mem(Nmem))
+      allocate(ye_bin(Nmem)) ; allocate(ye_pert(Nmem))
+      allocate(xe_bin(mnk,Nmem)) ; allocate(xe_pert(Nmem))
+      
+      mean_fac = 1.0/real(Nmem) ; cov_fac = 1.0/real(Nmem-1)
+
+      do bin=1,Nbin       
+c        call rand_int(pnt_mem,Nmem,Ne)
+        do i=Nmem*(bin-1)+1,Nmem*bin
+          pnt_mem(i) = i
+        end do
+
+        do n=1,Nmem
+          ye_bin(n) = ye(pnt_mem(n))
+          xe_bin(:,n) = xe(:,pnt_mem(n))
+        end do
+
+        ye_mean = sum(ye_bin(:))*mean_fac
+        ye_pert(:) = ye_bin(:) - ye_mean
+        ye_var = sum(ye_pert(:)*ye_pert(:))*cov_fac
+        kdenom = 1/(ye_var + R2)
+
+        do i=1,mnk
+          xe_mean = sum(xe_bin(i,:))*mean_fac
+          xe_pert(:) = xe_bin(i,:) - xe_mean
+          beta(i) = sum(ye_pert(:)*xe_pert(:))*cov_fac*kdenom
+        end do
+
+        beta_sum(:) = beta(:) + beta_sum(:)
+        beta_var(:) = beta(:)**2 + beta_var(:)
+
+      end do
+
+      hloc(:) = (beta_sum(:)**2/beta_var - 1)*cov_fac 
 
       return
       end
