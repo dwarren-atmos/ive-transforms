@@ -2,7 +2,7 @@
       subroutine metric_calc(zbot_p,zbot_u,zbot_v,sgz,wgz,dqdx_xy,
      >                         dqdx_zt,dqdx_zw,dqdy_xy,dqdy_zt,
      >                         dqdy_zw,dqdz,dzdq,ztop,dx,dy,
-     >				 nx,ny,nz)
+     >                         nx,ny,nz)
 
       integer nx,ny,nz
       real zbot_p(nx+1,ny+1),zbot_u(nx,ny+1),zbot_v(nx+1,ny)

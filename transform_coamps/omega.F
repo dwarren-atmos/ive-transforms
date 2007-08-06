@@ -1,28 +1,26 @@
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c
-c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Calculate the vertical velocity on the untransformed grid, omega
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       integer(ive_ptr) function omega(uvarnm,vvarnm,wvarnm,ndims,
      &                       dims,stag,min,max,miss,
      &                       dunits,disunits,dim_names)
       use default_module
 
       implicit none
-c
-c
+
       integer ndims,dims(4)
 	  real stag(4),min(4),max(4),miss
       character(len=*) :: uvarnm,vvarnm,wvarnm
       character(len=*) ::dunits,disunits,dim_names(4)
-c
+
       integer ntotal,utotal,vtotal,i
 	  logical new
       integer(ive_ptr) uvartmp,vvartmp,uvarin,vvarin,wvarin
       integer(ive_ptr) uvar,vvar,wvar
       character(len=10) :: freevar
-c
-c     new = .true.
+
       ntotal = (nx+1)*(ny+1)*(nz+1)*ntime
       utotal = (nx)*(ny+1)*(nz+1)*ntime
       vtotal = (nx+1)*(ny)*(nz+1)*ntime
@@ -30,18 +28,15 @@ c     new = .true.
 c
 c  Get U variable
 c
-c
       uvarin = 0
       uvarin = getvar(uvarnm,ndims,dims,stag,min,max,miss,dunits,
      &          disunits,dim_names,new)
-c
       if(uvarin.eq.0) then
         write(6,*)  'Error:  cannot access ',uvarnm
         return
       endif
 
-      uvartmp = 0
-      uvartmp = getmem(utotal)
+      uvartmp = 0 ; uvartmp = getmem(utotal)
       if(uvartmp.eq.0) then
         write(6,*) 'Error:  Cannot allocate memory in for uvartmp'
         return
@@ -50,8 +45,7 @@ c
       call mult_var(%val(uvartmp),%val(uvarin)
      &             ,%val(dqdx_xy),1,0,0,nx,ny,nz,ntime)
 c
-      uvar = 0
-      uvar = getmem(ntotal)
+      uvar = 0 ; uvar = getmem(ntotal)
       if(uvar.eq.0) then
         write(6,*) 'Error:  Cannot allocate memory for ',uvarnm
         return
@@ -78,8 +72,7 @@ c
         return
       endif
 c
-      vvartmp = 0
-      vvartmp = getmem(vtotal)
+      vvartmp = 0 ; vvartmp = getmem(vtotal)
       if(vvartmp.eq.0) then
         write(6,*) 'Error:  Cannot allocate memory in for vvartmp'
         return
@@ -88,8 +81,7 @@ c
       call mult_var(%val(vvartmp),%val(vvarin)
      &             ,%val(dqdy_xy),0,1,0,nx,ny,nz,ntime)
 c
-      vvar = 0
-      vvar = getmem(ntotal)
+      vvar = 0 ; vvar = getmem(ntotal)
       if(vvar.eq.0) then
         write(6,*) 'Error:  Cannot allocate memory for ', vvarnm
         return
@@ -117,8 +109,7 @@ c
         return
       endif
 c
-      wvar = 0
-      wvar = getmem(ntotal)
+      wvar = 0 ; wvar = getmem(ntotal)
       if(wvar.eq.0) then
         write(6,*) 'Error:  Cannot allocate memory for wvar'
         return
