@@ -2,6 +2,7 @@
      &             missing,data_units,data_display_units,dim_names)
 
       use default_module
+      use misc_module
 c     
 c     calc_field : This routine is used to calculate user-derived field.
 c     The return value of the routine is a integer(ive_ptr) to the field values.
@@ -22,7 +23,7 @@ c     data_display_units
 c		character	Units to use to display field (output).
 c     dim_names character	Names of the dimensions in the field (output).
 c
-      type(meta_ive) :: meta
+c      type(meta_ive) :: meta
       integer :: ndims,dims(4),i
       real    :: stag(4),min(4),max(4),missing
       character(len=*) :: name,data_units,data_display_units
@@ -130,6 +131,16 @@ c
         if(err) return
 
         call translate_domain(rarg(1),rarg(2))
+        calc_field = 1
+        return
+c
+c  Translate time
+c
+      case ('TRANS_TIME')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
+        if(err) return
+
+        call translate_time(rarg(1))
         calc_field = 1
         return
 c
@@ -434,7 +445,7 @@ c
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
-     &                    0,
+     &                    0,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         print *,ndims,missing
@@ -454,7 +465,7 @@ c
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
 
         calc_field = kgain(carg(1),carg(2),0.0,
-     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         return
@@ -469,7 +480,7 @@ c
         if(ccnt.eq.3) ctmp = carg(3)
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),0.0,
-     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,
+     &                    rarg(1),rarg(2),rarg(3),lmap,fld_cut,0,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
         return
@@ -481,44 +492,33 @@ c
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,3,0,1,err)
         if(err) return
 
-        calc_field = localize(rarg(1),rarg(2),rarg(3),carg(1),meta)
-c     &                    ndims,dims,stag,min,max,missing,data_units,
-c     &                    data_display_units,dim_names)
+        calc_field = localize(rarg(2),rarg(1),rarg(3),carg(1),
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
 
         ! TEMPORARY UNTIL type(meta_ive) is fully implemented
-        ndims = meta%ndims ; dims(:) = meta%dims(:) 
-        stag(:) = meta%stag(:) ; min(:) = meta%max(:) 
-        min(:) = meta%min(:) ; missing = meta%miss
-        data_units(:) = meta%dunits(:) 
-        data_display_units(:) = meta%disunits(:) 
-        dim_names(:) = meta%dim_names(:) 
-
-        
-        do i = 1,4
-          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
-        end do
+        !ndims = meta%ndims ; dims(:) = meta%dims(:) 
+        !stag(:) = meta%stag(:) ; min(:) = meta%max(:) 
+        !min(:) = meta%min(:) ; missing = meta%miss
+        !data_units(:) = meta%dunits(:) 
+        !data_display_units(:) = meta%disunits(:) 
+        !dim_names(:) = meta%dim_names(:) 
         return
 c
 c  Calculates the hierarchical localization factor
 c
       case ('HIERLOC')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,1,2,err)
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,2,2,err)
         if(err) return
-        
+
         ctmp = 'F' ; lmap = .false.
         if(ccnt.eq.3) ctmp = carg(3)
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
-     &                    iarg(1),
+     &                    iarg(1),iarg(2),
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-        print *,ndims,missing
-
-        do i = 1,4
-          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
-        end do
-        return
 
 c
 c  Variable not found

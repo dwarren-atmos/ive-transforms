@@ -1,14 +1,15 @@
       integer(ive_ptr) function kgain(obs_name,upd_name,R,x0,y0,z0,
-     &                                mapon,calc_type,Nbin,
+     &                                mapon,calc_type,Nbin,nfilt,
      &                                ndims,dims,stag,min,max,
      &                                miss,dunits,disunits,dim_names)
 
       use default_module
+      !use module_numerics
 
       implicit none
 
       real, intent(in) :: x0, y0, z0, R
-      integer, intent(in) :: Nbin 
+      integer, intent(in) :: Nbin, nfilt 
       character(len=*), intent(in) :: calc_type
       character(len=*), intent(in) :: obs_name, upd_name
       logical :: mapon
@@ -107,8 +108,10 @@
       elseif(lcor) then
         call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
       elseif(lhier) then
-        call hierloc_calc(%val(kgain),ye,%val(xprior),mnk,Ne,Nbin)
+        call hierloc_calc(%val(kgain),ye,%val(xprior),R,mnk,Ne,Nbin)
+        call filt9(%val(kgain),ix,iy,iz,nfilt)
       end if
+
 
       dims(1) = ix ; dims(2) = iy ; dims(3) = iz ; dims(4) = 1
       dim_names(4) = 'one' ; max(4) = 0.0 ; min(4) = 0.0
@@ -203,32 +206,36 @@
 !  Calculates hierarchial localization factor 
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      subroutine hierloc_calc(hloc,ye,xe,mnk,Ne,Nbin)
+      subroutine hierloc_calc(hloc,ye,xe,R,mnk,Ne,Nbin)
+
 
       integer, intent(in) :: mnk,Ne,Nbin
-      real, intent(in) :: ye(Ne), xe(mnk,Ne)
+      real, intent(in) :: ye(Ne), xe(mnk,Ne), R
 
       real, intent(out) :: hloc(mnk)
 
       integer :: i,n,Nmem,bin
-      real :: ye_mean, xe_mean,mean_fac,cov_fac,kdenom
-      real :: beta(mnk), beta_sum(mnk), beta_var(mnk)
+      real :: ye_mean, ye_var, xe_mean, mean_fac, cov_fac, kdenom, R2
+      real :: bin_fac, beta, beta_sum(mnk), beta_var(mnk), hloc_tmp
 
       integer, allocatable :: pnt_mem(:)
-      real, allocatable :: ye_bin(:), ye_pert(:)
+      real, allocatable :: ye_bin(:), ye_pert(:),
      &                     xe_bin(:,:), xe_pert(:)
 
+      R2 = R**2
       Nmem = int(Ne/Nbin)  
       allocate(pnt_mem(Nmem))
       allocate(ye_bin(Nmem)) ; allocate(ye_pert(Nmem))
       allocate(xe_bin(mnk,Nmem)) ; allocate(xe_pert(Nmem))
       
       mean_fac = 1.0/real(Nmem) ; cov_fac = 1.0/real(Nmem-1)
+      bin_fac = 1.0/real(Nbin-1)
 
+      beta_sum(:) = 0.0 ; beta_var(:) = 0.0
       do bin=1,Nbin       
-c        call rand_int(pnt_mem,Nmem,Ne)
-        do i=Nmem*(bin-1)+1,Nmem*bin
-          pnt_mem(i) = i
+
+        do i=1,Nmem
+          pnt_mem(i) = Nmem*(bin-1)+i
         end do
 
         do n=1,Nmem
@@ -244,15 +251,19 @@ c        call rand_int(pnt_mem,Nmem,Ne)
         do i=1,mnk
           xe_mean = sum(xe_bin(i,:))*mean_fac
           xe_pert(:) = xe_bin(i,:) - xe_mean
-          beta(i) = sum(ye_pert(:)*xe_pert(:))*cov_fac*kdenom
+          beta = sum(ye_pert(:)*xe_pert(:))*cov_fac*kdenom
+          beta_sum(i) = beta + beta_sum(i)
+          beta_var(i) = beta**2 + beta_var(i)
         end do
-
-        beta_sum(:) = beta(:) + beta_sum(:)
-        beta_var(:) = beta(:)**2 + beta_var(:)
 
       end do
 
-      hloc(:) = (beta_sum(:)**2/beta_var - 1)*cov_fac 
+      do i=1,mnk
+        hloc_tmp = (beta_sum(i)**2/beta_var(i) - 1)*bin_fac 
+        hloc(i) = max(hloc_tmp,0.0)
+      end do
+
+      deallocate(pnt_mem,ye_bin,ye_pert,xe_bin,xe_pert)
 
       return
       end

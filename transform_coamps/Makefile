@@ -47,6 +47,7 @@ CFLAGS = ${OPT} ${DEC} -D_NO_PROTO ${INCLUDES}
 FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 #
+#			module_numerics.o
 MODS	=	default_module.o   	\
             module_mapping.o   	\
 			misc_module.o
@@ -89,7 +90,8 @@ OBJS_F = 						\
 		 sound_out.o 			\
 		 point_val.o			\
 		 kgain.o				\
-		 localize.o			
+		 localize.o				\
+		 filt9.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
