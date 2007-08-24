@@ -1,4 +1,40 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Shifts time dimension
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine translate_time(time_shift)
 
+      USE DEFAULT_MODULE
+
+      real, intent(inout) :: time_shift
+      integer :: ierr, i
+      real :: r_val
+
+      ierr=.false.
+      time_shift = time_shift*3600.
+      offset(4) = time_shift+offset(4)
+
+      plmin(4)=plmin(4)+time_shift ; plmax(4)=plmax(4)+time_shift
+ 
+      call setrarr("plmin",plmin,4,ierr) ; if(ierr) goto 25
+      call setrarr("plmax",plmax,4,ierr) ; if(ierr) goto 30
+
+      do i=1,ntime
+        call s_val(%val(time),i,r_val(%val(time),i)+time_shift)
+      end do
+      return
+
+25    print *, 'Problems with serarr(plmin)' ; return
+30    print *, 'Problems with serarr(plmax)' ; return
+
+      return
+      end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Shifts spatial dimension
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine translate_domain(delx,dely)
 
       use default_module
@@ -78,9 +114,11 @@
 
       return
       end
-
-*---------------------------------------------------------------------------
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  Turns the transform switch on/off
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine trans_switch(iflg)
 
       use default_module
