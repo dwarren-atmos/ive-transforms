@@ -54,12 +54,15 @@ c
      &                 interp_pres,geopot,x_grid,y_grid,
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
-     &                 interp_height, kgain, localize
+     &                 interp_height, kgain, localize, vort_z, vort_x,
+     &                 vort_y,pvort
 c
       call setstr(fld,name)
 c
-      data_units(1:len(data_units)) = ' '
-      data_display_units(1:len(data_display_units)) = ' '
+      !data_units(1:len(data_units)) = ' '
+      !data_display_units(1:len(data_display_units)) = ' '
+      data_units = ' '
+      data_display_units = ' '
       iend = index(fld,'[',.true.) - 1
 
 
@@ -74,7 +77,7 @@ c
         if (err) return
       end if
 
-      calc_field = 1
+      calc_field = 0
       select case (trim(fld_cut))
 c
 c  List of available fields
@@ -131,7 +134,7 @@ c
         if(err) return
 
         call translate_domain(rarg(1),rarg(2))
-        calc_field = 1
+        !calc_field = 1
         return
 c
 c  Translate time
@@ -139,9 +142,10 @@ c
       case ('TRANS_TIME')
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
         if(err) return
-
         call translate_time(rarg(1))
-        calc_field = 1
+
+        !calc_field = 1
+        print *,'ABOUT TO RETURN CALC_FIELD'
         return
 c
 c  Turn vertical coordinate transformation on or off
@@ -159,120 +163,101 @@ c
 c  Derivative (fourth order diff)
 c
        case ('D')
-         if (ccnt.ne.2) then
-           write(*,*) 'Error:  expected two string arguments.'
-           return
-         else
-           calc_field = deriv(carg(1),carg(2),1,ndims,dims,stag,min,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if(err) return
+
+        calc_field = deriv(carg(1),carg(2),1,ndims,dims,stag,min,
      &                   max,missing,data_units,data_display_units,
      &                   dim_names)
-         return
-         end if
+        return
 c
 c  Rotate u wind through angle theta
 c
       case ('UROT')
-        if (rcnt.ne.1) then
-          write(6,*) 'Error:  expected one real arguments.' 
-          write(6,*) 'The angle of rotation.'
-          return
-        else if (ccnt.ne.2) then
-          write(6,*) 'Error:  expected two string arguments.'
-          write(6,*) 'U and V wind components.'
-          return
-        else
-          calc_field = urot2(rarg(1),carg(1),carg(2),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,2,err)
+        if(err) return
+
+        calc_field = urot2(rarg(1),carg(1),carg(2),
      &                ndims,dims,stag,min,max,missing,
      &                data_units,data_display_units,dim_names)
-          return
-        end if
+        return
 c
 c  Calculate Windspeed
 c
       case ('WSPD')
-        if (ccnt.ne.2) then
-          write(6,*) 'Error:  expected two character args.'
-          return
-        else
-          calc_field = windspeed(carg(1),carg(2),ndims,dims,stag,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if (err) return
+
+        calc_field = windspeed(carg(1),carg(2),ndims,dims,stag,
      &                 min,max,missing,data_units,
      &                 data_display_units,dim_names)
-          return
-        end if
+        return
 c
 c  Calculate relative diff (fld1 - fld2) / fld2
 c
       case ('RELDIFF')
-        if (ccnt.ne.2.and.rcnt.ne.1) then
-          write(6,*) 'Error:  expected two character args and 1 real.'
-          return
-        else
-          calc_field = reldiff(carg(1),carg(2),rarg(1),ndims,dims,stag,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,2,err)
+        if (err) return
+
+        calc_field = reldiff(carg(1),carg(2),rarg(1),ndims,dims,stag,
      &                 min,max,missing,data_units,
      &                 data_display_units,dim_names)
-          return
-        end if
+        return
 !
 ! Difference between time level t1 and t2
 ! timediff = fld(t1) - fld(t2)
 !
       case ('TIMEDIFF')
-        if (ccnt.ne.1.and.icnt.ne.2) then
-          write(6,*) 'Error:  expected one character args and 2 ints.'
-          return
-        else
-          calc_field=time_diff(carg(1),iarg(1),iarg(2),ndims,dims,stag,
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,2,1,err)
+        if (err) return
+        calc_field=time_diff(carg(1),iarg(1),iarg(2),ndims,dims,stag,
      &                 min,max,missing,data_units,
      &                 data_display_units,dim_names)
-          return
-        end if
+        return
 !
 !  Calculate the time mean (assuming equally spaced time intervals)
 !
       case ('TIMEMEAN')
-        if (ccnt.ne.1) then
-          write(6,*) 'USAGE: TIMEMEAN[CHAR FLD]'
-          return
-        else
-          calc_field=time_mean(trim(carg(1)),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+        if (err) return
+
+        calc_field=time_mean(trim(carg(1)),
      &                 ndims,dims,stag,min,max,missing,data_units,
      &                 data_display_units,dim_names)
-          return
-        end if
-c
+        return
 c
 c  RHO
 c
       case ('RHO')
-        calc_field = rho_calc(ndims,dims,stag,min,max,missing,
-     &                      data_units,data_display_units,dim_names)
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if (err) return
+
+        calc_field = rho_calc(carg(1),carg(2),
+     &                        ndims,dims,stag,min,max,missing,
+     &                        data_units,data_display_units,dim_names)
         return
 c
 c  OMEGA
 c
       case ('OMEGA')
-        if(ccnt.ne.3) then
-          print *,'ERROR: USAGE omega[U,V,W]'
-          return
-        else  
-          calc_field = omega(carg(1),carg(2),carg(3),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,3,err)
+        if (err) return
+
+        calc_field = omega(carg(1),carg(2),carg(3),
      &                      ndims,dims,stag,min,max,missing,
      &                      data_units,data_display_units,dim_names)
-          return
-        endif
+        return
 c    
 c  Buoyancy frequency
 c    
       case ('NSPEC')
-        if (ccnt.ne.1) then
-          write(6,*) 'Error:  expected two character args.'
-          return
-        else
-          calc_field = buoy_freq(carg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+        if (err) return
+
+        calc_field = buoy_freq(carg(1),
      &                   ndims,dims,stag,min,max,missing,data_units,
      &                   data_display_units,dim_names,0)
-          return
-        end if
+        return
 
       case ('N')
         calc_field = buoy_freq('the',ndims,dims,stag,min,max,missing,
@@ -287,152 +272,123 @@ c
 c  MASS FLUX
 c
       case ('MASSFLX_LAT')
-        if (rcnt.ne.4) then
-          write(6,*) 'Error:  expected four real arguments.'
-          return
-        else if (icnt.ne.2) then
-          write(6,*) 'Error:  expected two integer arguments.'
-          return
-        else
-          calc_field = massflx_lat(rarg(1),rarg(3),rarg(2),rarg(4),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,4,2,0,err)
+        if (err) return
+
+        calc_field = massflx_lat(rarg(1),rarg(3),rarg(2),rarg(4),
      &                 iarg(1),iarg(2),ndims,dims,stag,min,max,
      &                 missing,data_units,data_display_units,
      &                 dim_names)
-          return
-        end if
+        return
 c
       case ('MASSFLX_TOP')
-        if (rcnt.ne.8) then
-          write(6,*) 'Error:  expected eight real arguments.'
-          return
-        else if (icnt.ne.1) then
-          write(6,*) 'Error:  expected one integer arguments.'
-          return
-        else
-          top = .true.
-          calc_field = massflx_top(rarg(1:2),rarg(3:4),rarg(5:6),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,8,1,0,err)
+        if (err) return
+
+        top = .true.
+        calc_field = massflx_top(rarg(1:2),rarg(3:4),rarg(5:6),
      &                 rarg(7:8),iarg(1),top,
      &                 ndims,dims,stag,min,max,missing,data_units,
      &                 data_display_units,dim_names)
         return
-      end if
 c
       case ('MASSFLX_BOT')
-        if (rcnt.ne.8) then
-          write(6,*) 'Error:  expected eight real arguments.'
-          return
-        else if (icnt.ne.1) then
-          write(6,*) 'Error:  expected one integer arguments.'
-          return
-        else
-          top = .false.
-          calc_field = massflx_top(rarg(1:2),rarg(3:4),rarg(5:6),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,8,1,0,err)
+        if (err) return
+
+        top = .false.
+        calc_field = massflx_top(rarg(1:2),rarg(3:4),rarg(5:6),
      &                 rarg(7:8),iarg(1),top,
      &                 ndims,dims,stag,min,max,missing,data_units,
      &                 data_display_units,dim_names)
        return
-       end if
 c
       case ('MASSFLX_MAX')
-          calc_field = massflx_max(
+        calc_field = massflx_max(
      &                 ndims,dims,stag,min,max,missing,data_units,
      &                 data_display_units,dim_names)
-      return
+        return
 
       case ('MAX_SPEC')
-        if (rcnt.ne.1) then
-          write(6,*) 'Error:  expected 1 real argument.'
-          return
-        else if (ccnt.ne.1) then
-          write(6,*) 'Error:  expected one character argument.'
-          return
-        else
-          calc_field = maxmin_reg(trim(carg(1)),rarg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,1,err)
+        if(err) return
+
+        calc_field = maxmin_reg(trim(carg(1)),rarg(1),
      &                 ndims,dims,stag,min,max,missing,data_units,
      &                 data_display_units,dim_names)
-       return
-       end if
+        return
 c
 c  Calculates the temperature from theta and pressure
 c
       case ('THE2TEMP')
-         if (ccnt.ne.2) then
-           write(*,*) 'Usage: THE2TEMP[THETA FIELD:PRESSURE FIELD]'
-           return
-         else
-           calc_field = the2temp(carg(1),carg(2),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if(err) return
+
+        calc_field = the2temp(carg(1),carg(2),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-         return
-         end if
+        return
 c
 c  Calculates the variance of the time dimension of a field
 c
       case ('VARIANCE')
-         if (ccnt.ne.1) then
-           write(*,*) 'Usage: variance[fldname]'
-           return
-         else
-           calc_field = variance(carg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+        if(err) return
+
+        calc_field = variance(carg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
          return
-         end if
 c
 c  Interpolate a field to a height (z0<=0 --> abs(z0) agl )
 c
       case ('INTERPZ')
-         if (ccnt.ne.1.or.rcnt.ne.1) then
-           write(*,*) 'Usage: interp[string field: real z (agl)]'
-           return
-         else
-           calc_field = interp_height(carg(1),rarg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,1,err)
+        if(err) return
+
+        calc_field = interp_height(carg(1),rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-           do i=1,4
-             print *,min(i),max(i)
-           end do
-         return
-         end if
+        print *,'calc_field: data_display_units = ',
+     &   trim(data_display_units),'.'
+        print *,'calc_field: data_units = ',trim(data_units),'.'
+        return
 c
 c
 c  Interpolate a field to a presure level
 c
       case ('INTERPP')
-         if (ccnt.ne.1.or.rcnt.ne.1) then
-           write(*,*) 'Usage: interp[string field: real plevel]'
-           return
-         else
-           calc_field = interp_pres(carg(1),rarg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,1,err)
+        if(err) return
+
+        calc_field = interp_pres(carg(1),rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-         return
-         end if
+        return
 c
       case ('GEOPOT')
-         if (rcnt.ne.1) then
-           write(*,*) 'Usage: geopot[real plevel]'
-           return
-         else
-           calc_field = geopot(rarg(1),
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
+        if(err) return
+
+        calc_field = geopot(rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-         return
-         end if
+        return
+
 c
 c  U and V components of the geostrophic wind
 c
       case ('UG')
-         calc_field = geowind('U',
+        calc_field = geowind('U',
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-         return
+        return
 c
       case ('VG')
-         calc_field = geopot('V',
+        calc_field = geopot('V',
      &                ndims,dims,stag,min,max,missing,data_units,
      &                data_display_units,dim_names)
-         return
+        return
 c
 c  Calculates the kalman gain between a point and a field
 c
@@ -448,10 +404,6 @@ c
      &                    0,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
-        print *,ndims,missing
-        do i = 1,4
-          print *,i,dims(i),stag(i),min(i),max(i),dim_names(i)
-        end do
         return
 c
 c  Calculates the covariance between a point and a field
@@ -496,13 +448,6 @@ c
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
 
-        ! TEMPORARY UNTIL type(meta_ive) is fully implemented
-        !ndims = meta%ndims ; dims(:) = meta%dims(:) 
-        !stag(:) = meta%stag(:) ; min(:) = meta%max(:) 
-        !min(:) = meta%min(:) ; missing = meta%miss
-        !data_units(:) = meta%dunits(:) 
-        !data_display_units(:) = meta%disunits(:) 
-        !dim_names(:) = meta%dim_names(:) 
         return
 c
 c  Calculates the hierarchical localization factor
@@ -520,6 +465,41 @@ c
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
 
+      case ('VORT_X') ! x component of vorticity
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if(err) return
+
+        calc_field = vort_x(carg(1),carg(2),
+     &                  ndims,dims,stag,min,max,missing,data_units,
+     &                  data_display_units,dim_names)
+        return
+
+      case ('VORT_Y') ! y component of vorticity
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if(err) return
+
+        calc_field = vort_y(carg(1),carg(2),
+     &                  ndims,dims,stag,min,max,missing,data_units,
+     &                  data_display_units,dim_names)
+        return
+
+      case ('VORT_Z') ! z component of vorticity
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+        if(err) return
+
+        calc_field = vort_z(carg(1),carg(2),
+     &                  ndims,dims,stag,min,max,missing,data_units,
+     &                  data_display_units,dim_names)
+        return
+
+      case ('PVORT') ! potential vorticity
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,5,err)
+        if(err) return
+
+        calc_field = pvort(carg(1),carg(2),carg(3),carg(4),carg(5),
+     &                  ndims,dims,stag,min,max,missing,data_units,
+     &                  data_display_units,dim_names)
+        return
 c
 c  Variable not found
 c

@@ -1,112 +1,60 @@
-      integer(ive_ptr) function rho_calc(ndims,dims,stag,min,max,
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  function rho_calc(pvar_name,tvar_name, ...)
+!
+!  Calculates Density
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      integer(ive_ptr) function rho_calc(pvar_name,tvar_name,
+     &                           ndims,dims,stag,min,max,
      &                           miss,dunits,disunits,dim_names)
       use default_module
       implicit none
-c
-c  Calculates total density.  Kind of prosaic.
+
+      character(len=*), intent(in) :: pvar_name, tvar_name 
 c 
-      integer ndims,dims(4)
-      real stag(4),min(4),max(4),miss
-      character*(*) dunits,disunits,dim_names(4)
+      integer, intent(out) :: ndims,dims(4)
+      real, intent(out) :: stag(4),min(4),max(4),miss
+      character(len=*), intent(out) :: dunits,disunits,dim_names(4)
       logical new
-      integer(ive_ptr) p,thet
-c
-      p = getvar('ppp',ndims,dims,stag,min,max,miss,dunits,
-     >          disunits,dim_names,new)
-c
-      if (p.eq.0) then
-         write(*,*) 'Error:  cannot find field ppp.'
+
+      integer :: i, mnk
+      integer(ive_ptr) :: pvar,tvar
+      real :: the,pre,rho,r_val,slope,intercept
+
+      rho_calc = 0
+      mnk=(nx+1)*(ny+1)*nz*ntime
+
+      pvar = getvar(pvar_name,
+     &              ndims,dims,stag,min,max,miss,
+     &              dunits,disunits,dim_names,new)
+      !call convert_units(dunits,'Pa',slope,intercept)
+
+      tvar = getvar(tvar_name,
+     &              ndims,dims,stag,min,max,miss,
+     &              dunits,disunits,dim_names,new)
+  
+      if (tvar.le.0 .or. pvar.le.0) then
+         write(6,40) trim(pvar_name),trim(tvar_name)
          return
       end if
-c
-      rho_calc = 0
-      rho_calc = getmem(dims(1)*dims(2)*dims(3)*dims(4))
-c
-      if (rho_calc.eq.0) then
-        write(*,*) 'Error:  could not allocate space for rho.'
-        return
-      end if
-c
-      call rho_I(%val(rho_calc),%val(p),dims(1),dims(2),dims(3),
-     >              dims(4))
-c
-      call driver('free = PPP',0)
-c
-      thet = getvar('THE',ndims,dims,stag,min,max,miss,
-     >                         dunits,disunits,dim_names,new)
-c
-      if (thet.eq.0) then
-        write(*,*) 'Error:  cannot find field thet.'
-        return
-      end if
-c
-      call rho_II(%val(rho_calc),%val(thet),dims(1),dims(2),dims(3),
-     >                            dims(4))
-c
-      call driver('free = THE',0)
-c
-      dunits = 'kg/m/m/m'
-      disunits = 'kg/m/m/m'
-c
-      return
-      end
+40    FORMAT('Error getting either ',A,' or ',A,'.')
 
-*---------------------------------------------------------------------------
+      rho_calc = getmem(mnk) ; if(rho_calc.le.0) return
 
-      subroutine rho_I(rho,p,nx,ny,nz,nt)
+      do i=1,mnk
+        the = r_val(%val(tvar),i) 
+        pre = r_val(%val(pvar),i)
+        pre = pre*100.0 ! convert from hPa to Pa
+        !pre = pre*slope + interpcept
+        rho = pref/(Rd*the)*(pre/pref)**(cv/cp)
+        call s_val(%val(rho_calc),i,rho)
+      end do
 
-      integer nx,ny,nz,nt
-      real rho(nx,ny,nz,nt),p(nx,ny,nz,nt)
+      call freemem(pvar) ; call freemem(tvar)
 
-      integer i,j,k,n
-      real kappa,pref,g,thets,cp,R,rkappa,ppascal
-
-      PARAMETER (pref = 100000., g=9.806, thets = 273., 
-     >           cp = 1004., R = 287.04, kappa = R/cp, 
-     >           rkappa = cp/R)
-
-      do n=1,nt
-      do k=1,nz
-      do j=1,ny
-      do i=1,nx
-
-	  ppascal = 100*p(i,j,k,n)
-        rho(i,j,k,n) = ppascal/((ppascal/pref)**kappa)
-
-      enddo
-      enddo
-      enddo
-      enddo
+      dunits = 'kg/m/m/m' ; disunits = 'kg/m/m/m'
 
       return
       end
-
-*--------------------------------------------------------------------------
-
-      subroutine rho_II(rho,thet,nx,ny,nz,nt)
-
-      integer nx,ny,nz,nt
-      real rho(nx,ny,nz,nt),thet(nx,ny,nz,nt)
-
-      integer i,j,k,n
-      real Rd
-
-      PARAMETER (Rd = 287.04)
-
-      do n=1,nt
-      do k=1,nz
-      do j=1,ny
-      do i=1,nx
-         
-        rho(i,j,k,n) = rho(i,j,k,n)/(Rd*thet(i,j,k,n))
-
-      enddo
-      enddo
-      enddo
-      enddo
-
-      return
-      end
-
-*------------------------------------------------------------------------
 

@@ -55,6 +55,7 @@ MODS	=	default_module.o   	\
 OBJS_F = 						\
 		 default.o				\
  		 calc_field_coamps.o	\
+ 		 run_sub.o				\
 	     buoy_freq.o			\
 	     deriv.o				\
 	     get_args.o				\
@@ -91,6 +92,8 @@ OBJS_F = 						\
 		 point_val.o			\
 		 kgain.o				\
 		 localize.o				\
+		 vort.o				\
+		 pvort.o				\
 		 filt9.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
