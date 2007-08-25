@@ -1,5 +1,3 @@
-c
-c
 c     This is a Fortran version of the default transforms for IVE.
 c     -----------------------------------------------------------------
 c
@@ -178,18 +176,21 @@ c set up coordinate vector for times
 c
       if (time.ne.0) call freemem(time)
 c
-      ttime = data(4)
-      if (ttime.eq.0) then
-        time = 0
-        write(6,*) 'Error:  could not find time coordinate vector.'
-        stop
-      else
+      !ttime = data(4)
+      time = data(4)
+      !if (ttime.eq.0) then
+      !  time = 0
+      !  write(6,*) 'Error:  could not find time coordinate vector.'
+      !  stop
+      !else
         ntime = size(4)
-        time = getmem(ntime)
-        do i = 1,ntime
-          call s_val(%val(time),i,r_val(%val(ttime),i))
-        enddo
-      end if
+      !  time = getmem(ntime)
+      !time = getvar('time',ndims,dims,stagger,min,max,missing,
+     >!                 data_units,display_units,dim_names,flag)
+        !do i = 1,ntime
+        !  call s_val(%val(time),i,r_val(%val(ttime),i))
+        !enddo
+      !end if
 c
 c get total domain depth (not necessarily the same as wgz_max)
 c
@@ -446,6 +447,7 @@ c set domain offsets to zero
 c
       offset(1) = 0.
       offset(2) = 0.
+      offset(4) = 0.
 
       return
       end subroutine
@@ -496,7 +498,7 @@ c save the physical and index limits in the common block in
 c   default.icl for use in later calculations by other transform
 c   routines.
 c
-      if(name(strbeg(name):strend(name)) .eq. 'wgz')return
+      if(trim(name) .eq. 'wgz') return
       call getrarr("phmin",phmin,4,error)
       if (error.ne.0) then
         write(6,*) 'Error:  problem getting physical domain ',
@@ -510,9 +512,7 @@ c
         stop
       end if
 
-      inmax(1) = inmax1
-      inmax(2) = inmax2
-      inmax(3) = inmax3
+      inmax(1) = inmax1 ; inmax(2) = inmax2 ; inmax(3) = inmax3
       inmax(4) = inmax4
 
 c
@@ -527,6 +527,11 @@ c
       if ((abs(phmin(2)-plmin(2)).gt.dy).and.(inmax2.ne.1)) then
         phmin(2) = phmin(2) + offset(2)
         phmax(2) = phmax(2) + offset(2)
+      end if
+
+      if (inmax4.ne.1.and.abs(phmin(4)-plmin(4)).gt.0.0) then
+        phmin(4) = phmin(4) + offset(4)
+        phmax(4) = phmax(4) + offset(4)
       end if
 c
 c check to see whether vertical coordinate should be transformed
@@ -560,8 +565,8 @@ c
       else if (requ(phmin(3),lgz_min)) then
         coord(3) = lgz
       else 
-        write(*,*) 'Warning:  could not find vertical coordinate ',
-     >               'vector.' 
+c        write(*,*) 'Warning:  could not find vertical coordinate ',
+c     >               'vector.' 
         !stop
         coord(3) = 0
       endif
@@ -570,8 +575,8 @@ c check to see if vertical coordinate vector is evenly spaced.  If
 c     not, set delta = 0 to indicate uneven spacing. 
 c     
       if (coord(3).eq.0) then
-         write(*,*) ' Warning:  could not find vertical coordinate ',
-     >        'vector.  Assuming even spacing in vertical.'
+c         write(*,*) ' Warning:  could not find vertical coordinate ',
+c     >        'vector.  Assuming even spacing in vertical.'
       else
          k = 1
          start = r_val(%val(coord(3)),1)
@@ -1098,9 +1103,22 @@ c
 c
       return
       end subroutine
-c
-c     -----------------------------------------------------------------
-c
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      subroutine physuv_2_lonlatuv_trans(udat, vdat, nu, nv, imap)
+
+      integer, intent(in) :: nu, nv, imap
+      real, intent(inout) :: udat(nu,nv), vdat(nu,nv)
+
+      end subroutine
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine default_map(proj, plon, plat, rota, limit,
      &     plm1, plm2, plm3, plm4, exact_fit)
 c
@@ -1167,9 +1185,6 @@ c
       real cendpt(4,2), dv(4), dda, cpmin(4), cmin, cmax, ceil, floor
       integer(ive_ptr) pslice, slice
 
-      print *,'endpt,ni,da,nda,   1'
-      print *,endpt,ni,da,nda
-
       do i = 1, 4
          iflag(i) = 1
       enddo
@@ -1222,10 +1237,6 @@ c
             nda = ceil(cmax) - floor(cmin) + 1
             dda = (endpt(da,2) - endpt(da,1))/(nda-1)
          endif
-
-
-      print *,'endpt,ni,da,nda,   2'
-      print *,endpt,ni,da,nda
 
          pslice = getmem(ni*nda)
          slice = getmem(ni*nda)
@@ -1331,26 +1342,27 @@ c
       r_val = array(j)
       return
       end function
-c
-c *******************************************
-c
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!  subroutine s_val(array, j, val)
+!
+!  This routine is used to store a value in a 1d real array.
+!  Since Fortran cannot be used to directly access memory given
+!  a integer(ive_ptr), this function can be used to dereference the
+!  pointer and extract a value from the corresponding array as follows:
+!
+!  If p is the integer(ive_ptr) to some data array X, you set the j the
+!  data value in X (i.e. X(j)) to val with the following call:
+!
+!  call s_val(%val(p), j, val)
+!
+!  Arguments:
+!     array	real	output	The array to store the value in.
+!     j		integer	input	The index of array to use.
+!     val	real	input	The value to set
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       subroutine s_val(array, j, val)
-c
-c     This routine is used to store a value in a 1d real array.
-c     Since Fortran cannot be used to directly access memory given
-c     a integer(ive_ptr), this function can be used to dereference the pointer
-c     and extract a value from the corresponding array as follows:
-c
-c     If p is the integer(ive_ptr) to some data array X, you set the j th data
-c     value in X (i.e. X(j)) to val with the following call:
-c
-c     call s_val(%val(p), j, val)
-c
-c     Arguments:
-c     array	real	output	The array to store the value in.
-c     j		integer	input	The index of array to use.
-c     val	real	input	The value to set
-c
+
       integer j
       real array(j), val
 

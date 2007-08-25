@@ -1,5 +1,3 @@
-
-c 
       integer(ive_ptr) function interp_height(varnm,z0,
      &         ndims,dims,stag,min,max,miss,dunits,
      &         disunits,dim_names)
@@ -89,8 +87,6 @@ c
       dim_names(1) = 'nx' ; dim_names(2) = 'ny'
       dim_names(3) = 'one' ; dim_names(4) = 'time'
       min(3) = z0 ;  max(3) = z0
-      !min(3) = 0.0 ;  max(3) = 0.0
-      dunits = outdunits ; disunits = outdisunits
 
       return
       end

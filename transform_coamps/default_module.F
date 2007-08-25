@@ -40,7 +40,7 @@ c
       integer :: igrid, jgrid, iref, jref
 
       real :: inmax(4),phmin(4),phmax(4),delta(4)
-      real :: offset(2)
+      real :: offset(4)
       real :: dx,dy,dz,plmin(4),plmax(4)
       real :: wgz_max,wgz_min,sgz_max,sgz_min,lgz_min,lgz_max
       real :: zbot_delta(2),zbot_min(4),zbot_max(4),ztop
@@ -55,6 +55,9 @@ c
         real :: stag(dim_len), max(dim_len), min(dim_len), miss
         character(len=MAX_LEN) :: dunits, disunits, dim_names(dim_len)
       END TYPE
+
+      real, parameter :: pref=10**5, Rd=287.04, cp=1004., cv=717.,
+     &                   kappa = Rd/cp
 
       CONTAINS
 

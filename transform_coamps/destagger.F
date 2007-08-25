@@ -23,7 +23,7 @@
       real, intent(inout) ::  var_t(nx+1,ny+1,nz,nt)
   
       real :: tmpvar
-      integer n,k,j,i
+      integer n,k,j,i,mnk
 c
       var_t(:,:,:,:) = 1.0
 
@@ -36,7 +36,7 @@ c
         do i=1+iu,nx+1-iu; do j=1+iv,ny+1-iv;
           tmpvar = .5*(var(i-iu,j-iv,k,n) + var(i,j,k,n))
           var_t(i,j,k,n) = var_t(i,j,k,n) * tmpvar
-      end do; end do;
+          end do; end do;
 
       if(iv.eq.1) then
         do i = 1,nx+1
