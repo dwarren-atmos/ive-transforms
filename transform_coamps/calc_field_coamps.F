@@ -51,11 +51,11 @@ c
 c
       integer(ive_ptr) vert_grid,deriv,urot,vrot,buoy_freq,massflx_lat,
      &                 massflx_top,massflx_max,rho_calc,omega,test,
-     &                 interp_pres,geopot,x_grid,y_grid,
+     &                 interp_pres,findz,x_grid,y_grid,
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
      &                 interp_height, kgain, localize, vort_z, vort_x,
-     &                 vort_y,pvort
+     &                 vort_y,pvort,sigdiff
 c
       call setstr(fld,name)
 c
@@ -145,7 +145,6 @@ c
         call translate_time(rarg(1))
 
         !calc_field = 1
-        print *,'ABOUT TO RETURN CALC_FIELD'
         return
 c
 c  Turn vertical coordinate transformation on or off
@@ -349,9 +348,6 @@ c
         calc_field = interp_height(carg(1),rarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
-        print *,'calc_field: data_display_units = ',
-     &   trim(data_display_units),'.'
-        print *,'calc_field: data_units = ',trim(data_units),'.'
         return
 c
 c
@@ -370,7 +366,7 @@ c
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
         if(err) return
 
-        calc_field = geopot(rarg(1),
+        calc_field = findz('PPP',rarg(1),.false.,.true.,
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
         return
@@ -385,7 +381,7 @@ c
         return
 c
       case ('VG')
-        calc_field = geopot('V',
+        calc_field = geowind('V',
      &                ndims,dims,stag,min,max,missing,data_units,
      &                data_display_units,dim_names)
         return
@@ -494,12 +490,30 @@ c
 
       case ('PVORT') ! potential vorticity
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,5,err)
-        if(err) return
+        if(err) then
+          call make_help_widget('Expected: pvort[U:V:W:THE:PRE]')
+          return
+        end if
 
         calc_field = pvort(carg(1),carg(2),carg(3),carg(4),carg(5),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
         return
+
+      case ('SIGDIFF') ! Significant difference between two means
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,1,4,err)
+        if(err) then
+          call make_help_widget('Expected:'
+     &         //     'SIGDIFF[VAR1:VAR2:STD1:STD2,CONFLEV,N]')
+          return
+        end if
+
+        calc_field = sigdiff(carg(1),carg(2),carg(3),carg(4),
+     &                       rarg(1),iarg(1),iarg(1),
+     &                       ndims,dims,stag,min,max,missing,data_units,
+     &                       data_display_units,dim_names)
+        return
+c
 c
 c  Variable not found
 c

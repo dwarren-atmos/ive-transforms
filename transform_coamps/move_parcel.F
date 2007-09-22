@@ -43,6 +43,7 @@
 !  step forward in transformed space
       retpt(4) = curpt(4) + delt
       sigma_new = sigma + wwind*delt
+      !retpt(3) =  curpt(3) + wwind*delt
       retpt(2)  = curpt(2) + vwind*delt
       retpt(1)  = curpt(1) + uwind*delt
 

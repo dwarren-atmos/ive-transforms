@@ -66,6 +66,11 @@
      &             r_val(%val(d_vvar_t),i)-r_val(%val(d_uvar_t),i))
       end do
 
+      ! free memorey of work variables
+      call freemem(d_uvar) ; call freemem(d_vvar)
+      call freemem(d_uvar_t) ; call freemem(d_vvar_t)
+
+
       dunits='1/s' ; disunits='1/s'
       dims(1) = nx+1 ; dims(2) = ny+1 ; dims(3) = nz
       dim_names(1)='nx' ; dim_names(2)='ny' ; dim_names(3)='nz' 
@@ -129,6 +134,11 @@
         call s_val(%val(vort_x),i,
      &             r_val(%val(d_wvar_t),i)-r_val(%val(d_vvar_t),i))
       end do
+
+      ! free memorey of work variables
+      call freemem(d_wvar) ; call freemem(d_vvar)
+      call freemem(d_wvar_t) ; call freemem(d_vvar_t)
+
 
       dunits='1/s' ; disunits='1/s'
       dims(1) = nx+1 ; dims(2) = ny+1 ; dims(3) = nz
@@ -194,6 +204,11 @@
         call s_val(%val(vort_y),i,
      &             r_val(%val(d_uvar_t),i)-r_val(%val(d_wvar_t),i))
       end do
+
+      ! free memorey of work variables
+      call freemem(d_uvar) ; call freemem(d_wvar)
+      call freemem(d_uvar_t) ; call freemem(d_wvar_t)
+
 
       dunits='1/s' ; disunits='1/s'
       dims(1) = nx+1 ; dims(2) = ny+1 ; dims(3) = nz

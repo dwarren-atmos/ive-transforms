@@ -93,6 +93,7 @@ OBJS_F = 						\
 		 kgain.o				\
 		 localize.o				\
 		 vort.o				\
+		 sigdiff.o				\
 		 pvort.o				\
 		 filt9.o
 

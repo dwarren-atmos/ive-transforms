@@ -25,6 +25,12 @@
       utotal = (nx)*(ny+1)*(nz+1)*ntime
       vtotal = (nx+1)*(ny)*(nz+1)*ntime
 
+      omega = 0 ; omega = getmem(ntotal)
+      if(omega.le.0) then
+        write(6,*) 'Error:  Cannot allocate memory for omega'
+        return
+      end if
+
 c
 c  Get U variable
 c
@@ -57,9 +63,8 @@ c
 c
       call var_at_w(%val(uvar),%val(uvartmp),%val(sgz),%val(wgz),
      &              1,0,0,nx,ny,nz,ntime)
+      call freemem(uvartmp) !; call freemem(uvarin)
 c
-c      write(freevar,'(A,A)') 'free = ',uvarnm
-c      call driver(freevar,0)
 c
 c  Get V variable
 c
@@ -93,10 +98,7 @@ c
 c
       call var_at_w(%val(vvar),%val(vvartmp),%val(sgz),%val(wgz),
      &              0,1,0,nx,ny,nz,ntime)
-c
-c      write(freevar,'(A,A)') 'free = ',vvarnm
-c      call driver(freevar,0)
-
+      call freemem(vvartmp) !; call freemem(vvarin)
 c
 c  Get W variable
 c
@@ -117,25 +119,15 @@ c
 c
       call mult_var(%val(wvar),%val(wvarin)
      &             ,%val(dqdz),0,0,1,nx,ny,nz,ntime)
+      !call freemem(wvarin)
 c
-
-      omega = 0
-      omega = getmem(ntotal)
-      if(omega.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory for omega'
-        return
-      end if
 c
       call omega_calc(%val(omega),%val(uvar),%val(vvar),
      &                %val(wvar),%val(dqdx_xy),%val(dqdy_xy),
      &                %val(dqdx_zw),%val(dqdy_zw),%val(dqdz),
      &                nx,ny,nz,ntime)
 c
-c      write(freevar,'(A,A)') 'free = ',wvarnm
-c      call driver(freevar,0)
-
-      call freemem(uvar) !; call freemem(uvartmp)
-      call freemem(vvar) !; call freemem(vvartmp)
+      call freemem(uvar) ; call freemem(vvar) ; call freemem(wvar)
 c
       dims(1) = nx+1
       dims(2) = ny+1
