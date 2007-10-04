@@ -1,0 +1,224 @@
+--------------------------------------------------------------------------
+                        Brief Documentation of the
+                            IVE EM-TRANSFORMS
+
+             David N. Bresch, Daniel Luethi and Christoph Schar
+                   Atmospheric Physics ETH, 8093 Zurich
+--------------------------------------------------------------------------
+IVE Transforms represent the user-interface of the IVE Grafics Package 
+developped at the University of Washington in the Group of Prof. Dale R. 
+Durran. This document describes the installation and use of the IVE EM-
+Transforms. These Transforms have been developped for the EM hydrostatic 
+model of the German and Swiss Weather Services, but they can also be used 
+with any other numerical model data on sigma/pressure-hybrid coordinates, 
+or on pressure-coordinates. The transforms allow for interactive slicing on 
+pressure, height and potential temperature surfaces. Furthermore, they 
+contain code to provide (in combination with the IVE getvar facility) means 
+to easily compute derived fields, such as derivatives on pressure surfaces, 
+etc.
+
+This documentation assumes that you are working on a site where the IVE 
+Grafics Package is already installed. The installation of the EM-Transforms 
+depends on whether you are on a SMA-site (Swiss Meteorological Agency), on 
+a LAPETH-site (Atmospheric Physics ETH), or on another site. The 
+appropriate procedures for installation are indicated below.
+
+Some filenames given in this documentation relate to the file-system on the 
+SUN Network at Atmospheric Physics ETH. These are prepended with "LAPETH:"
+
+
+--------------------------------------------------------------------------
+1) Installation of the EM-Transforms: Steps on non-LAPETH/SMA sites
+--------------------------------------------------------------------------
+(1) Install the library libcdfio.a: This library contains intermediate 
+level routines to read and write NetCDF-Files. It is used by the EM-
+Transforms, but is also useful in order to write data-files in the IVE-
+format. A documentation of the library is contained in the file 
+LAPETH:/home/schaer/cdf/libcdfio.man.
+   For installation, copy the file LAPETH:/home/schaer/cdf/libcdfio.ini, 
+and execute it on your host. It will install the library ~/lib/libcfio.a 
+relative to your home directory.
+   On non-LAPETH platforms, it might be necessary to slightly modify the 
+file libcdfio.ini, in order to tell it where it finds the library 
+libnetcdf.a and the associated include-file.
+   Note that libcdfio.ini can also be submited as a batch-job to a Cray 
+mainframe, if installation should be performed on such a system.
+
+(2) Copy the RCS-Source-code to your host. Create the directories
+~/ive and ~/ive/source_em, and copy all the files from 
+LAPETH:/usr/local/lib/ive/source_em into this directory
+
+
+--------------------------------------------------------------------------
+2) Installation of the EM-Transforms: Steps on any sites
+--------------------------------------------------------------------------
+(1) Create your directory where the EM-Transforms should be located. The 
+convention is to create a directory named ~/ive/em_trafos.
+
+(2) Create a soft link to the source-code directory: Go into the directory 
+named ~/ive/em_trafos and execute the link command
+   ln -s ../source_em RCS
+This creates the RCS-link later utilized by gmake. On LAPETH and SMA 
+platforms, the link
+   ln -s /usr/loca/lib/ive/source_em RCS
+should be used instead, since the source-code is already installed in the 
+standard directory refered to above.
+
+(3) Compile the transforms: Go into the directory ~/ive/em_trafos and make 
+the transforms with
+   gmake
+On non-LAPETH/SMA platforms, it might be necessary to slightly modify the 
+Makefile, in order to tell it where to find the libraries libnetcdf.a and 
+libnetcdfio.a, as well as the associated include file. If successful, gmake 
+creates the transforms-object-file ~/ive/em_trafos/trans_em.o.
+
+
+--------------------------------------------------------------------------
+3) Run and test the EM-Transforms
+--------------------------------------------------------------------------
+In order to start IVE with the EM-Transforms, you must tell IVE about the 
+transforms you want to use. This is done with an environment variable
+   setenv IVETRANSFILE ~/ive/em_trafos/trans_em.o
+On LAPETH-sites, you can instead use the script
+   LAPETH:/home/schaer/bin/ive
+which sets up this environment variable, in addition to some other 
+customizing operations.
+
+For testing, use the files 
+    LAPETH:/em2/W03/W03_hst_36
+    LAPETH:/em2/W03/W03_cst 
+which can be copied to your host if working on an non-LAPETH site. These 
+are convenient files to test most of the facilities provided with the EM-
+Transforms.
+
+
+--------------------------------------------------------------------------
+4) Implemented commands
+--------------------------------------------------------------------------
+The file LAPETH:/usr/local/lib/help_em contains a list of some of the 
+commands which are provided with the EM-transforms. Some other commands may 
+be documented in ~/ive/em_trafos/calc_field.f.
+
+For all implemented commands, you have to enter
+   field=<command>
+into the IVE command line. For the commands which do not create a new field 
+(e.g. switching to another coordinate), an error message will be displayed, 
+which can be ignored. However, due to a small bug in IVE, the currently 
+active variable button must be reselected in order to avoid problems.
+
+
+--------------------------------------------------------------------------
+5) Customization
+--------------------------------------------------------------------------
+The transforms can be changed, updated and customized without requiring the 
+recompilation of the IVE source code. The user is however recommended to 
+make his changes only in the files privat.f and heading.f in the directory 
+~/ive/em_trafos. If these files are not visible, check them out with 
+   co privat.f
+   co heading.f
+in order to obtain your private copy of the file. Your changes will become 
+active after you compile the transforms with gmake. 
+
+In privat.f, you can add your own field-definitions and other things (like 
+adding a fortran routine which calculates a field from existing fields). 
+See the current versions of privat.f and calc_field.f for examples.
+
+In heading.f, you can change the appearence of the plot title and the 
+subtitle (Read the comments in heading.f carefully). Note that this routine 
+is only effective on LAPETH/SMA-sites, since it requires some specific 
+modification of the IVE source-code. On non LAPETH/SMA-sites, the plot 
+title will always be IVE standard.
+
+
+--------------------------------------------------------------------------
+6) Recompilation after a change in the source-code directory
+--------------------------------------------------------------------------
+If the source in the directory source_em has been modified (e.g. by another 
+user or the person responsible for IVE at your site), you can simply 
+recompile the EM-Transforms with gmake in order to make the changes 
+effective for your private version of the EM-Transforms. It might however 
+be necessary that you first delete some of the standard source code which 
+was copied in an earlier compilation step by gmake into your directory 
+~/ive/em_transforms. In this case, you will be notified correspondingly by 
+the person who changed the source-code. It usually concerns some of the 
+include-files *.inc or the Makefile.
+
+
+--------------------------------------------------------------------------
+7) Basics on NetCDF-Files
+--------------------------------------------------------------------------
+Both the data-file and the constants-file are NetCDF-files. In order to 
+display their contents in ASCII, type
+   ncdump <filename> | more
+Convenient intermediate-level subroutines to write data-files are provided 
+in the library libcdfio.a (see the file libcdfio.ini and section 1 above).
+
+In order to write constants-files, you can use the ncgen command (see man 
+ncgen). This allows you to write an ASCII version of the constants file, 
+and then to convert it into a NetCDF file. For creating an ASCII version of 
+the constants-file, start from an existing constants-file. Its ASCII 
+version can again be obtained with ncdump
+   ncdump  file_cst  >  newfile_cst.txt
+After doing your changes to newfile_cst.txt, you can convert it into the 
+netcdf-format using
+   ncgen  -n  -o newfile_cst.cdf   newfile_cst.txt 
+A brief documentation of the variables in the constants-file is given 
+further below in section 9.
+
+
+--------------------------------------------------------------------------
+8) Data-Files
+--------------------------------------------------------------------------
+The data-files for the EM-Transforms have the classical IVE file structure. 
+There is no staggering in the horizontal, but in the vertical direction. 
+Several "FIELD"-commands in the transforms assume that some variables are 
+present with a specific name:
+
+PS(nx,ny,1,nt)   the surface-pressure. If the variable PS is not
+                 present, the EM-Transforms assume that the data is on
+                 pressure surfaces.
+ZB(nx,ny)        the geopotential height in [m] of the topography. If not
+                 present on the data-file, the EM-Transforms search it
+                 on the "external"-file, named *_ext. For filename 
+                 conventions see the subroutine new_file in trafos.f.
+U(nx,ny,nz,nt)   the horizontal wind-component in the x-direction
+V(nx,ny,nz,nt)   the horizontal wind-component in the y-direction
+T(nx,ny,nz,nt)   the temperature in deg K. If the data-set to be studied
+                 is based on potential temperature rather than sensible
+                 temperature, provide a function T in privat.f, which
+                 computes T from THETA, and all the functionality of
+                 the IVE-Transforms is maintained.
+Z(nx,ny,nz,nt)   the geopotential, in [m].
+
+**Hier fehlt noch ein Text der die Attribute einer Variabel beschreibt, 
+sowie die globalen Attribute.
+
+The computational sigma/pressure hybrid levels are staggered with 
+stag(3)=-0.5 for the variables P and Z. Most of the other variables are 
+located on the layer-centers (e.g. U, V, T, etc), and this is indicated 
+with stag(3)=0.
+
+The pressure of the individual gridpoints is defined by
+   p(i,j,k,l)=aklev(k)+bklev(k)*ps(i,j,1,l)
+for the staggered variables [stag(3)=-0.5], while for the unstaggered 
+variables 
+   p(i,j,k,l)=aklay(k)+bklay(k)*ps(i,j,1,l)
+The arrays aklev, aklay, bklev, bklay are provided on the constants-file 
+along with other information describing the data-file. The name of the 
+constants-file associated with each data-file is saved as a global 
+attribute on the data-file.
+
+The time-array contains the time in hours of the individual fields (as a 
+function of their 4th dimension, refered to above with nt and l) relative 
+to a starting time (usually the initialization time of the simulation). The 
+starting-point of the time-axes is contained in the variables 
+   stary, startm, startd, starth, stars   (NetCDF long integers)
+denoting year, month, day, hour and second. Alternatively, these variables 
+can also be stored in the constants file.
+
+
+--------------------------------------------------------------------------
+9) Constants-Files
+--------------------------------------------------------------------------
+
+

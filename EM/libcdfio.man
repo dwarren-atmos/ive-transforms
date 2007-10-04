@@ -1,0 +1,461 @@
+-----------------------------------------------------------------------
+LIBCDFIO
+-----------------------------------------------------------------------
+This library provides an intermediate set of FORTRAN-routines which
+allow to write NetCDF files for use with the IVE graphics package.
+The use of the routines does not require knowledge of NetCDF itself.
+-----------------------------------------------------------------------
+Two set of routines are provided to write an IVE-NetCDF file. The first 
+procedure assumes that the variables are known to the users as a whole,
+i.e. are available as one single array covering all spatial and temporal
+dimensions. The associated calling sequence is
+
+c     create the cdf-file and write the global attributes
+      call crecdf (filname, cdfid,  <global attributes> )
+
+c       write the individual variables to the file
+        call putcdf (cdfid, var_name1, <variable attributes>, data)
+        call putcdf (cdfid, var_name2, <variable attributes>, data)
+        call putcdf (cdfid, var_name3, <variable attributes>, data)
+c       the additional arguments to putcdf cover all the attributes of
+c       the variable.
+
+c       if the variables are 4-dimensional (i.e. have a time dimension),
+c       provide the time-values [dimensioned as real times(ntime)] stored
+c       in the array:
+        call puttimes (cdfid, times, ntime, error)
+
+c     close the IVE-NetCDF file
+      call clscdf(cdfid, ....)
+
+The second procedure should be used if the variables are not available as a
+whole, as happens for instance in a numerical model where only one time
+level is usually available. Here each variable is written to the file with
+several calls to routines of LIBIVECDF. These calls either define the
+variable, or write a segment (e.g. one time-level) onto the file.
+The associated sequence of calls is
+
+c     create the cdf-file and write the global attributes
+      call crecdf (filename, cdfid, ....)
+
+c       define the variables
+        call putdef (cdfid, var_name1, <variable attributes>)
+        call putdef (cdfid, var_name2, <variable attributes>)
+        call putdef (cdfid, var_name3, <variable attributes>)
+c       these calls do not transfer data to the file, but only define the
+c       variables and some of their attributes. The size of the fourth
+c       dimension (i.e. the time-dimension) does not have to be specified 
+c       with these calls.
+
+c       loop over times and/or levels
+
+c         write segments of data for the various variables to the file
+          call putdat (cdfid, var_name1, time, level, data, error)
+          call putdat (cdfid, var_name2, time, level, data, error)
+          call putdat (cdfid, var_name3, time, level, data, error)
+c         Here 
+c           'time'    (real)       specifies the time-value, and
+c           'level'   (integer)    specifies the level-index
+c         of the data-segment to be written to the file. A whole 3D array
+c         for the specified time can be written to the file with setting
+c         level=0.
+
+c       end of loop over times and/or levels
+
+c     close the IVE-NetCDF file
+      call clscdf(cdfid, ....)
+
+In this second procedure, a call to puttimes is optional. The routine
+putdat keeps track of the time-values stored, and extends the time-
+dimension appropriately. A call to puttimes must however be issued, if the
+first occurrence of each time-value is not in ascending order.
+
+Note that 'putcdf' and 'putdef' treat the time-dimension differently.
+In 'putdef' it is defined as unlimited (i.e. can later be extended to
+any value), while in 'putcdf' the time-dimension is fixed and cannot not
+be extended with a later call to putdat. This is useful since some tasks
+require to have time-dependent and -independent data on the same file,
+where the time-independent data is defined as (nx,ny,nz,1).
+
+Additional routines are available to read data from IVE-NetCDF files,
+and to handle optional global and variable attributes. It follows a
+list of all the user-callable entry-points. Specifics for the individual
+routines follow further below.
+
+routines to open and close IVE-NetCDF files:
+-  crecdf      Create a new file
+-  opncdf      Open an existing file
+-  readcdf     Open an existing file (read-only)
+-  clscdf      Close a file
+
+routines to read/write variables from/to an IVE-NetCDF file
+-  putcdf      Write a whole variable and its attributes
+-  getcdf      Read a whole variable and its attributes
+-  putdef      Define a variable
+-  getdef      Get the definitions from a variable
+-  putdat      Write data-segments
+-  getdat      Read data-segments
+
+routines to handle the times-array
+-  puttimes    Write the times-array
+-  gettimes    Read the times-array
+
+routines to handle optional variable attributes (not yet implemented)
+-  putunits    Define units-attributes of a variable
+-  getunits    Read units-attributes of a variable
+
+routines to handle optional global attributes (not yet implemented)
+-  putproj     Define the default projection
+-  getproj     Read the default projection
+
+
+-----------------------------------------------------------------------
+History:
+-----------------------------------------------------------------------
+Written in spring 1993 by
+   Heini Wernli, Bettina Messmer
+   Christoph Schar
+from Atmospheric Physics ETH, Zurich. 
+
+Parts of routines putcdf and getcdf originate from 
+   Pete Miller
+from the University of Washington, Seattle.
+-----------------------------------------------------------------------
+
+
+
+
+
+      subroutine clscdf (cdfid, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine closes an open NetCDF file.
+c     Aguments :
+c        cdfid  int  input   the id of the file to be closed.
+c        error  int  output  indicates possible errors found in this
+c                            routine.
+c                            error = 0   no errors detected.
+c                            error = 1   error detected.
+c     History:
+c        Nov. 91  Pete Miller  UW  Created.
+c-----------------------------------------------------------------------
+
+
+
+
+      subroutine crecdf (filnam, cdfid,  
+     &                            phymin, phymax, ndim, cfn, error) 
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to create a NetCDF file for use with 
+c        the UWGAP plotting package. Any NetCDF file written to must 
+c        be closed with a call to clscdf.
+c     Arguments:
+c        filnam  char  input   the user-supplied NetCDF file name.
+c        cdfid   int   output  the file-identifier
+c        phymin  real  input   the minimum physical dimension of the
+c                              entire physical domain along each axis.
+c                              phymin is dimensioned (ndim)
+c        phymax  real  input   the maximum physical dimension of the
+c                              entire physical domain along each axis.
+c                              phymax is dimensioned (ndim)
+c        ndim    int   input   the number of dimensions in the file
+c                              (i.e. number of elements in phymin,
+c                              phymax)
+c        cfn     char  input   constants file name 
+c                              ('0' = no constants file).
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   error detected.
+c     History:
+c        Nov. 91  Pete Miller, UW         Created cr3df.
+c        Jan. 92  Christoph Schar, UW     Created crecdf.
+c-----------------------------------------------------------------------
+
+
+
+      subroutine opncdf(filnam, cdfid,
+     &                 phymin, phymax, ndim, varnam, nvar, cfn, error) 
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to open an existing IVE-NetCDF file. 
+c        Any NetCDF file written to must be closed with a call to cls_cdf.
+c     Arguments:
+c        filnam  char  input   the user-supplied NetCDF file name.
+c        cdfid   int   output  the file-identifier
+c        phymin  real  output  the minimum physical dimension of the
+c                              entire physical domain along each axis.
+c                              phymin is dimensioned Min(3,ndim)
+c        phymax  real  output  the maximum physical dimension of the
+c                              entire physical domain along each axis.
+c                              phymax is dimensioned Min(3,ndim)
+c        ndim    int   output  the maximum number of dimensions in the 
+c                              file (ndim<=4).
+c        varnam  char  output  an array containing the variable names.
+c                              varnam is dimensioned (nvar).
+c        nvar    int   output  the number of variables in the file
+c        cfn     char  output  constants file name 
+c                              ('0'=no constants file).
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   error detected.
+c     History:
+c        Nov. 91  Pete Miller, UW      Created cr3df.
+c        Jan. 92  Christoph Schar, UW  Created opncdf.
+c-----------------------------------------------------------------------
+
+
+
+
+      subroutine gettimes (cdfid, times, ntime, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to set the time-level 
+c        to be accessed with later calls to routines of this package.
+c     Arguments:
+c        cdfid   int   input   the file-identifier. It can be obtained
+c                              from a previous call to cre_cdf or opn_cdf.
+c        times   real  output  the values of time stored in the file,
+c                              dimensioned at least (ntimes).
+c        ntimes  int   output  the number of times stored in the file.
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   times is not defined on the
+c                                          file.
+c                              error = 2   another error.
+c     History:
+c-----------------------------------------------------------------------
+
+
+
+
+
+      subroutine puttimes (cdfid, times, ntime, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to set the time-level 
+c        to be accessed with later calls to routines of this package.
+c     Arguments:
+c        cdfid   int   input   the file-identifier. It can be obtained
+c                              from a previous call to cre_cdf or opn_cdf.
+c        times   real  input   the values of time stored in the file,
+c                              dimensioned at least (ntimes).
+c        ntimes  int   input   the number of times to be stored in the
+c                              file.
+c        error   int   output  error = 0   no errors detected.
+c                              error = 1   previously defined values of
+c                                          times are inconsisten with the
+c                                          values specified in this
+c                                          routine.
+c                              error = 2   another error.
+c     Note:
+c        There is no need to call this routine if the variables are written 
+c        with calls to putdef and putdat, provided the first occurence 
+c        of each time-level is in ascending order.
+c     History:
+c-----------------------------------------------------------------------
+
+
+
+
+      subroutine getdef (cdfid, varnam, ndim, misdat, 
+     &                              vardim, varmin, varmax, stag, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to get the dimensions and attributes of 
+c        a variable from an IVE-NetCDF file for use with the IVE plotting
+c        package. Prior to calling this routine, the file must be opened
+c        with a call to opncdf.
+c     Arguments:
+c        cdfid   int   input   file-identifier
+c                              (can be obtained by calling routine 
+c                              opncdf)
+c        varnam  char  input   the user-supplied variable name.
+c                              (can be obtained by calling routine 
+c                              opncdf)
+c        ndim    int   output  the number of dimensions (ndim<=4)
+c        misdat  real  output  missing data value for the variable. 
+c        vardim  int   output  the dimensions of the variable.
+c                              Is dimensioned at least (ndim). 
+c        varmin  real  output  the location in physical space of the
+c                              origin of each variable. 
+c                              Is dimensioned at least Min(3,ndim). 
+c        varmax  real  output  the extend of each variable in physical
+c                              space.
+c                              Is dimensioned at least Min(3,ndim). 
+c        stag    real  output  the grid staggering for each variable.
+c                              Is dimensioned at least Min(3,ndim). 
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   the variable is not on the file.
+c                              error =10   other errors.
+c     History:
+c       Apr. 93    Christoph Schaer (ETHZ)     Created.
+c-----------------------------------------------------------------------
+
+
+
+
+      subroutine putdef (cdfid, varnam, ndim, misdat, 
+     &                            vardim, varmin, varmax, stag, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to define the dimensions and the
+c        attributes of a variable on an IVE-NetCDF file for use with the
+c        IVE plotting package. Prior to calling this routine, the file must
+c        be opened with a call to opncdf (extend an existing file) or
+c        crecdf (create a new file).
+c     Arguments:
+c        cdfid   int   input   file-identifier
+c                              (can be obtained by calling routine 
+c                              opncdf)
+c        varnam  char  input   the user-supplied variable name.
+c        ndim    int   input   the number of dimensions (ndim<=4). 
+c                              Upon ndim=4, the fourth dimension of the
+c                              variable is specified as 'unlimited'
+c                              on the file (time-dimension). It can 
+c                              later be extended to arbitrary length.
+c        misdat  real  input   missing data value for the variable. 
+c        vardim  int   input   the dimensions of the variable.
+c                              Is dimensioned at least Min(3,ndim). 
+c        varmin  real  input   the location in physical space of the
+c                              origin of each variable.
+c                              Is dimensioned at least Min(3,ndim). 
+c        varmax  real  input   the extent of each variable in physical
+c                              space.
+c                              Is dimensioned at least Min(ndim). 
+c        stag    real  input   the grid staggering for each variable.
+c                              Is dimensioned at least Min(3,ndim). 
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error =10   other errors detected.
+c     History:
+c       Apr. 93    Christoph Schaer (ETHZ)     Created.
+c-----------------------------------------------------------------------
+
+
+
+      subroutine getdat (cdfid, varnam, time, level, dat, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to get data of a variable from an 
+c        IVE-NetCDF file for use with the IVE plotting package. 
+c        Prior to calling this routine, the file must be opened with 
+c        a call to opncdf. The dimensions and attributes of the variable
+c        can be obtained with a preceding call to getdef.
+c     Arguments:
+c        cdfid   int   input   file-identifier
+c                              (must be obtained by a previous call to
+c                              routine opncdf or crecdf) 
+c        varnam  char  input   the user-supplied variable name.
+c                              (can be obtained by a previous call to  
+c                              routine opncdf)
+c        time    real  input   the user-supplied time-value of the
+c                              data-segment to be read from the file. The 
+c                              time-levels stored in the file can be 
+c                              obtained with a call to gettimes.
+c        level   int input     Define the horizontal level(s) to be read 
+c                              from the NetCDF file. Suppose that the
+c                              variable is defined as (nx,ny,nz,nt).
+c                              level>0: the call returns the subdomain
+c                                       (1:nx,1:ny,level,itimes)
+c                              level=0: the call returns the subdomain
+c                                       (1:nx,1:ny,1:nz,itimes)
+c                              Here itimes is the time-index corresponding
+c                              to the value of 'time'. 
+c        dat     real  output  data-array dimensioned sufficiently 
+c                              large. The dimensions (nx,ny,nz,nt)
+c                              of the variable can be obtained
+c                              with a call to getdef. 
+c        error   int output    error = 0   no errors detected.
+c                              error = 1   the variable is not present on
+c                                          the file.
+c                              error = 2   the specified time-value is not
+c                                          present in the file.
+c                              error = 3   inconsistent value of level
+c                              error =10   other errors.
+c     History:
+c-----------------------------------------------------------------------
+
+
+
+      subroutine putdat (cdfid, varnam, time, level, dat, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to write the data of a variable
+c        to an IVE-NetCDF file for use with the IVE plotting package. 
+c        Prior to calling this routine, the file must be opened with 
+c        a call to opncdf (for extension) or crecdf (for creation), the 
+c        variable must be defined with a call to putdef.
+c     Arguments:
+c        cdfid   int   input   file-identifier
+c                              (must be obtained by calling routine 
+c                              opncdf or crecdf)
+c        varnam  char  input   the user-supplied variable name (must 
+c                              previously be defined with a call to
+c                              putdef)
+c        time    real  input   the user-supplied time-level of the
+c                              data to be written to the file (the time-
+c                              levels stored in the file can be obtained
+c                              with a call to gettimes). If 'time' is not
+c                              yet known to the file, a knew time-level is
+c                              allocated and appended to the times-array.
+c        level   int input     the horizontal level(s) to be written 
+c                              to the NetCDF file. Suppose that the
+c                              variable is defined as (nx,ny,nz,nt).
+c                              level>0: the call writes the subdomain
+c                                       (1:nx,1:ny,level,itimes)
+c                              level=0: the call writes the subdomain
+c                                       (1:nx,1:ny,1:nz,itimes)
+c                              Here itimes is the time-index corresponding
+c                              to the value of 'time'. 
+c        dat     real  output  data-array dimensioned sufficiently 
+c                              large. The dimensions (nx,ny,nz)
+c                              of the variable must previously be defined
+c                              with a call to putdef. No previous 
+c                              definition of the time-dimension is
+c                              required.
+c        error   int output    indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   the variable is not present on
+c                                          the file.
+c                              error = 2   the value of 'time' is new, but
+c                                          appending it would yield a non
+c                                          ascending times-array.
+c                              error = 3   inconsistent value of level
+c                              error =10   another error.
+c     History:
+c-----------------------------------------------------------------------
+
+
+
+      subroutine putunits (cdfid, varnam, ndim, misdat, 
+     &                            vardim, varmin, varmax, stag, error)
+c-----------------------------------------------------------------------
+c     Purpose:
+c        This routine is called to write the optional units attributes
+c        of a (previously defined) variable to a IVE-NetCDF file for use
+c        with the IVE plotting package. 
+c     Arguments:
+c        cdfid   int   input   file-identifier
+c                              (can be obtained by calling routine 
+c                              opncdf)
+c        varnam  char  input   the user-supplied variable name.
+c        units   chr   input   The units of the variable. 
+c        dunits  chr   input   The display-units of the variable.
+c        error   int   output  indicates possible errors found in this
+c                              routine.
+c                              error = 0   no errors detected.
+c                              error = 1   the specified variable is not
+c                                          on the file
+c                              error =10   other errors detected.
+c     History:
+c-----------------------------------------------------------------------
+
+
