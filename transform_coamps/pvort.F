@@ -2,7 +2,7 @@
 !
 !   function vort_z(uvar_name, vvar_name, ...)
 !
-!   Calculates the vertical component of vorticity 
+!   Calculates ertel pv 
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       integer(ive_ptr) function pvort(unam,vnam,wnam,tnam,pnam,
