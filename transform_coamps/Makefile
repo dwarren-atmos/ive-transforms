@@ -10,7 +10,16 @@
 
 MODLIB	= ./mods
 
+machine := ${shell /usr/ucb/arch}
+ifndef machine
 machine := ${shell /usr/bin/arch}
+endif
+ifndef machine
+machine := ${shell /usr/bin/uname}
+endif
+ifndef machine
+machine := ${shell /bin/uname}
+endif
 ifeq (${machine},alpha)
    F90 = f90
    CC = cc
@@ -31,7 +40,7 @@ else
    FC=ifort
    CC = icc
    CPP = ${F90} -E
-   DEC = 
+   DEC = -fPIC
    LDEC = -shared
    LIBS = -lfftpack -lnetcdf
    OPT = -O2
@@ -48,14 +57,13 @@ FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 #
 #			module_numerics.o
-MODS	=	default_module.o   	\
-            module_mapping.o   	\
-			misc_module.o
+MODS	=   default_module.o   	\
+	    module_mapping.o   	\
+	    misc_module.o
 
-OBJS_F = 						\
-		 default.o				\
- 		 calc_field_coamps.o	\
- 		 run_sub.o				\
+OBJS_F =     default.o				\
+	     calc_field_coamps.o	\
+	     run_sub.o				\
 	     buoy_freq.o			\
 	     deriv.o				\
 	     get_args.o				\
@@ -87,15 +95,15 @@ OBJS_F = 						\
 	     time_mean.o			\
 	     the2temp.o				\
 	     variance.o				\
-		 max_min.o 				\
-		 sound_out.o 			\
-		 point_val.o			\
-		 kgain.o				\
-		 localize.o				\
-		 vort.o				\
-		 sigdiff.o				\
-		 pvort.o				\
-		 filt9.o
+	     max_min.o 				\
+	     sound_out.o 			\
+	     point_val.o			\
+	     kgain.o				\
+	     localize.o				\
+	     vort.o				\
+	     sigdiff.o				\
+	     pvort.o				\
+	     filt9.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
