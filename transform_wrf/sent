@@ -1,0 +1,28 @@
+From warren Wed Aug  6 16:04:28 2008
+To: all_users@atmos.washington.edu
+Subject: Fwd: new net threat
+
+Forward for beth:
+ More than a thousand hacked Web sites are serving up fake Flash Player
+software to users duped into clicking on links in mail that's part of a
+massive spam attack masquerading as CNN.com news notifications.
+
+The bogus messages, which claim to be from the CNN.com news Web site,
+include links to what are supposedly the day's Top 10 news stories and Top
+10 news video clips from the cable network. Clicking on any of those links,
+however, brings up a dialog that says an incorrect version of Flash Player
+has been detected and that tells users they needed to update to a newer
+edition.
+
+One distinguishing feature of the attack is the endless loop it uses to
+frustrate victims. If user clicks "Cancel" in the dialog that prompts for an
+update, another pop-up appears that tells the victim that they have to
+download it to view the video. Clicking "Cancel" the returns the user to the
+first dialog.
+
+It puts you in this perpetual loop, so your only options are to kill your
+browser session or be browbeaten into installing it.
+
+MX Logic has detected more than 160 million spam messages in the fake
+CNN.com attack in the past 48 hours.
+
