@@ -34,11 +34,12 @@ else
    CC = icc
    CPP = ${F90} -E
 ifeq (${MACH}, x86_64)
-   DEC = -fPIC -DSIXTY_FOUR_bptr -mcmodel=medium
+   DEC = -fPIC -DSIXTY_FOUR_bptr
+   LDEC = -shared 
 else
    DEC =
-endif
    LDEC = -shared
+endif
    LIBS = -lfftpack -lnetcdf -lnetcdff 
    OPT = -O2
    AUTOMATIC = -automatic

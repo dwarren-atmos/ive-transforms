@@ -65,7 +65,7 @@ c
       common/flcount/numfls
 
       integer(ive_ptr) :: tlgz,tsgz,twgz,ttime,thgt_ptr,tzbot_u,tzbot_v
-      integer(ive_ptr) :: tztop,ttgrid,theight
+      integer(ive_ptr) :: tztop,ttgrid,theight,map_tmp
       logical :: error,error1,error2,flag
       real :: r_val,tgrid,stagger(4),min(4),max(4),missing, pls(4)
       real*8 :: slope,intercept
@@ -79,7 +79,7 @@ c
 
       character(len=80) :: dummy
       double precision djunk(2)
-      integer(ive_ptr) :: mu_ptr,mub_ptr
+      integer(ive_ptr) :: mu_ptr,mub_ptr, ph_ptr,phb_ptr
 
       integer :: set_button_name
 
@@ -87,8 +87,6 @@ c
       write(6,*)'got :',dimvar_size(1),dimvar_size(2),
      &     dimvar_size(3),dimvar_size(4)
       call getparr('dimvar_data', dimvar_data, 4, error)
-      write(6,*)'got :',dimvar_data(1),dimvar_data(2),
-     &     dimvar_data(3),dimvar_data(4)
       
       !call set_buttons
 
@@ -138,6 +136,7 @@ c
 
       do i = 1,4
         exact_coord(i) = dimvar_data(i)
+        coord(i) = dimvar_data(i)
         n(i) = dimvar_size(i)
       enddo
 
@@ -146,16 +145,16 @@ c set up coordinate vector for times
 c
       if (time.ne.0) call freemem(time)
       time = dimvar_data(4) ; ntime = dimvar_size(4)
-      
+      flag=.true.
       znw_ptr = getvar('ZNW',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
       if(znw_ptr.ne.0) then
         znw_min = r_val(%val(znw_ptr),1)
         znw_max = r_val(%val(znw_ptr),dims(1))
       end if
-        nzp1 = dims(1) ; nz = nz-1
-        print *,'NZ NZP1 ',nz, nzp1
+      nzp1 = dims(1) ; nz = dims(1)-1
 
+      flag=.true.
       znu_ptr = getvar('ZNU',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
       if(znu_ptr.ne.0) then
@@ -165,13 +164,16 @@ c
       end if
 
 
+      flag=.true.
       ptop_ptr = getvar('P_TOP',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
       ptop = r_val(%val(ptop_ptr),1)
 
+      flag=.true.
       psfc_ptr = getvar('PSFC',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
 
+      flag=.true.
       hgt_ptr = getvar('HGT',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
       ierr = set_button_name ('HGT'//char(0), '') ! Terrain
@@ -183,84 +185,39 @@ c
       if (ttgrid.ne.0) tgrid = r_val(%val(ttgrid),1)
       if (tgrid.ne.0.) trans_on = 1
 
+
       flag=.true.
-      mu_ptr=getvar('MUB',ndims,dims,stagger,min,max,
-     >                  missing,data_units,display_units,dim_names,flag)
-      mub_ptr=getvar('MU',ndims,dims,stagger,min,max,
-     >                  missing,data_units,display_units,dim_names,flag)
       mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
      >                  missing,data_units,display_units,dim_names,flag)
-      mu_delta=delta(:) ; mu_dims = dims(:)  
-      phys_mumin = min(:) ; phys_mumax = max(:) ;
-      call driver('free=MU',0)
-      call driver('free=MUB',0)
-      ierr = set_button_name ('MU', '')  
-      ierr = set_button_name ('MUB', '')
       if(mutot_ptr .eq. 0) then
          write(6,*)'MU_TOT failed',flag
          stop 1
       endif
+      mu_delta=delta(:) ; mu_dims = dims(:)  
+      phys_mumin = min(:) ; phys_mumax = max(:) ;
+      
+
+      flag=.true.
       phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
-      call driver('free=PH',0)
-      call driver('free=PHB',0)
+      if(phtot_ptr .eq. 0) then
+         write(6,*)'PHTOT failed',flag
+         stop 1
+      endif
+      ierr = set_button_name ('MU', '')  
+      ierr = set_button_name ('MUB', '')
       ierr = set_button_name ('PH', '')
       ierr = set_button_name ('PHB', '')
       
 c     mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
 c     >                  data_units,display_units,dim_names,flag)
-      
+c      
 c     mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,missing,
 c     >                  data_units,display_units,dim_names,flag)
-      
+c     
 c     mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,missing,
 c     >                  data_units,display_units,dim_names,flag)
-      
-      
-      ierr=nf_get_att_double(ncid,0,'TRUELAT1',djunk(1))
-      if(ierr.eq.NF_NOERR) then
-         trulat1=djunk(1)
-      else
-         trulat1 =30.0
-      endif
-      ierr=nf_get_att_double(ncid,0,'TRUELAT2',djunk(1))
-      if(ierr.eq.NF_NOERR) then
-         trulat2=djunk(1)
-      else
-         trulat2 =30.0
-      endif
-      ierr=nf_get_att_double(ncid,0,'STAND_LON',djunk(1))
-      if(ierr.eq.NF_NOERR) then
-      ierr=nf_get_att_double(ncid,0,'CEN_LON',djunk(1))
-      endif
-      if(ierr.eq.NF_NOERR) then
-         cenlon=djunk(1)
-      else
-         cenlon =60.0
-      endif
-      ierr=nf_get_att_double(ncid,0,'CEN_LAT',djunk(1))
-      if(ierr.eq.NF_NOERR) then
-         cenlat=djunk(1)
-      else
-         cenlon =60.0
-      endif
-      ierr=nf_get_att_double(ncid,0,'MAP_PROJ',djunk(1))
-      if(ierr.eq.NF_NOERR) then
-         iproj=djunk(1)
-      else
-         iproj = 4
-      endif
-
-      if(iproj .eq. 0) then
-         projection='CE'
-      else if(iproj .eq. 1) then
-         projection='LC'
-      else if(iproj .eq. 2) then
-         projection='ST'
-      else if(iproj .eq. 3) then
-         projection='ME'
-      endif
-      write(6,*)iproj,'=',projection,cenlon,cenlat
+c     
       twod = 0
       if (plmax(2).eq.plmin(2)) twod = 1
       
@@ -275,6 +232,7 @@ c     >                  data_units,display_units,dim_names,flag)
       
       mumax = 0.0
       mumin = 999999.0
+!      write(6,*)'mutot_ptr ',mutot_ptr,' ntime ',ntime
       do i=1,nx*ny*ntime
          mumax=amax1(r_val(%val(mutot_ptr),i),mumax)
          mumin=amin1(r_val(%val(mutot_ptr),i),mumin)
@@ -328,33 +286,70 @@ c     >                  data_units,display_units,dim_names,flag)
         stop
       end if
 
+      flag=.true.
+      map_tmp=getvar('XLAT',ndims,dims,stagger,min,max,
+     >     missing,data_units,display_units,dim_names,flag)
+      lat_ll=getmem(dims(4))
+      lat_ur=getmem(dims(4))
+      lon_ll=getmem(dims(4))
+      lon_ur=getmem(dims(4))
+      call transcopylats(%val(map_tmp),dims(1),dims(2),dims(3),dims(4),
+     &     %val(lat_ll), %val(lat_ur))
+      call driver('free=XLAT',0)
+      flag=.true.
+      map_tmp=getvar('XLONG',ndims,dims,stagger,min,max,
+     >     missing,data_units,display_units,dim_names,flag)
+      call transcopylons(%val(map_tmp),dims(1),dims(2),dims(3),dims(4),
+     &     %val(lon_ll), %val(lon_ur))
+      call driver('free=XLONG',0)
+      ierr = set_button_name ('XLAT', '')
+      ierr = set_button_name ('XLONG', '')
 
-c
-c  Get map factors for common block
-c
-c      hmap   = getmem(nxp1*nyp1*3)
-c      grdrot = getmem(nxp1*nyp1)
-c      fcor    = getmem(nxp1*nyp1)
-c      call map_factors(%val(hmap),%val(grdrot),%val(fcor),
-c     >  nxp1,nyp1,dx,dy,
-c     >  iref,jref,igrid,reflat,reflon,stdlt1,stdlt2,stdlon)
+      ierr=nf_get_att_double(ncid,0,'TRUELAT1',djunk(1))
+      if(ierr.eq.NF_NOERR) then
+         trulat1=djunk(1)
+      else
+         trulat1 =30.0
+      endif
+      ierr=nf_get_att_double(ncid,0,'TRUELAT2',djunk(1))
+      if(ierr.eq.NF_NOERR) then
+         trulat2=djunk(1)
+      else
+         trulat2 =30.0
+      endif
+      ierr=nf_get_att_double(ncid,0,'STAND_LON',djunk(1))
+      if(ierr.eq.NF_NOERR) then
+      ierr=nf_get_att_double(ncid,0,'CEN_LON',djunk(1))
+      endif
+      if(ierr.eq.NF_NOERR) then
+         cenlon=djunk(1)
+      else
+         cenlon =60.0
+      endif
+      ierr=nf_get_att_double(ncid,0,'CEN_LAT',djunk(1))
+      if(ierr.eq.NF_NOERR) then
+         cenlat=djunk(1)
+      else
+         cenlon =60.0
+      endif
+      ierr=nf_get_att_double(ncid,0,'MAP_PROJ',djunk(1))
+      if(ierr.eq.NF_NOERR) then
+         iproj=djunk(1)
+      else
+         iproj = 4
+      endif
 
-c
-c      dqdx_xy = getmem(3*(nx+1)*(ny+1))
-c      dqdx_zt = getmem(nz+1)
-c      dqdx_zw = getmem(nz+1)
-c      dqdy_xy = getmem(3*(nx+1)*(ny+1))
-c      dqdy_zt = getmem(nz+1)
-c      dqdy_zw = getmem(nz+1)
-c      dqdz = getmem(3*(nx+1)*(ny+1))
-c      dzdq = getmem(3*(nx+1)*(ny+1))
-c      call metric_calc(%val(zbot_p),%val(zbot_u),%val(zbot_v),
-c     >              %val(sgz),%val(wgz),%val(dqdx_xy),%val(dqdx_zt),
-c     >              %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zt),
-c     >              %val(dqdy_zw),%val(dqdz),%val(dzdq),ztop,dx,dy,
-c     >              nx,ny,nz)
+      if(iproj .eq. 0) then
+         projection='CE'
+      else if(iproj .eq. 1) then
+         projection='LC'
+      else if(iproj .eq. 2) then
+         projection='ST'
+      else if(iproj .eq. 3) then
+         projection='ME'
+      endif
+      write(6,*)iproj,'=',projection,cenlon,cenlat
 
-c      call bnd_arrays(%val(sgz),%val(wgz),nx,ny,nz)
 
 c set domain offsets to zero
       offset(1) = 0. ;  offset(2) = 0. ;  offset(4) = 0.
@@ -402,6 +397,8 @@ c
       integer k,iflg, strbeg,strend
       logical flag,requ
       real :: plmin_scaled(4), plmax_scaled(4)
+      integer(ive_ptr) :: dimvar_data(4)
+      integer :: dimvar_size(4)
 c
 c save the physical and index limits in the common block in
 c   default.icl for use in later calculations by other transform
@@ -415,7 +412,14 @@ c
 !         write(6,*)'NEW_FIELD name = ',name(1:80)
 !      endif
       if(trim(name(1:80)) .eq. 'ZNW' .or. 
-     &     trim(name(1:80)) .eq. 'ZNU') return
+     &     trim(name(1:80)) .eq. 'ZNU' .or.
+     &     trim(name(1:80)) .eq. 'XLAT' .or. 
+     &     trim(name(1:80)) .eq. 'XLONG' .or.
+     &     trim(name(1:80)) .eq. 'MU' .or.
+     &     trim(name(1:80)) .eq. 'MUB' .or.
+     &     trim(name(1:80)) .eq. 'PH' .or.
+     &     trim(name(1:80)) .eq. 'PHB' 
+     &     ) return
 
       call getrarr("plmax_scaled",plmax_scaled,4,error)
       if (error.ne.0) then
@@ -446,6 +450,7 @@ c      print *,'PLMIN/MAX_SCLAED: ', plmin_scaled, plmax_scaled
      >                               'maximum for field.'
         stop
       end if
+
 
       inmax(1) = inmax1 ; inmax(2) = inmax2 
       inmax(3) = inmax3 ; inmax(4) = inmax4
@@ -552,10 +557,11 @@ c
 c check to see if time coordinate vector is evenly spaced
 c
       if (inmax(4).ne.1) then
-        coord(4) = time
+         call getparr('dimvar_data', dimvar_data, 4, error)
+!         write(6,*)'time: ',time, dimvar_data(4)
+          coord(4) = dimvar_data(4) !should = time
         k = 1
         start = r_val(%val(coord(4)),1)
-
         do while(k.le.inmax(4))
           if (requ(start+(k-1)*delta(4),r_val(%val(coord(4)),k))) then
             k = k+1
@@ -1114,6 +1120,10 @@ c
       character*(*) proj, limit
       integer       exact_fit
       real          plon, plat, rota, plm1(2), plm2(2), plm3(2), plm4(2)
+
+      real mytime, r_val
+      integer imytime
+      logical error
 c
 c     The default is the current window in a Lambert Conic
 c     Projection.
@@ -1124,7 +1134,8 @@ c
          plon = cenlon
          plat = trulat1
       else if(projection .eq. 'ST') then
-         plat=sign(90.,cenlon)
+!         plat=sign(90.,cenlon)
+         plat=trulat1
          plon=cenlon
 !         rota=-1*rrota(ipl)
          rota=0.
@@ -1137,9 +1148,26 @@ c
 c     Setting limt to CL tells IVE to clip to the current window using
 c     phys_2_lonlat.
 c
-      limit = 'CL'
+      call getrvar('time', mytime, error)
+      if(.not. error) then
+         do imytime=1,ntime
+            if(mytime .eq. r_val(%val(time),imytime)) then
+               plm1=r_val(%val(lat_ll),imytime)
+               plm2=r_val(%val(lon_ll),imytime)
+               plm3=r_val(%val(lat_ur),imytime)
+               plm4=r_val(%val(lon_ur),imytime)
+            endif
+         enddo
+      else
+         plm1=0.
+         plm2=0.
+         plm3=0.
+         plm4=0.
+      endif
+      limit = 'CO'
       exact_fit = 1
       !exact_fit = 0
+      write(6,*)'map:',plm1,plm2,plm3,plm4,plon,plat,rota
       return
       end
 c
@@ -1318,8 +1346,9 @@ c     Arguments:
 c     array	real	input	The array to extract the value from.
 c     j		integer	input	The index of array to use.
 c
+      real array
       integer j
-      real array(j)
+      dimension array(j)
 
       r_val = array(j)
       return
@@ -1603,3 +1632,20 @@ c
       end
 
          
+      subroutine transcopylats(lats, x,y,z,t, lat_ll, lat_ur)
+      real lats, lat_ll, lat_ur
+      integer x,y,z,t
+      dimension lats(x,y,z,t), lat_ll(t), lat_ur(t)
+
+      lat_ll(:) = lats(1,1,1,:)
+      lat_ur(:) = lats(x,y,z,:)
+      end
+
+      subroutine transcopylons(lons, x,y,z,t, lon_ll, lon_ur)
+      real lons, lon_ll, lon_ur
+      integer x,y,z,t
+      dimension lons(x,y,z,t), lon_ll(t), lon_ur(t)
+
+      lon_ll(:) = lons(1,1,1,:)
+      lon_ur(:) = lons(x,y,z,:)
+      end

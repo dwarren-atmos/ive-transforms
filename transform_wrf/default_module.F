@@ -23,21 +23,17 @@ c
 #  endif
 
       integer(ive_ptr) :: getvar, addvar, getmem, coord(4), time
-      integer :: getvid
-
       integer(ive_ptr) :: znu_ptr, znw_ptr, ptop_ptr, psfc_ptr
-      integer(ive_ptr) :: mutot_ptr, phtot_ptr
-      integer(ive_ptr) :: hgt_ptr
+      integer(ive_ptr) :: mutot_ptr, phtot_ptr, hgt_ptr
       integer(ive_ptr) :: mapM_ptr, mapU_ptr, mapV_ptr
-
+      integer(ive_ptr) :: lat_ll, lat_ur, lon_ll, lon_ur
       integer(ive_ptr) :: fcor
-
       integer(ive_ptr) :: dqdx_xy, dqdx_zt, dqdx_zw
       integer(ive_ptr) :: dqdy_xy, dqdy_zt, dqdy_zw
       integer(ive_ptr) :: dqdz, dzdq
-
       integer(ive_ptr) :: grdrot
 
+      integer :: getvid
       integer :: trans_eta,trans_on
       integer :: nx,ny,nz,twod, nzp1
       integer :: ntime, nznw, nznu
