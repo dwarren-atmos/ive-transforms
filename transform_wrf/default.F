@@ -1600,7 +1600,7 @@ c
       
       integer iflag(4)
       data iflag/1,1,0,1/
-      real bottom, top, part
+      real bottom, top, part, retpres
       call phys_2_index(hgt, index, iflag, ndims, 1)
       if(index(1) .lt. 1 .or. index(2) .lt. 1 .or. 
      &     index(4) .lt. 1) then
@@ -1608,14 +1608,16 @@ c
          return
       endif
          
+      k=nzp1
+      bottom=interp(phtot_ptr,nx,ny,nz,ntime,
+     &     index(1),index(2), real(k), index(4),spval)
       k=nz
-      bottom=spval
       do while(bottom .gt. hgt(3) .and. k .gt. 1)
          bottom=interp(phtot_ptr,nx,ny,nz,ntime,
      &        index(1),index(2), real(k), index(4),spval)
          k=k-1
       enddo
-      if(bottom .eq. spval .or. bottom .eq. nz .or.
+      if((bottom .lt. hgt(3) .and. k .eq. nzp1) .or.
      &     ((k.eq.1) .and. bottom .gt. hgt(3))) then
          index(3)=-1
          return

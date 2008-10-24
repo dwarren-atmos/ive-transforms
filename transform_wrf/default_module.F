@@ -45,7 +45,7 @@ c
       real :: offset(4)
       real :: dx,dy,dz,plmin(4),plmax(4)
       real :: wgz_max,wgz_min,sgz_max,sgz_min,lgz_min,lgz_max
-      real :: zbot_delta(2),zbot_min(4),zbot_max(4)
+      real :: zbot_delta(2),zbot_min(4),zbot_max(4),ztop
       real :: phys_mumin(4), phys_mumax(4), mu_dims(4), mu_delta(4)
       real :: ptop
       real :: reflat,reflon,stdlt1,stdlt2,stdlon
