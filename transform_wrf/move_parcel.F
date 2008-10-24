@@ -30,7 +30,7 @@
      &     zpart, phys(4), ind(4), ri, spval
 
 !  external functions
-      real interp ! interp is not part of the transform package
+      real interp, r_val ! interp is not part of the transform package
       data flag/1,1,1,1/
 !
       call getrvar('spval', spval, error)
@@ -58,21 +58,32 @@
       if(wwind*delt .eq. 0.) then
          return
       endif
+      if(inmax(3) .eq. 1) then
+         retpt(3) = curpt(3)
+         return
+      else if(delta(3) .eq. 0) then
 !     get the of the index points
-      retpt(3)=sigma_new
-      write(6,*)'sigma_new',sigma_new
-      call hgt_2_index(retpt,realij,4,spval)
-!     convert back to pressure
-      do i=1,4
-         if(abs(ind(i)-realij(i)) .gt. 1.) then
-            write(6,*)'diff at ',i,'is ',abs(ind(i)-realij(i))
+         retpt(3)=sigma_new
+         call hgt_2_index(retpt,realij,4,spval)
+         if(realij(3) .ge. inmax(3)) then
+            retpt(3) = phmax(3)
+            return
          endif
-      enddo
-      call index_2_phys(retpt,realij,flag,4,1)
-!      write(6,*)'(',curpt(1),curpt(2),curpt(3),curpt(4),')',
-!     &     '->(',retpt(1),retpt(2),retpt(3),retpt(4),')'
-!      write(6,*)curpt
-!      write(6,*)retpt
-!      call sleep(1)
+         
+!     convert back to pressure
+         retpt(3) = r_val(%val(coord(3)),int(realij(3)) +
+     &        (realij(3) - int((realij(3))))) *
+     &        (r_val(%val(coord(3)),int(realij(3))+1) - 
+     &        r_val(%val(coord(3)),int(realij(3))))
+         mupt = get_2Dpt_time(%val(mutot_ptr),
+     &        retpt(1), retpt(2), retpt(4),
+     &        int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
+     &        phys_mumin(1:2), mu_delta(1:2))
+         
+         retpt(3) = retpt(3)*mupt + ptop
+      else
+         retpt(3) = phmin(3) + realij(3)*delta(3)  
+      endif
+         
       return
       end
