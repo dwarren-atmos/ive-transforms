@@ -41,17 +41,18 @@
 !     interp is not part of the transform package
       hgtval=interp(%val(phtot_ptr),nx,ny,nz,ntime,
      &     realij(1),realij(2),realij(3),realij(4),spval)
-      write(6,*)'hgtval',hgtval
 !  step forward in transformed space
       retpt(1)  = curpt(1) + uwind*delt
       retpt(2)  = curpt(2) + vwind*delt
       retpt(4) = curpt(4) + delt
+!quick test
+!      retpt(3) = curpt(3) + wwind*delt/8. !8 meters/mb
+!      return
       if(hgtval .eq. spval) then
          retpt(3)=-1
          write(6,*)'left the area'
          return
       endif
-      write(6,*)'wwind*delt',wwind*delt,wwind, delt, hgtval + wwind*delt
       sigma_new = hgtval + wwind*delt
 !     find sigma_new in the grid
       retpt(3)=curpt(3)
