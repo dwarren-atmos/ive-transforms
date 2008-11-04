@@ -177,7 +177,9 @@ c
       hgt_ptr = getvar('HGT',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
       ierr = set_button_name ('HGT'//char(0), '') ! Terrain
-
+      zbot_dims(1) = dims(1)
+      zbot_dims(2) = dims(2)
+      zbot_min = min
       ! get flag for grid tranform (if it exists)
       tgrid=1. ; trans_on = 0
       ttgrid = getvar('tgrid',ndims,dims,stagger,min,max,missing,
@@ -411,6 +413,7 @@ c
 !         write(6,*)'len(name',len(name)
 !         write(6,*)'NEW_FIELD name = ',name(1:80)
 !      endif
+      call setrvar('spval',9.9999997E+37,error)
       if(trim(name(1:80)) .eq. 'ZNW' .or. 
      &     trim(name(1:80)) .eq. 'ZNU' .or.
      &     trim(name(1:80)) .eq. 'XLAT' .or. 
@@ -814,8 +817,8 @@ c
 c
 c     Interpolate terrain to the required point.
 c
-               topo(i, j) =  get_ter_pt (%val(hgt_ptr), phypt(1), 
-     &              phypt(2), zbot_dims(1), zbot_dims(2), zbot_min,
+               topo(i, j) =  get_ter_pt (%val(hgt_ptr), compt(1), 
+     &              compt(2), zbot_dims(1), zbot_dims(2), zbot_min,
      &              zbot_delta)
 c               topo(i, j) = amax1 (topo(i, j), zero)
             enddo
@@ -1479,28 +1482,30 @@ c
       real function get_ter_pt(ter,x,y,nx,ny,ter_min,del)
 
       integer nx,ny
-      real ter(nx,ny),ter_min(2),del(2),x,y
+      real ter(nx,ny),ter_min(2),del(2),x,y,interp
 
       integer i,j,ip1,jp1
       real ri,rj,deli,delj
 
-      ri = (x - ter_min(1))/del(1) + 1.
-      rj = (y - ter_min(2))/del(2) + 1.
+c      ri = (x - ter_min(1))/del(1) + 1.
+c      rj = (y - ter_min(2))/del(2) + 1.
 
-      i = max(min(int(ri),nx-1),1)
-      j = max(min(int(rj),ny-1),1)
+c      i = max(min(int(ri),nx-1),1)
+c      j = max(min(int(rj),ny-1),1)
 
-      deli = ri - real(i)
-      delj = rj - real(j)
+c      deli = ri - real(i)
+c      delj = rj - real(j)
 
-      ip1 = min(i+1,nx)
-      jp1 = min(j+1,ny) 
+c      ip1 = min(i+1,nx)
+c      jp1 = min(j+1,ny) 
 
-      get_ter_pt = (1.-deli)*(1.-delj)*ter(i,j)
-     >     +  deli*(1.-delj)*ter(ip1,j)
-     >     +  delj*(1.-deli)*ter(i,jp1)
-     >     +  deli*delj*ter(ip1,jp1)
-
+c      get_ter_pt = (1.-deli)*(1.-delj)*ter(i,j)
+c     >     +  deli*(1.-delj)*ter(ip1,j)
+c     >     +  delj*(1.-deli)*ter(i,jp1)
+c     >     +  deli*delj*ter(ip1,jp1)
+      
+      get_ter_pt=interp(ter,nx,ny,1,1,x,y,1.,1.,9.9999997E+37)
+      write(6,*)ter(int(x),int(y)),x,y,nx,ny
       return
       end
 c
