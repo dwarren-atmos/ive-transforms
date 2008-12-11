@@ -84,8 +84,6 @@ c
       integer :: set_button_name
 
       call getiarr('dimvar_size', dimvar_size, 4, error)
-      write(6,*)'got :',dimvar_size(1),dimvar_size(2),
-     &     dimvar_size(3),dimvar_size(4)
       call getparr('dimvar_data', dimvar_data, 4, error)
       
       !call set_buttons
@@ -186,11 +184,20 @@ c
      >            data_units,display_units,dim_names,flag)
       if (ttgrid.ne.0) tgrid = r_val(%val(ttgrid),1)
       if (tgrid.ne.0.) trans_on = 1
-
-
+! try allocating memory to reduce likelihood of failure later
+      mutot_ptr=getmem(zbot_dims(1)*zbot_dims(2)*35*5)
+      if( mutot_ptr .ne. 0) then
+         call freemem(mutot_ptr)
+         mutot_ptr = 0
+      endif
       flag=.true.
       mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
-     >                  missing,data_units,display_units,dim_names,flag)
+     >     missing,data_units,display_units,dim_names,flag)
+      if(mutot_ptr .eq. 0) then
+         call sleep(1)
+         mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+      endif
       if(mutot_ptr .eq. 0) then
          write(6,*)'MU_TOT failed',flag
          stop 1
@@ -202,6 +209,11 @@ c
       flag=.true.
       phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
+      if(phtot_ptr .eq. 0) then
+         call sleep(1)
+         phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+      endif
       if(phtot_ptr .eq. 0) then
          write(6,*)'PHTOT failed',flag
          stop 1
@@ -234,7 +246,6 @@ c
       
       mumax = 0.0
       mumin = 999999.0
-!      write(6,*)'mutot_ptr ',mutot_ptr,' ntime ',ntime
       do i=1,nx*ny*ntime
          mumax=amax1(r_val(%val(mutot_ptr),i),mumax)
          mumin=amin1(r_val(%val(mutot_ptr),i),mumin)
@@ -243,7 +254,6 @@ c
        plmax(3) = ptop ; plmin(3) = (mumax+ptop)
        phmax(3) = ptop ; phmin(3) = (mumax+ptop)
 
-       write(6,*)'plmax(3):', plmax(3),' plmin(3)',plmin(3)
       call setrarr('phmax',phmax,4,error1)
       call setrarr('phmin',phmin,4,error2)
       if (error1 .or. error2) then
@@ -350,7 +360,6 @@ c
       else if(iproj .eq. 3) then
          projection='ME'
       endif
-      write(6,*)iproj,'=',projection,cenlon,cenlat
 
 
 c set domain offsets to zero
@@ -820,7 +829,7 @@ c
                topo(i, j) =  get_ter_pt (%val(hgt_ptr), compt(1), 
      &              compt(2), zbot_dims(1), zbot_dims(2), zbot_min,
      &              zbot_delta)
-c               topo(i, j) = amax1 (topo(i, j), zero)
+               topo(i, j) = amax1 (topo(i, j), zero)
             enddo
          enddo
       endif
@@ -1170,7 +1179,6 @@ c
       limit = 'CO'
       exact_fit = 1
       !exact_fit = 0
-      write(6,*)'map:',plm1,plm2,plm3,plm4,plon,plat,rota
       return
       end
 c
@@ -1482,30 +1490,27 @@ c
       real function get_ter_pt(ter,x,y,nx,ny,ter_min,del)
 
       integer nx,ny
-      real ter(nx,ny),ter_min(2),del(2),x,y,interp
+      real ter(nx,ny),ter_min(2),del(2),x,y
+      double precision interp
 
       integer i,j,ip1,jp1
       real ri,rj,deli,delj
 
-c      ri = (x - ter_min(1))/del(1) + 1.
-c      rj = (y - ter_min(2))/del(2) + 1.
+      i=max(int(x),1)
+      j=max(int(y),1)
+      deli = x - real(i)
+      delj = y - real(j)
+      ip1=min(i+1,nx)
+      jp1=min(j+1,ny)
 
-c      i = max(min(int(ri),nx-1),1)
-c      j = max(min(int(rj),ny-1),1)
 
-c      deli = ri - real(i)
-c      delj = rj - real(j)
 
-c      ip1 = min(i+1,nx)
-c      jp1 = min(j+1,ny) 
-
-c      get_ter_pt = (1.-deli)*(1.-delj)*ter(i,j)
-c     >     +  deli*(1.-delj)*ter(ip1,j)
-c     >     +  delj*(1.-deli)*ter(i,jp1)
-c     >     +  deli*delj*ter(ip1,jp1)
-      
-      get_ter_pt=interp(ter,nx,ny,1,1,x,y,1.,1.,9.9999997E+37)
-      write(6,*)ter(int(x),int(y)),x,y,nx,ny
+      get_ter_pt = (1.-deli)*(1.-delj)*ter(i,j)
+     >     +  deli*(1.-delj)*ter(ip1,j)
+     >     +  delj*(1.-deli)*ter(i,jp1)
+     >     +  deli*delj*ter(ip1,jp1)
+     
+c      write(6,*)ter(int(x),int(y)),x,y,nx,ny
       return
       end
 c
@@ -1601,7 +1606,8 @@ c
       real    hgt(ndims), index(ndims)
 
       integer i, j, k
-      real    r_val, interp, spval
+      real    r_val, spval
+      double precision interp
       
       integer iflag(4)
       data iflag/1,1,0,1/
@@ -1613,26 +1619,25 @@ c
          return
       endif
          
-      k=nzp1
-      bottom=interp(phtot_ptr,nx,ny,nz,ntime,
-     &     index(1),index(2), real(k), index(4),spval)
       k=nz
+      bottom=interp(%val(phtot_ptr),nx,ny,nz,ntime,
+     &     index(1),index(2), real(k), index(4),spval)
       do while(bottom .gt. hgt(3) .and. k .gt. 1)
-         bottom=interp(phtot_ptr,nx,ny,nz,ntime,
-     &        index(1),index(2), real(k), index(4),spval)
          k=k-1
+         bottom=interp(%val(phtot_ptr),nx,ny,nz,ntime,
+     &        index(1),index(2), real(k), index(4),spval)
       enddo
-      if((bottom .lt. hgt(3) .and. k .eq. nzp1) .or.
+      if((bottom .lt. hgt(3) .and. k .eq. nz) .or.
      &     ((k.eq.1) .and. bottom .gt. hgt(3))) then
          index(3)=-1
          return
       endif
 
-      top=interp(phtot_ptr,nx,ny,nz,ntime,
-     &        index(1),index(2), real(k+1), index(4),spval)
       if(bottom .eq. hgt(3)) then
          index(3)=real(k)
       else
+         top=interp(%val(phtot_ptr),nx,ny,nz,ntime,
+     &        index(1),index(2), real(k+1), index(4),spval)
          part=(hgt(3)-bottom)/(top-bottom)
          index(3)=real(k)+part
       endif
