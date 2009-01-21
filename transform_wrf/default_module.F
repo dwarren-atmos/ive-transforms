@@ -27,7 +27,7 @@ c
       integer(ive_ptr) :: mutot_ptr, phtot_ptr, hgt_ptr
       integer(ive_ptr) :: mapM_ptr, mapU_ptr, mapV_ptr
       integer(ive_ptr) :: lat_ll, lat_ur, lon_ll, lon_ur
-      integer(ive_ptr) :: fcor
+      integer(ive_ptr) :: fcor,xlat,xlong, ptot_ptr
       integer(ive_ptr) :: dqdx_xy, dqdx_zt, dqdx_zw
       integer(ive_ptr) :: dqdy_xy, dqdy_zt, dqdy_zw
       integer(ive_ptr) :: dqdz, dzdq
