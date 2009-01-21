@@ -40,7 +40,7 @@ else
    DEC =
    LDEC = -shared
 endif
-   LIBS = -lfftpack -lnetcdf -lnetcdff 
+   LIBS = -L/usr/lib -L/usr/local/lib -lnetcdf -lnetcdff #-lfftpack
    OPT = -O2
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include
@@ -96,7 +96,7 @@ OBJS_f: ${OBJS_f}
 
 TRANS_WRF: ${MODS} ${OBJS_f} ${OBJS_F}
 	${LD} ${LDEC} ${OBJS_f} ${OBJS_F} ${MODS} -o trans_wrf.o ${LIBS}
-	cp trans_wrf.o ../
+#	cp trans_wrf.o ../
 
 clean:
 	${RM} ${OBJS_F} ${OBJS_f} ${MODS} ${MODLIB}/*.mod trans_wrf.o

@@ -65,7 +65,7 @@ c
       common/flcount/numfls
 
       integer(ive_ptr) :: tlgz,tsgz,twgz,ttime,thgt_ptr,tzbot_u,tzbot_v
-      integer(ive_ptr) :: tztop,ttgrid,theight,map_tmp
+      integer(ive_ptr) :: tztop,ttgrid,theight
       logical :: error,error1,error2,flag
       real :: r_val,tgrid,stagger(4),min(4),max(4),missing, pls(4)
       real*8 :: slope,intercept
@@ -90,7 +90,7 @@ c
 
       znu_ptr = 0 ; znw_ptr=0 ; ptop_ptr = 0 ; hgt_ptr = 0
       psfc_ptr = 0 ; mutot_ptr = 0 ; phtot_ptr = 0
-
+      xlat = 0 ; xlong = 0 ; ptot_ptr = 0
 
       idcdf = ncid
       numfls = 0
@@ -171,6 +171,7 @@ c
       psfc_ptr = getvar('PSFC',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
 
+      ierr = set_button_name ('PSFC'//char(0), '') ! Terrain
       flag=.true.
       hgt_ptr = getvar('HGT',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
@@ -185,7 +186,7 @@ c
       if (ttgrid.ne.0) tgrid = r_val(%val(ttgrid),1)
       if (tgrid.ne.0.) trans_on = 1
 ! try allocating memory to reduce likelihood of failure later
-      mutot_ptr=getmem(zbot_dims(1)*zbot_dims(2)*35*5)
+      mutot_ptr=getmem(zbot_dims(1)*zbot_dims(2)*35*5*3)
       if( mutot_ptr .ne. 0) then
          call freemem(mutot_ptr)
          mutot_ptr = 0
@@ -197,10 +198,10 @@ c
          call sleep(1)
          mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
-      endif
-      if(mutot_ptr .eq. 0) then
-         write(6,*)'MU_TOT failed',flag
-         stop 1
+         if(mutot_ptr .eq. 0) then
+            write(6,*)'MU_TOT failed',flag
+            stop 1
+         endif
       endif
       mu_delta=delta(:) ; mu_dims = dims(:)  
       phys_mumin = min(:) ; phys_mumax = max(:) ;
@@ -213,10 +214,22 @@ c
          call sleep(1)
          phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
+         if(phtot_ptr .eq. 0) then
+            write(6,*)'PHTOT failed',flag
+            stop 1
+         endif
       endif
-      if(phtot_ptr .eq. 0) then
-         write(6,*)'PHTOT failed',flag
-         stop 1
+      flag=.true.
+      ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
+     >     missing,data_units,display_units,dim_names,flag)
+      if(ptot_ptr .eq. 0) then
+         call sleep(1)
+         ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(ptot_ptr .eq. 0) then
+            write(6,*)'Pressure failed',flag
+            stop 1
+         endif
       endif
       ierr = set_button_name ('MU', '')  
       ierr = set_button_name ('MUB', '')
@@ -299,21 +312,21 @@ c
       end if
 
       flag=.true.
-      map_tmp=getvar('XLAT',ndims,dims,stagger,min,max,
+      xlat=getvar('XLAT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       lat_ll=getmem(dims(4))
       lat_ur=getmem(dims(4))
       lon_ll=getmem(dims(4))
       lon_ur=getmem(dims(4))
-      call transcopylats(%val(map_tmp),dims(1),dims(2),dims(3),dims(4),
+      call transcopylats(%val(xlat),dims(1),dims(2),dims(3),dims(4),
      &     %val(lat_ll), %val(lat_ur))
-      call driver('free=XLAT',0)
+c      call driver('free=XLAT',0)
       flag=.true.
-      map_tmp=getvar('XLONG',ndims,dims,stagger,min,max,
+      xlong=getvar('XLONG',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
-      call transcopylons(%val(map_tmp),dims(1),dims(2),dims(3),dims(4),
+      call transcopylons(%val(xlong),dims(1),dims(2),dims(3),dims(4),
      &     %val(lon_ll), %val(lon_ur))
-      call driver('free=XLONG',0)
+c      call driver('free=XLONG',0)
       ierr = set_button_name ('XLAT', '')
       ierr = set_button_name ('XLONG', '')
 
@@ -615,18 +628,23 @@ c
       real    phys(ndims, npts), index(ndims, npts)
 
       integer i, j, k, iflag(4)
-      real    mupt, coord_k, coord_kp1, ind2(ndims)
+      logical error
+      real    mupt, coord_k, coord_kp1, ind2(ndims), mh, spval
+      real junk
       real    r_val ! function
+      double precision extrap
 
       data iflag/0, 0, 0, 1/
 
+      call getrvar('spval', spval, error)
+      if(error)spval = -9999.99
       do i = 1, npts
          do j = 1, ndims
             if (flag(j) .eq. 1) then
 
 c     Case where we are out of the data array
                if ( index(j,i) .lt. 1 ) then
-                  phys(j,i) = -9999.99 !missing
+                  phys(j,i) = spval !missing
 c     Trivial case where dimension does not exist (depth of array is 
 c     unity along this dimension)
                else if (inmax(j) .eq. 1 .or. index(j,i) .lt. 1) then
@@ -654,17 +672,23 @@ c     Case of evenly spaced physical coord.
 
 c     Handle vertical transformation
                if ( j.eq.3 .and. trans_eta.eq.1 ) then
+                  mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &                 index(1,i),index(2,i),1.,index(4,i),spval)
+                 
+                  phys(j, i) = extrap(%val(ptot_ptr),nx,ny,nz,ntime,
+     &                 index(1,i),index(2,i),index(3,i),
+     &                 index(4,i),spval)
 
-                call phys_2_index(phys(:,i), ind2, iflag, ndims, 1)
-                mupt = get_2Dpt_time(%val(mutot_ptr), 
-     &                 phys(1, i), phys(2, i), ind2(4),
-     &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
-     &                 phys_mumin(1:2), mu_delta(1:2))
+!                call phys_2_index(phys(:,i), ind2, iflag, ndims, 1)
+!                mupt = get_2Dpt_time(%val(mutot_ptr), 
+!     &                 phys(1, i), phys(2, i), ind2(4),
+!     &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
+!     &                 phys_mumin(1:2), mu_delta(1:2))
 
-                ! this is wrf transform for dry hydrostatic flow
-                phys(j, i) = phys(j, i)*mupt + ptop
-                !phys(j, i) = phys(j, i)
-
+!                this is wrf transform for dry hydrostatic flow
+!                write(6,*)phys(j, i),mupt ,ptop
+!                phys(j, i) = phys(j, i)*mupt + ptop
+                if( phys(j, i) .gt. mh) phys(j, i)=spval
                endif
 
             endif
@@ -701,15 +725,25 @@ c
       real    phys(ndims, npts), index(ndims, npts)
 
       integer i, j, k
-      real    r_val
-      real    mupt, p
+      logical error
+      real    r_val, spval
+      real    mupt, p, mh
+      double precision extrap
 
+!     can't do without all others
+      if(flag(3) .eq. 1) then
+         flag(1) = 1
+         flag(2) = 1
+         flag(4) = 1
+         call getrvar('spval', spval, error)
+         if(error)spval = -9999.99
+      endif
       do i = 1, npts
          do j = ndims, 1, -1
             if (flag(j) .eq. 1) then
 
                if ((j.eq.3).and.(trans_eta.eq.1)) then
-
+                  
                 mupt = get_2Dpt_time(%val(mutot_ptr), 
      &                 phys(1, i), phys(2, i), index(4,i),
      &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
@@ -779,6 +813,13 @@ c     Physical coord. increasing with index.
 
  5          continue
          enddo
+         if(flag(3) .eq. 1) then
+!           must have gotten all others for j
+            mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &           index(1,i),index(2,i),1.,index(4,i),spval)
+            if(phys(3, i) .gt. mh)index(3,i)=-1 !under ground
+         endif
+
       enddo
       return
       end subroutine
@@ -874,18 +915,23 @@ c
       integer MAXDIM
       parameter (MAXDIM = 4)
       integer   i, iflag
-      real      phypt, min, max
+      logical error
+      real      phypt, min, max, spval
       dimension iflag(MAXDIM), phypt(MAXDIM),
      &          min(MAXDIM), max(MAXDIM)
 c
       integer stepby
       real    value
+      double precision extrap
+
 c
+      call getrvar('spval', spval, error)
+      if(error) call write_message('cant get spval in vert_ter')
       if ( hgt_ptr .ne. 0 ) then
          iflag(1) = 1
          iflag(2) = 1
          iflag(3) = 0
-         iflag(4) = 0
+         iflag(4) = 1
          call phys_2_index(pt1, min, iflag, MAXDIM, 1)
          call phys_2_index(pt2, max, iflag, MAXDIM, 1)
          if (max(1) .eq. min(1)) then
@@ -909,26 +955,36 @@ c
             xter = getmem(nter)
             yter = getmem(nter)
             topoht = getmem(nter)
-            value =  get_ter_pt (%val(hgt_ptr), pt1(1), pt2(2),
-     &              zbot_dims(1), zbot_dims(2), zbot_min,
-     &              zbot_delta)
-            value = amax1(value, zero)
+
+            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &           min(1),min(2),1.,min(4),spval)
+c            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
+c     &              zbot_dims(1), zbot_dims(2), zbot_min,
+c     &              zbot_delta)
+            if(value .eq. spval)value=101325.
+c            value = amax1(value, zero)
             call put_ter(%val(xter), %val(yter), %val(topoht), 1, pt1,
      &           value)
             do i = 2, nter-1
                min(stepby) = int(min(stepby)+1)
                call index_2_phys(phypt, min, iflag, MAXDIM, 1)
-               value =  get_ter_pt (%val(hgt_ptr), phypt(1), phypt(2),
-     &              zbot_dims(1), zbot_dims(2), zbot_min,
-     &              zbot_delta)
-               value = amax1(value, zero)
+               value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &              min(1),min(2),1.,min(4),spval)
+!               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
+!     &              zbot_dims(1), zbot_dims(2), zbot_min,
+!     &              zbot_delta)
+               if(value .eq. spval)value=101325.
+c               value = amax1(value, zero)
                call put_ter(%val(xter), %val(yter), %val(topoht), i,
      &              phypt, value)
             enddo
-            value =  get_ter_pt (%val(hgt_ptr), pt2(1), pt2(2),
-     &           zbot_dims(1), zbot_dims(2), zbot_min,
-     &           zbot_delta)
-            value = amax1(value, zero)
+            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &           max(1),max(2),1.,max(4),spval)
+!            value =  get_ter_pt (%val(hgt_ptr), max(1), max(2),
+!     &           zbot_dims(1), zbot_dims(2), zbot_min,
+!           &           zbot_delta)
+            if(value .eq. spval)value=101325.
+c            value = amax1(value, zero)
             call put_ter(%val(xter), %val(yter), %val(topoht), nter,
      &           pt2, value)
 c
@@ -939,22 +995,29 @@ c
             xter = getmem(nter+1)
             yter = getmem(nter+1)
             topoht = getmem(nter+1)
-            value =  get_ter_pt (%val(hgt_ptr), pt1(1), pt1(2),
-     &           zbot_dims(1), zbot_dims(2), zbot_min,
-     &           zbot_delta)
-            value = amax1(value, zero)
+            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &           min(1),min(2),1.,min(4),spval)
+!            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
+!     &           zbot_dims(1), zbot_dims(2), zbot_min,
+!           &           zbot_delta)
+            if(value .eq. spval)value=101325.
+c            value = amax1(value, zero)
             call put_ter(%val(xter), %val(yter), %val(topoht), 1, pt1,
      &           value)
             do i = 2, nter
                phypt(1) = pt1(1) + i * (pt2(1) - pt1(1)) / real(nter)
                phypt(2) = pt1(2) + i * (pt2(2) - pt1(2)) / real(nter)
-               value =  get_ter_pt (%val(hgt_ptr), phypt(1), phypt(2),
-     &              zbot_dims(1), zbot_dims(2), zbot_min,
-     &              zbot_delta)
-               value = amax1(value, zero)
-               call put_ter(%val(xter), %val(yter), %val(topoht), i,
-     &              phypt, value)
-            enddo
+               call phys_2_index(phypt, min, iflag, MAXDIM, 1)
+            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+     &           min(1),min(2),1.,min(4),spval)
+!               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
+!     &              zbot_dims(1), zbot_dims(2), zbot_min,
+!     &              zbot_delta)
+            if(value .eq. spval)value=101325.
+c            value = amax1(value, zero)
+            call put_ter(%val(xter), %val(yter), %val(topoht), i,
+     &           phypt, value)
+         enddo
          endif
 c
 c     Handle no terrain case.
@@ -983,6 +1046,7 @@ c
       xter(i) = pt(1)
       yter(i) = pt(2)
       topoht(i) = value
+!      write(6,*) xter(i), yter(i), topoht(i)
 c
       return
       end subroutine
@@ -1488,7 +1552,15 @@ c
 c  *****************************************************
 c
       real function get_ter_pt(ter,x,y,nx,ny,ter_min,del)
-
+c
+c     ter(nx,ny)   input terrain field
+c     x            input real x val (comp point)
+c     y            input real y val (comp point)
+c     nx           input number in x dim
+c     ny           input number in x dim
+c     ter_min(2)   input currently unused
+c     del input(2) input currently unused
+c
       integer nx,ny
       real ter(nx,ny),ter_min(2),del(2),x,y
       double precision interp
@@ -1498,6 +1570,8 @@ c
 
       i=max(int(x),1)
       j=max(int(y),1)
+      i=min(int(x),nx)
+      j=min(int(y),ny)
       deli = x - real(i)
       delj = y - real(j)
       ip1=min(i+1,nx)

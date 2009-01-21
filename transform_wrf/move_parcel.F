@@ -74,34 +74,37 @@ c         write(6,*)'left the area'
          call hgt_2_index(retpt,realij,4,spval)
 !     per Cliff - vertical advection too chaotic so better to limit it
 !!!!     can't go more than 1 grid point in a time step!!!!
-         if(realij(3) .gt. ind(3)+1.5) then
-            realij(3)= ind(3)+1.5
-            write(6,*)'limiting function applied'
-         endif  
-         if(realij(3) .lt. ind(3)-1.5) then
-            realij(3)= ind(3)-1.5
-            write(6,*)'limiting function applied'
-         endif
+!#         if(realij(3) .gt. ind(3)+1.5) then
+!#            realij(3)= ind(3)+1.5
+!#            write(6,*)'limiting function applied'
+!#         endif  
+!#         if(realij(3) .lt. ind(3)-1.5) then
+!#            realij(3)= ind(3)-1.5
+!#            write(6,*)'limiting function applied'
+!#         endif
          if(realij(3) .gt. inmax(3)) then
             retpt(3) = -1
             return
          endif
          
 !     convert back to pressure
-         k=int(realij(3))
-         kp1=k+1
-         retpt(3) = r_val(%val(coord(3)),k) +
-     &        (realij(3) - k) *
-     &        (r_val(%val(coord(3)),kp1) - 
-     &        r_val(%val(coord(3)),k))
-         mupt = get_2Dpt_time(%val(mutot_ptr),
-     &        retpt(1), retpt(2), realij(4),
-     &        int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
-     &        phys_mumin(1:2), mu_delta(1:2))
+         retpt(3) = interp(%val(ptot_ptr),nx,ny,nz,ntime,
+     &        realij(1),realij(2),realij(3),realij(4),spval)
+
+!         k=int(realij(3))
+!         kp1=k+1
+!         retpt(3) = r_val(%val(coord(3)),k) +
+!     &        (realij(3) - k) *
+!     &        (r_val(%val(coord(3)),kp1) - 
+!     &        r_val(%val(coord(3)),k))
+!         mupt = get_2Dpt_time(%val(mutot_ptr),
+!     &        retpt(1), retpt(2), realij(4),
+!     &        int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
+!     &        phys_mumin(1:2), mu_delta(1:2))
          
-         retpt(3) = retpt(3)*mupt + ptop
+!         retpt(3) = retpt(3)*mupt + ptop
       else
-         retpt(3) = phmin(3) + realij(3)*delta(3)  
+        retpt(3) = phmin(3) + realij(3)*delta(3)  
       endif
 
       return
