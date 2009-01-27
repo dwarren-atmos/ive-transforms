@@ -1,258 +1,76 @@
-      subroutine ll2ij(igrid,reflat,reflon,iref,jref,stdlt1,stdlt2
-     1                ,stdlon,delx,dely,grdi,grdj,npts
-     2                ,grdlat,grdlon)
+      subroutine ll2ij( x, y, lat, lon, xlat, xlon, nx, ny)
+!     this routine takes a lat and lon and returns an x y in 
+!     array space.
 
-c rcs keywords: $RCSfile: ll2ij.f,v $ 
-c               $Revision: 1.2 $ $Date: 1998/11/24 23:38:08 $c
-c********************************************************************
-c********************************************************************
-c          SUBROUTINE: ll2ij
-c
-c          PURPOSE: To compute i- and j-coordinates of a specified
-c                   grid given the latitude and longitude points.
-c                   All latitudes in this routine start
-c                   with -90.0 at the south pole and increase
-c                   northward to +90.0 at the north pole.  The
-c                   longitudes start with 0.0 at the Greenwich
-c                   meridian and increase to the east, so that
-c                   90.0 refers to 90.0E, 180.0 is the inter-
-c                   national dateline and 270.0 is 90.0W.
-c
-c          INPUT VARIABLES:
-c
-c            igrid:  type of grid projection:
-c
-c                       = 1, mercator projection
-c                       = 2, lambert conformal projection
-c                       = 3, polar stereographic projection
-c                       = 4, cartesian coordinates
-c                       = 5, spherical projection
-c
-c            reflat: latitude at reference point (iref,jref)
-c
-c            reflon: longitude at reference point (iref,jref)
-c
-c            iref:   i-coordinate value of reference point
-c
-c            jref:   j-coordinate value of reference point
-c
-c            stdlt1: standard latitude of grid
-c
-c            stdlt2: second standard latitude of grid (only required
-c                    if igrid = 2, lambert conformal)
-c
-c            stdlon: standard longitude of grid (longitude that
-c                     points to the north)
-c
-c            delx:   grid spacing of grid in x-direction
-c                    for igrid = 1,2,3 or 4, and 5 delx must be in meters
-c
-c            dely:   grid spacing (in meters) of grid in y-direction
-c                    for igrid = 1,2,3 or 4, and 5 delx must be in meters
-c
-c            grdlat: latitude of point (grdi,grdj)
-c
-c            grdlon: longitude of point (grdi,grdj)
-c
-c            npts:   number of points to find information for
-c
-c          OUTPUT VARIABLES:
-c
-c            grdi:   i-coordinate(s) that this routine will generate
-c                    information for
-c
-c            grdj:   j-coordinate(s) that this routine will generate
-c                    information for
-c
-c********************************************************************
-c********************************************************************
-c
-      implicit none
-c
-c********************************************************************
-c
-      integer i
-      integer igrid
-      integer ihem
-      integer iref
-      integer jref
-      integer npts
-c
-      real alnfix
-      real alon
-      real check
-      real cn1
-      real cn2
-      real cn3
-      real cn4
-      real cnx
-      real cny
-      real con1
-      real con2
-      real d2r
-      real deg
-      real delx
-      real dely
-      real gcon
-      real grdi  (npts)
-      real grdj  (npts)
-      real grdlat(npts)
-      real grdlon(npts)
-      real ogcon
-      real omega4
-      real onedeg
-      real pi
-      real pi2
-      real pi4
-      real r2d
-      real radius
-      real reflat
-      real reflon
-      real rih
-      real rrih
-      real stdlon
-      real stdlt1
-      real stdlt2
-      real x
-      real xih
-      real y
-      real yih
-c
-c********************************************************************
-c          make sure igrid is an acceptable value
-c********************************************************************
-c
-      if (igrid.lt.1.or.igrid.gt.5) then
-        print 800
-        print 805,igrid
-        print 800
-        return
+      integer nx,ny
+      real x, y, lat, lon, xlat(nx,ny), xlon(nx,ny)
+      integer i,j, besti, ip1, jp1
+      real dist, bestdist, lastdist, savdist, sav2dist
+      real dx1,dx2,dx3,dx4, dy1,dy2,dy3,dy4
+
+      savdist=sqrt((xlat(nx,ny)-xlat(1,1))**2 +
+     &     (xlon(nx,ny)-xlon(1,1))**2)
+      sav2dist=savdist
+      
+      do while(j .le. ny)
+         i=1
+         lastdist=savdist
+         dist = sqrt((lat-xlat(1,j))**2 +
+     &     (lon-xlon(1,j))**2)
+         if(sav2dist .lt. dist) then
+            j=ny+1
+         else
+            sav2dist = dist
+         endif
+         do while(i .le. nx)
+            dist = sqrt((lat -xlat(i,j))**2 + (lon -xlon(i,j))**2)
+            if(bestdist .gt. dist)then 
+               bestdist=dist
+               x = i
+               y = j
+               i = i + 1
+            else
+               if(savdist .gt. dist) then
+                  savdist = dist
+                  i=nx+1
+               else
+                  i = nx+1
+               endif
+            endif
+         end do
+         j = j + 1
+      end do
+
+!     have closest i,j
+      if(x .le. lat .and. y .le.lon) then
+         i = x; j = y; ip1 = x + 1; jp1 = y + 1;
+         if(i .eq. nx)ip1 = nx
+         if(j .eq. ny)jp1 = ny
+      elseif(x .ge. lat .and. y .ge.lon) then
+         i = x - 1; j = y - 1; ip1 = x; jp1 = y;
+         if(ip1 .eq. 1)i = 1
+         if(jp1 .eq. 1)j = 1
+      elseif(x .le. lat .and. y .ge.lon) then
+         i = x; j = y - 1; ip1 = x + 1; jp1 = y;
+         if(i .eq. nx)ip1 = nx
+         if(jp1 .eq. 1)j = 1
+      elseif(x .ge. lat .and. y .le.lon) then
+         i = x - 1; j = y; ip1 = x; jp1 = y + 1;
+         if(ip1 .eq. 1)i = 1
+         if(j .eq. ny)jp1 = ny
+      else
+         write(6,*)'cant get here x.ge.lat.ge.x etc.'
       endif
-c
-c********************************************************************
-c          local constants
-c********************************************************************
-c
-      pi=4.0*atan(1.0)
-      pi2=pi/2.0
-      pi4=pi/4.0
-      d2r=pi/180.0
-      r2d=180.0/pi
-      radius=6371229.0
-      omega4=4.0*pi/86400.0
-      onedeg=radius*2.0*pi/360.0
-c
-c********************************************************************
-c          mercator projection (igrid=1)
-c********************************************************************
-c
-      if (igrid.eq.1) then
-        deg=abs(stdlt1)*d2r
-        con1=cos(deg)
-        con2=radius*con1
-        deg=reflat*0.5*d2r
-        rih=con2*alog(tan(pi4+deg))
-        do i=1,npts
-          alon=grdlon(i)+180.0-reflon
-          if (alon.lt.  0.0) alon=alon+360.0
-          if (alon.gt.360.0) alon=alon-360.0
-          grdi(i)=iref+(alon-180.0)*con2/(r2d*delx)
-          deg=grdlat(i)*d2r+pi2
-          deg=deg*0.5
-          grdj(i)=jref+(con2*alog(tan(deg))-rih)/dely
-        enddo
-        return
-c
-c********************************************************************
-c          lambert conformal (igrid=2) or
-c          polar stereographic (igrid=3)
-c********************************************************************
-c
-      else if (igrid.eq.2.or.igrid.eq.3) then
-        if (igrid.eq.2) then
-          if (stdlt1.eq.stdlt2) then
-            gcon=sin(abs(stdlt1)*d2r)
-          else
-            gcon=(log(sin((90.0-abs(stdlt1))*d2r))
-     1           -log(sin((90.0-abs(stdlt2))*d2r)))
-     2          /(log(tan((90.0-abs(stdlt1))*0.5*d2r))
-     3           -log(tan((90.0-abs(stdlt2))*0.5*d2r)))
-          endif
-        else
-          gcon=1.0
-        endif
-        ogcon=1.0/gcon
-        ihem=nint(abs(stdlt1)/stdlt1)
-        deg=(90.0-abs(stdlt1))*d2r
-        cn1=sin(deg)
-        cn2=radius*cn1*ogcon
-        deg=deg*0.5
-        cn3=tan(deg)
-        deg=(90.0-abs(reflat))*0.5*d2r
-        cn4=tan(deg)
-        rih=cn2*(cn4/cn3)**gcon
-        deg=(reflon-stdlon)*d2r*gcon
-        xih= rih*sin(deg)
-        yih=-rih*cos(deg)*ihem
-        do i=1,npts
-          deg=(90.0-grdlat(i)*ihem)*0.5*d2r
-          cn4=tan(deg)
-          rrih=cn2*(cn4/cn3)**gcon
-          check=180.0-stdlon
-          alnfix=stdlon+check
-          alon=grdlon(i)+check
-          if (alon.lt.  0.0) alon=alon+360.0
-          if (alon.gt.360.0) alon=alon-360.0
-          deg=(alon-alnfix)*gcon*d2r
-          x= rrih*sin(deg)
-          y=-rrih*cos(deg)*ihem
-          grdi(i)=iref+(x-xih)/delx
-          grdj(i)=jref+(y-yih)/dely
-        enddo
-        return
-c
-c********************************************************************
-c          analytic grid (igrid=4)
-c********************************************************************
-c
-      else if (igrid.eq.4) then
-        cnx=delx/onedeg
-        cny=dely/onedeg
-        do i=1,npts
-          grdi(i)=iref+(grdlon(i)-reflon)/cnx
-          grdj(i)=jref+(grdlat(i)-reflat)/cny
-        enddo
-        return
-c
-c********************************************************************
-c          spherical grid (igrid=5)
-c********************************************************************
-c
-      else if (igrid.eq.5) then
-        cnx=delx/onedeg
-        cny=dely/onedeg
-        do i=1,npts
-          grdi(i)=iref+(grdlon(i)-reflon)/cnx
-          grdj(i)=jref+(grdlat(i)-reflat)/cny
-        enddo
-        return
-      endif
-c
-c********************************************************************
-c          format statements
-c********************************************************************
-c
-  800 format(/,' ',72('-'),/)
-  805 format(/,' ERROR from subroutine ll2ij:',/
-     1        ,'   igrid must be one of the following values:',//
-     2        ,'            1: mercator projection',/
-     3        ,'            2: lambert conformal projection',/
-     4        ,'            3: polar steographic projection',/
-     5        ,'            4: cartesian coordinates',/
-     6        ,'            5: spherical projection',//
-     7        ,' Your entry was:',i6,', Correct and try again',/)
-c
-c********************************************************************
-c
+      dx1 = (lon - xlon(i,j))/(xlon(ip1,j)-xlon(i,j))
+      dx2 = 1. - dx1
+      dx3 = (lon - xlon(i,jp1))/(xlon(ip1,jp1)-xlon(i,jp1))
+      dx4 = 1. - dx3
+      dy1 = (lat - xlat(i,j))/(xlat(i,jp1)-xlat(i,j))
+      dy2 = 1. - dy1
+      dy3 = (lat - xlat(ip1,j))/(xlat(ip1,jp1)-xlat(ip1,j))
+      x = i*dx1*dy1 + i*dx3*dy3 + ip1*dx2*dy2 + ip1*dx4*dy4
+      y = j*dx1*dy1 + j*dx3*dy3 + jp1*dx2*dy2 + jp1*dx4*dy4
       return
-      end
+      end subroutine
+      
+      

@@ -53,6 +53,10 @@
 !quick test
 !      retpt(3) = curpt(3) + wwind*deltsec/8. !8 meters/mb
 !      return
+      if(wwind .eq. 0.) then
+         retpt(3)=curpt(3)
+         return
+      endif
       if(hgtval .eq. spval) then
          retpt(3)=-1
 c         retpt(3) = curpt(3)
@@ -61,10 +65,6 @@ c         write(6,*)'left the area'
       endif
       sigma_new = hgtval + wwind*deltsec
 !     find sigma_new in the grid
-      if(wwind .eq. 0.) then
-         retpt(3)=curpt(3)
-         return
-      endif
       if(inmax(3) .eq. 1) then
          retpt(3) = curpt(3)
          return

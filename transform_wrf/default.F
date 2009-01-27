@@ -1070,47 +1070,35 @@ c
       integer npts
       real    x(npts), y(npts), lon(npts), lat(npts)
 c
-c	integer i,igrid,iref,jref
-c	integer iflag(2)
-c      real reflat,grdi(npts),grdj(npts),reflon,stdlt1,stdlt2,stdlon
-c	 real phys(2,npts),grid(2,npts)
 c
       integer i
-c     integer iref,jref
-      integer iflag(2)
-      real grdi(npts),grdj(npts)
-      real phys(2,npts),grid(2,npts)
+      logical error
+      real grdi(npts),grdj(npts), mytime
+      double precision interp
 c
-      data iflag/1,1/
 c
-c     call ref_latlon(iref,jref,dx,dy)
-c
-      lon(:) = x(:) ; lat(:) = y(:) ; return
+      write(6,*)'in phys_2_latlon'
+      call getrvar('tloc',mytime,error)
+      if(error)mytime=1.0
 
       do i=1,npts
-        phys(1,i) = x(i)
-        phys(2,i) = y(i)
-      end do
+         grdi(i) =  x(i)/dx
+         grdj(i) =  y(i)/dx
+         lat(i) = interp(%val(xlat), nx, ny, 1, ntime,
+     &        grdi(i),grdj(i),1,time)
+      lon(i) = interp(%val(xlong), nx, ny, 1, ntime,
+     &        grdi(i),grdj(i),1,time)
+      enddo
 c	 
-      call phys_2_index(phys,grid,iflag,2,npts)
-c
-      do i=1,npts
-        grdi(i) = grid(1,i)
-        grdj(i) = grid(2,i)
-      end do
-c
-c      call ij2ll (igrid,reflat,reflon,iref,jref,stdlt1,stdlt2
-c     1                 ,stdlon,dx,dy,grdi,grdj,npts
-c     2                 ,lat,lon)
-c
       return
       end subroutine
 c
 c     -----------------------------------------------------------------
 c
+c
       subroutine lonlat_2_phys(x, y, lon, lat, npts)
-
       use DEFAULT_MODULE
+
 c     
 c     lonlat_2_phys : This routine converts longitude-latitude coordinates
 c     to physical coordinates.
@@ -1125,32 +1113,32 @@ c
       integer npts
       real    x(npts), y(npts), lon(npts), lat(npts)
 c
-      integer i
-c     integer iref,jref
-      integer iflag(2)
-      real grdi(npts),grdj(npts)
-      real phys(2,npts),grid(2,npts)
+      integer k
+      integer iflag(4)
+      logical error
+      real mytime
+      real phys(4,npts),grid(4,npts)
 c
-      data iflag/1,1/
+!      data iflag/1,1,0,0/
 
-      x(:) = lon(:); y(:) = lat(:) ; return
 c
-c	call ref_latlon(iref,jref,dx,dy)
 c
-      call ll2ij (igrid,reflat,reflon,iref,jref,stdlt1,stdlt2
-     1                 ,stdlon,dx,dy,grdi,grdj,npts
-     2                 ,lat,lon)
+c     Only thing we know is that we increase in x and y
 c
-      do i = 1, npts
-         grid(1,i) = grdi(i)
-         grid(2,i) = grdj(i)
-      end do
+      call getrvar('tloc',mytime,error)
+      grid(4,:)=mytime
+      grid(3,:)=1.
+      if(error)mytime=1.0
+      do k = 1, npts
+         call ll2ij(grid(1,x),grid(2,k),lat(k),lon(k),%val(xlat),
+     &        %val(xlong), nx, ny)
+      enddo
 c
-      call index_2_phys(phys,grid,iflag,2,npts)
+      call index_2_phys(phys,grid,iflag,4,npts)
 c
-      do i=1,npts
-        x(i) = phys(1,i)
-        y(i) = phys(2,i)
+      do k=1,npts
+        x(k) = phys(1,k)
+        y(k) = phys(2,k)
       end do
 c
       return
@@ -1204,7 +1192,9 @@ c
 c     The default is the current window in a Lambert Conic
 c     Projection.
 c
-      proj = projection
+      proj(1:len(proj))=' '
+      limit(1:len(limit))=' '
+      proj(1:2) = projection(1:2)
       if(projection .eq. 'LC') then
          rota = trulat2
          plon = cenlon
@@ -1240,7 +1230,7 @@ c
          plm3=0.
          plm4=0.
       endif
-      limit = 'CO'
+      limit(1:2) = 'CO'
       exact_fit = 1
       !exact_fit = 0
       return
