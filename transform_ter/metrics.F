@@ -48,6 +48,7 @@
 *   all the terrain pts here (i.e., u, v, and therm).  Note that 
 *   dqdx_xy(i,j,3) is normally not used during model integrations. 
 *
+*  Need to take into account when ny == 1 (twod)
       do j=1,ny
         dqdx_xy(1,j,1) = ztop/(ztop-zbot_p(1,j))
      >                * rdx*(zbot_u(2,j)-zbot_u(1,j))
@@ -101,15 +102,15 @@
         dqdy_xy(i,ny,1) = ztop/(ztop-zbot_p(i,ny))
      >                * rdy*(zbot_v(i,ny+1)-zbot_v(i,ny))
         dqdy_xy(i,ny,3) = ztop/(ztop-zbot_v(i,ny))
-     >      *( 4./3.*rdy*(zbot_p(i,ny)-zbot_p(i,ny-1))
-     >           - 1./6.*rdy*(zbot_v(i,ny+1)-zbot_v(i,ny-1)) )
+     >      *( 4./3.*rdy*(zbot_p(i,ny)-zbot_p(i,max(1,ny-1)))
+     >           - 1./6.*rdy*(zbot_v(i,ny+1)-zbot_v(i,max(1,ny-1))) )
       enddo
 
       do i=1,nx+1
         dqdy_xy(i,1,2) = ztop/(ztop-zbot_u(i,1))
-     >                * rdy*(zbot_u(i,2)-zbot_u(i,1))
+     >                * rdy*(zbot_u(i,min(2,ny))-zbot_u(i,1))
         dqdy_xy(i,ny,2) = ztop/(ztop-zbot_u(i,ny))
-     >                * rdy*(zbot_u(i,ny)-zbot_u(i,ny-1))
+     >                * rdy*(zbot_u(i,ny)-zbot_u(i,max(1,ny-1)))
       enddo
 
       do j=2,ny-1

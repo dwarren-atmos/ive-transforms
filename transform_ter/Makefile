@@ -9,7 +9,23 @@
 #
 
 
+machine := ${shell /usr/ucb/arch}
+ifndef machine
 machine := ${shell /usr/bin/arch}
+endif
+ifndef machine
+machine := ${shell /usr/bin/uname}
+endif
+ifndef machine
+machine := ${shell /bin/uname}
+endif
+ifndef mtype
+mtype=${shell /bin/uname -m}
+endif
+ifndef mtype
+mtype=${shell /usr/bin/uname -m}
+endif
+
 ifeq (${machine},alpha)
    LD = ld
    F90 = f90
@@ -28,9 +44,12 @@ else
    CC = icc
    CPP = /usr/lib/cpp
    DEC = 
+ifeq (${mtype},x86_64)
+   DEC=-DSIXTY_FOUR_bptr
+endif
    LDEC = -shared
-   LIBS = -lfftpack 
-   OPT = -O2
+   LIBS = -L/usr/local/lib -lfftpack 
+   OPT = -O2 -fPIC
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include
 endif
@@ -66,7 +85,7 @@ all: TRANS_TER
 
 TRANS_TER: ${OBJS_TER}
 	${LD} ${LDEC} ${LSUN} ${OBJS_TER} -o trans_ter.o ${LIBS}
-	cp trans_ter.o ../
+#	cp trans_ter.o ../
 
 clean:
 	${RM} ${OBJS_TER} trans_ter.o

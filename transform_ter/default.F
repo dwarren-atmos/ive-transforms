@@ -112,9 +112,9 @@ c   in the netCDF file.  If the size of the domain is set by attributes,
 c   or if a dimension variable does not exist, size will be zero, and 
 c   data will be NULL.
 c
-      ive_ptr data(4)
-      integer size(4)
-      common/cdf_dimvar/data,size
+      ive_ptr dimvar_data(4)
+      integer dimvar_size(4)
+c      common/cdf_dimvar/data,size
 c
 c common block t_cdfid holds the netCDF id of the current input file
 c 
@@ -138,6 +138,9 @@ c
 
       data wgz,sgz,time,zbot_p,zbot_u,zbot_v/0,0,0,0,0,0/
 
+      call getiarr('dimvar_size', dimvar_size, 4, error)
+      call getparr('dimvar_data', dimvar_data, 4, error)
+
       idcdf = ncid
       numfls = 0
 
@@ -152,8 +155,8 @@ c
       enddo
 
       do i = 1,4
-        exact_coord(i) = data(i)
-        n(i) = size(i)
+        exact_coord(i) = dimvar_data(i)
+        n(i) = dimvar_size(i)
       enddo
 c
 c get some domain info from IVE
@@ -228,13 +231,13 @@ c set up coordinate vector for times
 c
       if (time.ne.0) call freemem(time)
 
-      ttime = data(4)
+      ttime = dimvar_data(4)
       if (ttime.eq.0) then
         time = 0
         write(6,*) 'Error:  could not find time coordinate vector.'
         stop
       else
-        ntime = size(4)
+        ntime = dimvar_size(4)
         time = getmem(ntime)
         do i = 1,ntime
           call s_val(%val(time),i,r_val(%val(ttime),i))
@@ -468,6 +471,10 @@ c save the physical and index limits in the common block in
 c   default.icl for use in later calculations by other transform
 c   routines.
 c
+      if((len(name).ge. 3).and.
+     &     (name(1:3) .eq. 'sgz' .or. name(1:3) .eq. 'wgz')) then
+         return
+      endif
       call getrarr("phmin",phmin,4,error)
       if (error.ne.0) then
         write(6,*) 'Error:  problem getting physical domain ',
