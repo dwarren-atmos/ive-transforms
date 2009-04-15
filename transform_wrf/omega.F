@@ -3,7 +3,7 @@
 !  Calculate the vertical velocity on the untransformed grid, omega
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      integer(ive_ptr) function omega(uvarnm,vvarnm,wvarnm,ndims,
+      integer(ive_ptr) function omega(presnm,tempnm,wnm,ndims,
      &                       dims,stag,min,max,miss,
      &                       dunits,disunits,dim_names)
       use default_module
@@ -12,128 +12,76 @@
 
       integer ndims,dims(4)
 	  real stag(4),min(4),max(4),miss
-      character(len=*) :: uvarnm,vvarnm,wvarnm
-      character(len=*) ::dunits,disunits,dim_names(4)
-
+      character(len=*) :: presnm,tempnm,wnm
+      character(len=80) ::dunits,disunits,dim_names(4)
+      character *80 string,tstr,wstr
       integer ntotal,utotal,vtotal,i
-	  logical new
-      integer(ive_ptr) uvartmp,vvartmp,uvarin,vvarin,wvarin
-      integer(ive_ptr) uvar,vvar,wvar
-      character(len=10) :: freevar
+	  logical newp,newt,neww
+      integer(ive_ptr) pvar,tvar,wvar
 
-      ntotal = (nx+1)*(ny+1)*(nz+1)*ntime
-      utotal = (nx)*(ny+1)*(nz+1)*ntime
-      vtotal = (nx+1)*(ny)*(nz+1)*ntime
 
-      omega = 0 ; omega = getmem(ntotal)
+
+
+c
+c
+c  Get Temp@P variable
+c
+      tvar = 0
+      tstr=' '
+      write(tstr,*)trim(tempnm),'@',trim(presnm)
+      tvar = getvar(tstr,ndims,dims,stag,min,max,miss,dunits,
+     &                  disunits,dim_names,newt)
+c
+      if(tvar.eq.0) then
+        write(6,*)  'Error:  cannot access ',tempnm
+        return
+      endif
+c
+c
+c
+c  Get W@P variable
+c
+      wvar = 0
+      wstr=' '
+      write(wstr,*)trim(wnm),'@',trim(presnm)
+      wvar = getvar(wstr,ndims,dims,stag,min,max,miss,dunits,
+     &              disunits,dim_names,neww)
+c
+      if(wvar.eq.0) then
+        write(6,*)  'Error:  cannot access ',wnm
+        return
+      endif
+
+c
+c  Get Pressure variable
+c
+      pvar = 0
+      pvar = getvar(presnm,ndims,dims,stag,min,max,miss,dunits,
+     &          disunits,dim_names,newp)
+      if(pvar.eq.0) then
+        write(6,*)  'Error:  cannot access ',presnm
+        return
+      endif
+
+c
+c
+      omega = 0 ; omega = getmem(dims(1)*dims(2)*dims(3)*dims(4))
       if(omega.le.0) then
         write(6,*) 'Error:  Cannot allocate memory for omega'
         return
       end if
 
+      call omega_calc(%val(omega),%val(pvar),%val(tvar),
+     &                %val(wvar),dims(1),dims(2),dims(3),dims(4))
 c
-c  Get U variable
-c
-      uvarin = 0
-      uvarin = getvar(uvarnm,ndims,dims,stag,min,max,miss,dunits,
-     &          disunits,dim_names,new)
-      if(uvarin.eq.0) then
-        write(6,*)  'Error:  cannot access ',uvarnm
-        return
-      endif
 
-      uvartmp = 0 ; uvartmp = getmem(utotal)
-      if(uvartmp.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory in for uvartmp'
-        return
-      end if
 c
-      call mult_var(%val(uvartmp),%val(uvarin)
-     &             ,%val(dqdx_xy),1,0,0,nx,ny,nz,ntime)
-c
-      uvar = 0 ; uvar = getmem(ntotal)
-      if(uvar.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory for ',uvarnm
-        return
-      end if
-c
-      do i=1,ntotal
-        call s_val(%val(uvar),i,1.)
-      end do
-c
-      call var_at_w(%val(uvar),%val(uvartmp),%val(sgz),%val(wgz),
-     &              1,0,0,nx,ny,nz,ntime)
-      call freemem(uvartmp) !; call freemem(uvarin)
-c
-c
-c  Get V variable
-c
-      vvarin = 0
-      vvarin = getvar(vvarnm,ndims,dims,stag,min,max,miss,dunits,
-     &                  disunits,dim_names,new)
-c
-      if(vvarin.eq.0) then
-        write(6,*)  'Error:  cannot access ',vvarnm
-        return
-      endif
-c
-      vvartmp = 0 ; vvartmp = getmem(vtotal)
-      if(vvartmp.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory in for vvartmp'
-        return
-      end if
-c
-      call mult_var(%val(vvartmp),%val(vvarin)
-     &             ,%val(dqdy_xy),0,1,0,nx,ny,nz,ntime)
-c
-      vvar = 0 ; vvar = getmem(ntotal)
-      if(vvar.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory for ', vvarnm
-        return
-      end if
-c
-      do i=1,ntotal
-        call s_val(%val(vvar),i,1.)
-      end do
-c
-      call var_at_w(%val(vvar),%val(vvartmp),%val(sgz),%val(wgz),
-     &              0,1,0,nx,ny,nz,ntime)
-      call freemem(vvartmp) !; call freemem(vvarin)
-c
-c  Get W variable
-c
-      wvarin = 0
-      wvarin = getvar(wvarnm,ndims,dims,stag,min,max,miss,dunits,
-     &              disunits,dim_names,new)
-c
-      if(wvarin.eq.0) then
-        write(6,*)  'Error:  cannot access ',wvarnm
-        return
-      endif
-c
-      wvar = 0 ; wvar = getmem(ntotal)
-      if(wvar.eq.0) then
-        write(6,*) 'Error:  Cannot allocate memory for wvar'
-        return
-      end if
-c
-      call mult_var(%val(wvar),%val(wvarin)
-     &             ,%val(dqdz),0,0,1,nx,ny,nz,ntime)
-      !call freemem(wvarin)
-c
-c
-      call omega_calc(%val(omega),%val(uvar),%val(vvar),
-     &                %val(wvar),%val(dqdx_xy),%val(dqdy_xy),
-     &                %val(dqdx_zw),%val(dqdy_zw),%val(dqdz),
-     &                nx,ny,nz,ntime)
-c
-      call freemem(uvar) ; call freemem(vvar) ; call freemem(wvar)
-c
-      dims(1) = nx+1
-      dims(2) = ny+1
-      dims(3) = nz+1
-      dunits = 'm/s'
-      disunits = 'm/s'
+c     Already correct from pressure
+!      dims(1) = nx+1
+!      dims(2) = ny+1
+!      dims(3) = nz+1
+      dunits = 'Pa/s'
+      disunits = 'Pa/s'
 c
       return
       end
@@ -141,37 +89,26 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-      subroutine omega_calc(omega,u,v,w,dqdx_xy,dqdy_xy,dqdx_zw,
-     &                     dqdy_zw,dqdz_xy,nx,ny,nz,nt)
+      subroutine omega_calc(omega,p,t,w,nx,ny,nz,nt)
       implicit none
 c
       integer nx,ny,nz,nt
-      real omega(nx+1,ny+1,nz+1,nt),u(nx+1,ny+1,nz+1,nt),
-     &     v(nx+1,ny+1,nz+1,nt),w(nx+1,ny+1,nz+1,nt),
-     &     dqdx_xy(nx+1,ny+1,3),dqdy_xy(nx+1,ny+1,3),
-     &     dqdx_zw(nz+1),dqdy_zw(nz+1),dqdz_xy(nx+1,ny+1,3)
+      real omega(nx,ny,nz,nt),p(nx,ny,nz,nt),
+     &     t(nx,ny,nz,nt),w(nx,ny,nz,nt)
 c
       integer i,j,k,n
-      real dqdx,dqdy,dqdz
 c
-      do n=1,nt ; do k=1,nz+1 ; do j=1,ny+1 ; do i=1,nx+1
-c         dqdx = dqdx_xy(i,j,1)*dqdx_zw(k)
-c         dqdy = dqdy_xy(i,j,1)*dqdy_zw(k)
-c         dqdz = dqdz_xy(i,j,1)
-c
-        dqdx = dqdx_zw(k)
-        dqdy = dqdy_zw(k)
-        dqdz = 1.0
+      do n=1,nt ; do k=1,nz ; do j=1,ny ; do i=1,nx
+
 c
 c   omega is 0 at the bottom boundry
-c
+c   omega = -Dens*G*w
+c   Dens = p/RT where R=8.31432*10 for mb pressure
         if(k.eq.1) then
           omega(i,j,k,n) = 0.
         else
-          omega(i,j,k,n) = 
-     &                  dqdx * u(i,j,k,n) +
-     &                  dqdy * v(i,j,k,n) +
-     &                  dqdz * w(i,j,k,n)
+          omega(i,j,k,n) =  -1.*(p(i,j,k,n)/(83.1432 * t(i,j,k,n))) *
+     &                   9.8*w(i,j,k,n)
         end if
 c
       end do ; end do ; end do ; end do

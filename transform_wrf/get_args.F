@@ -18,6 +18,7 @@
       logical delimit,charstr,realstr,lendbrk,lbegbrk
 
       err = .false.
+      lendbrk=.true.;lbegbrk=.true.
       do k=1,10
         carg(k) = ' '
         iarg(k) = -1

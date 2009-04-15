@@ -97,6 +97,28 @@ c
 c
 c get some domain info from IVE
 c
+c     Need Xlat and Xlong for lltpij and ijtoll
+c
+      flag=.true.
+      xlat=getvar('XLAT',ndims,dims,stagger,min,max,
+     >     missing,data_units,display_units,dim_names,flag)
+      lat_ll=getmem(dims(4))
+      lat_ur=getmem(dims(4))
+      lon_ll=getmem(dims(4))
+      lon_ur=getmem(dims(4))
+      call transcopylats(%val(xlat),dims(1),dims(2),dims(3),dims(4),
+     &     %val(lat_ll), %val(lat_ur))
+c      call driver('free=XLAT',0)
+      flag=.true.
+      xlong=getvar('XLONG',ndims,dims,stagger,min,max,
+     >     missing,data_units,display_units,dim_names,flag)
+      call transcopylons(%val(xlong),dims(1),dims(2),dims(3),dims(4),
+     &     %val(lon_ll), %val(lon_ur))
+c      call driver('free=XLONG',0)
+      ierr = set_button_name ('XLAT', '')
+      ierr = set_button_name ('XLONG', '')
+c
+
       call getaarr("domain_units",dom_units,4,error)
       if (error) then
         write(6,*) 'Error:  could not get domain_units in new_file.'
@@ -127,6 +149,9 @@ c
         if (i .eq. j) then ! things are dependent on themselves
           coord_dep(i,j) = 1
         end if
+        if  (j .eq. 3) then ! z is dependant on all
+           coord_dep(i,j) = 1
+        endif
       enddo ; enddo
 
       ! the vertical coord is a function of everything
@@ -192,15 +217,19 @@ c
          mutot_ptr = 0
       endif
       flag=.true.
-      mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
+      mutot_ptr=getvar('MU_TOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(mutot_ptr .eq. 0) then
-         call sleep(1)
-         mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
+         mutot_ptr=addvar('MU+MUB','MU_TOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(mutot_ptr .eq. 0) then
-            write(6,*)'MU_TOT failed',flag
-            stop 1
+            call sleep(1)
+            mutot_ptr=addvar('MU+MUB','MU_TOT',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(mutot_ptr .eq. 0) then
+               write(6,*)'MU_TOT failed',flag
+               stop 1
+            endif
          endif
       endif
       mu_delta=delta(:) ; mu_dims = dims(:)  
@@ -208,27 +237,35 @@ c
       
 
       flag=.true.
-      phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
+      phtot_ptr = getvar('PH_TOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(phtot_ptr .eq. 0) then
-         call sleep(1)
-         phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
+         phtot_ptr=addvar('PH+PHB','PH_TOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(phtot_ptr .eq. 0) then
-            write(6,*)'PHTOT failed',flag
-            stop 1
+            call sleep(1)
+            phtot_ptr = addvar('PH+PHB','PH_TOT',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(phtot_ptr .eq. 0) then
+               write(6,*)'PHTOT failed',flag
+               stop 1
+            endif
          endif
       endif
       flag=.true.
-      ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
+      ptot_ptr = getvar('Pressure',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(ptot_ptr .eq. 0) then
-         call sleep(1)
          ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(ptot_ptr .eq. 0) then
-            write(6,*)'Pressure failed',flag
-            stop 1
+            call sleep(1)
+            ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(ptot_ptr .eq. 0) then
+               write(6,*)'Pressure failed',flag
+               stop 1
+            endif
          endif
       endif
       ierr = set_button_name ('MU', '')  
@@ -236,15 +273,42 @@ c
       ierr = set_button_name ('PH', '')
       ierr = set_button_name ('PHB', '')
       
-c     mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c      
-c     mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c     
-c     mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c     
+      mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapM_ptr .eq. 0) then
+         call sleep(1)
+         mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapM_ptr .eq. 0) then
+            write(6,*)'MAPFAC_M failed',flag
+            stop 1
+         endif
+      endif
+         
+      mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapU_ptr .eq. 0) then
+         call sleep(1)
+         mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapU_ptr .eq. 0) then
+            write(6,*)'MAPFAC_U failed',flag
+            stop 1
+         endif
+      endif
+     
+      mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapV_ptr .eq. 0) then
+         call sleep(1)
+         mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapV_ptr .eq. 0) then
+            write(6,*)'MAPFAC_V failed',flag
+            stop 1
+         endif
+      endif
+
       twod = 0
       if (plmax(2).eq.plmin(2)) twod = 1
       
@@ -311,24 +375,6 @@ c
         stop
       end if
 
-      flag=.true.
-      xlat=getvar('XLAT',ndims,dims,stagger,min,max,
-     >     missing,data_units,display_units,dim_names,flag)
-      lat_ll=getmem(dims(4))
-      lat_ur=getmem(dims(4))
-      lon_ll=getmem(dims(4))
-      lon_ur=getmem(dims(4))
-      call transcopylats(%val(xlat),dims(1),dims(2),dims(3),dims(4),
-     &     %val(lat_ll), %val(lat_ur))
-c      call driver('free=XLAT',0)
-      flag=.true.
-      xlong=getvar('XLONG',ndims,dims,stagger,min,max,
-     >     missing,data_units,display_units,dim_names,flag)
-      call transcopylons(%val(xlong),dims(1),dims(2),dims(3),dims(4),
-     &     %val(lon_ll), %val(lon_ur))
-c      call driver('free=XLONG',0)
-      ierr = set_button_name ('XLAT', '')
-      ierr = set_button_name ('XLONG', '')
 
       ierr=nf_get_att_double(ncid,0,'TRUELAT1',djunk(1))
       if(ierr.eq.NF_NOERR) then
@@ -374,6 +420,23 @@ c      call driver('free=XLONG',0)
          projection='ME'
       endif
 
+c      end if
+c
+c compute metric arrays (subroutine in metrics.F)
+c
+!      dqdx_xy = getmem(3*(nx+1)*(ny+1))
+!      dqdx_zt = getmem(nz+1)
+!      dqdx_zw = getmem(nz+1)
+!      dqdy_xy = getmem(3*(nx+1)*(ny+1))
+!      dqdy_zt = getmem(nz+1)
+!      dqdy_zw = getmem(nz+1)
+!      dqdz = getmem(3*(nx+1)*(ny+1))
+!      dzdq = getmem(3*(nx+1)*(ny+1))
+!      call metric_calc(%val(hgt_ptr),%val(hgt_ptr),%val(hgt_ptr),
+!     >     %val(znu_ptr),%val(znw_ptr),%val(dqdx_xy),%val(dqdx_zt),
+!     >     %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zt),
+!     >     %val(dqdy_zw),%val(dqdz),%val(dzdq),ztop,dx,dy,
+!     >     nx,ny,nz)
 
 c set domain offsets to zero
       offset(1) = 0. ;  offset(2) = 0. ;  offset(4) = 0.
@@ -436,14 +499,14 @@ c
 !         write(6,*)'NEW_FIELD name = ',name(1:80)
 !      endif
       call setrvar('spval',9.9999997E+37,error)
-      if(trim(name(1:80)) .eq. 'ZNW' .or. 
-     &     trim(name(1:80)) .eq. 'ZNU' .or.
-     &     trim(name(1:80)) .eq. 'XLAT' .or. 
-     &     trim(name(1:80)) .eq. 'XLONG' .or.
-     &     trim(name(1:80)) .eq. 'MU' .or.
-     &     trim(name(1:80)) .eq. 'MUB' .or.
-     &     trim(name(1:80)) .eq. 'PH' .or.
-     &     trim(name(1:80)) .eq. 'PHB' 
+      if(trim(name(1:len(name))) .eq. 'ZNW' .or. 
+     &     trim(name(1:len(name))) .eq. 'ZNU' .or.
+     &     trim(name(1:len(name))) .eq. 'XLAT' .or. 
+     &     trim(name(1:len(name))) .eq. 'XLONG' .or.
+     &     trim(name(1:len(name))) .eq. 'MU' .or.
+     &     trim(name(1:len(name))) .eq. 'MUB' .or.
+     &     trim(name(1:len(name))) .eq. 'PH' .or.
+     &     trim(name(1:len(name))) .eq. 'PHB' 
      &     ) return
 
       call getrarr("plmax_scaled",plmax_scaled,4,error)
@@ -724,10 +787,10 @@ c
       integer npts, ndims, flag(ndims)
       real    phys(ndims, npts), index(ndims, npts)
 
-      integer i, j, k
+      integer i, j, k, l
       logical error
       real    r_val, spval
-      real    mupt, p, mh
+      real    mupt, p, mh, myin(4), myph(4)
       double precision extrap
 
 !     can't do without all others
@@ -740,31 +803,9 @@ c
       endif
       do i = 1, npts
          do j = ndims, 1, -1
-            if (flag(j) .eq. 1) then
+            if (flag(j) .eq. 1 .and. j .ne. 3) then
 
-               if ((j.eq.3).and.(trans_eta.eq.1)) then
-                  
-                mupt = get_2Dpt_time(%val(mutot_ptr), 
-     &                 phys(1, i), phys(2, i), index(4,i),
-     &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
-     &                 phys_mumin(1:2), mu_delta(1:2))
-
-
-                 ! This is wrf transform for dry hydrostatic flow
-                if(mupt .ne. 0.) then
-                   p = (phys(j, i) - ptop )/mupt
-                else
-                   p=-1.0
-                endif
-                 !p = phys(j, i)
-
-                 if (p .lt. 0) then
-                   index(j, i) = -1.0
-                   goto 5
-                 end if
-               else
-                  p = phys(j, i)
-               end if
+               p = phys(j, i)
 
 c     Trivial case where dimension does not exist (depth of array is 
 c     unity along this dimension)
@@ -777,44 +818,57 @@ c     point locations given in a 1D "dimension variable" array.
 c
 c     Physical coord. increasing with index.
                   if (phmin(j) .lt. phmax(j)) then
-                       k = 2
-10                     if ((p.gt.r_val(%val(coord(j)),k)).and.
-     >                           (k.lt.inmax(j))) then
-                         k = k+1
-                         goto 10
-                       end if
-
-                       index(j,i) = real(k) - (p-
-     &                       r_val(%val(coord(j)),k))/
-     &                       (r_val(%val(coord(j)),k-1)-
-     &                       r_val(%val(coord(j)),k))
-
-                  else ! Physical coord. decreasing with index.
-                       k = 2
- 20                    if ((p.lt.r_val(%val(coord(j)),k)).and.
-     >                           (k.lt.inmax(j))) then
-                         k = k+1
-                         goto 20
-                       end if
-
-                       index(j,i) = real(k) - (p-
-     &                       r_val(%val(coord(j)),k))/
-     &                       (r_val(%val(coord(j)),k-1)-
-     &                       r_val(%val(coord(j)),k))
+                     k = 2
+ 10                  if ((p.gt.r_val(%val(coord(j)),k)).and.
+     >                    (k.lt.inmax(j))) then
+                        k = k+1
+                        goto 10
+                     end if
+                     
+                     index(j,i) = real(k) - (p-
+     &                    r_val(%val(coord(j)),k))/
+     &                    (r_val(%val(coord(j)),k-1)-
+     &                    r_val(%val(coord(j)),k))
+                     
+                  else          ! Physical coord. decreasing with index.
+                     k = 2
+ 20                  if ((p.lt.r_val(%val(coord(j)),k)).and.
+     >                    (k.lt.inmax(j))) then
+                        k = k+1
+                        goto 20
+                     end if
+                     
+                     index(j,i) = real(k) - (p-
+     &                    r_val(%val(coord(j)),k))/
+     &                    (r_val(%val(coord(j)),k-1)-
+     &                    r_val(%val(coord(j)),k))
                   endif
-
-               else ! Case of evenly spaced physical coord.
+                  
+               else             ! Case of evenly spaced physical coord.
                   index(j,i) = (p-phmin(j))/delta(j) + 1
                   if (index(j,i) .lt. 1) index(j,i) = 1
                   if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
+!                  if (index(j,i) .lt. 1) index(j,i) = -1
+!                  if (index(j,i) .gt. inmax(j)) index(j,i) = -1
                endif
-
-            endif
-
- 5          continue
+ 
+           endif
          enddo
          if(flag(3) .eq. 1) then
+!
 !           must have gotten all others for j
+!     need to index3,i) because wrf transform is bad!!!
+!
+            if((trans_eta.eq.1)) then
+               myin=index(:,i)
+c               write(6,*)myin
+               call pres_2_index(phys(3,i),myin,4,spval)
+               index(:,i)=myin
+c               write(6,*)myin
+            else
+               index(3,i) = phys(3,i)
+            endif
+            
             mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
      &           index(1,i),index(2,i),1.,index(4,i),spval)
             if(phys(3, i) .gt. mh)index(3,i)=-1 !under ground
@@ -1077,7 +1131,7 @@ c
       double precision interp
 c
 c
-      write(6,*)'in phys_2_latlon'
+c      write(6,*)'in phys_2_latlon'
       call getrvar('tloc',mytime,error)
       if(error)mytime=1.0
 
@@ -1705,6 +1759,63 @@ c
          part=(hgt(3)-bottom)/(top-bottom)
          index(3)=real(k)+part
       endif
+      end
+
+
+      subroutine pres_2_index(pres, index, ndims, spval)
+
+      use DEFAULT_MODULE
+c     
+c     phys_2_index : This routine translates physical coordinates into 
+c     array indices.
+c     
+c     Arguments:
+c     phys	real	input	Array of physical coordinates.
+c     index	real	output	Array of indicies.  A negative index =>
+c				this point gets the missing data value
+c				(e.g. is under the terrain).
+c     ndims	integer	input	Number of dimensions in each point.
+c     npts	integer	input	Number of points to convert.
+c
+
+      integer  ndims
+      real    pres, index(ndims)
+
+      integer i, j, k
+      real    r_val, spval
+      double precision interp
+      
+      real bottom, top, part
+         
+      if(nz .eq. 1) then
+         index(3) = 1
+         return
+      endif
+      k=nz
+      bottom=interp(%val(ptot_ptr),nx,ny,nz,ntime,
+     &     index(1),index(2), real(k), index(4),spval)
+      do while(bottom .lt. pres .and. k .gt. 1)
+         k=k-1
+         bottom=interp(%val(ptot_ptr),nx,ny,nz,ntime,
+     &        index(1),index(2), real(k), index(4),spval)
+      enddo
+!      write(6,*)pres,bottom,k
+      if((bottom .gt. pres .and. k .eq. nz) .or.
+     &     ((k.eq.1) .and. bottom .lt. pres)) then
+         index(3)=-1
+         return
+      endif
+
+      if(bottom .eq. pres) then
+         index(3)=real(k)
+         return
+      else
+         top=interp(%val(ptot_ptr),nx,ny,nz,ntime,
+     &        index(1),index(2), real(k+1), index(4),spval)
+         part=(pres-bottom)/(top-bottom)
+         index(3)=real(k)+part
+      endif
+      return
       end
 
          

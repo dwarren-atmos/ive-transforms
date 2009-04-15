@@ -59,33 +59,14 @@ MODS	=	default_module.o   	\
             module_mapping.o   	\
 			misc_module.o
 
-OBJS_F = 						\
-		 default.o		 \
-	         move_parcel.o
-# 		 calc_field.o	\
- 		 run_sub.o				\
-	     buoy_freq.o			\
-	     deriv.o				\
-	     get_args.o				\
-	     ive_funcs.o			\
-	     mkfield.o				\
-	     metrics.o				\
-	     destagger.o			\
-	     omega.o				\
-	     units_smpfy.o			\
-	     vert_grid.o			\
-	     xy_grid.o				\
-	     rho.o					\
-	     interp_pres.o			\
-	     interp_height.o		\
-	     vert_interp_field.o	\
-	     horiz_interp_field.o	\
-	     the2temp.o				\
-		 max_min.o 				\
-		 point_val.o			\
-		 vort.o				\
-		 pvort.o				\
-		 filt9.o
+OBJS_F =  default.o calc_field.o run_sub.o \
+	  deriv.o   metrics.o get_args.o list.o omega.o \
+	  destagger.o move_parcel.o pvort.o
+#	  buoy_freq.o  ive_funcs.o\
+#	  mkfield.o  units_smpfy.o \
+#	  vert_grid.o xy_grid.o rho.o interp_pres.o interp_height.o \
+#	  vert_interp_field.o horiz_interp_field.o the2temp.o \
+#	  max_min.o point_val.o vort.o pvort.o filt9.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
