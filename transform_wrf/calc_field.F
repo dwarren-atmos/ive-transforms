@@ -26,7 +26,8 @@ c
 c      type(meta_ive) :: meta
       integer :: ndims,dims(4),i
       real    :: stag(4),min(4),max(4),missing
-      character(len=*) :: name,data_units,data_display_units
+      character(len=*) :: name
+      character(len=80):: data_units,data_display_units
      &                   ,dim_names(4)
 c
       integer ibeg,iend,idvar,ircode,strbeg,strend,ierr,ncvid
@@ -59,29 +60,32 @@ c
 c
       call setstr(fld,name)
 c
-      !data_units(1:len(data_units)) = ' '
-      !data_display_units(1:len(data_display_units)) = ' '
-      data_units = ' '
+      data_units(1:len(data_units)) = ' '
+      data_display_units(1:len(data_display_units)) = ' '
+!      data_units = ' '
+!
       data_display_units = ' '
-      iend = index(fld,'[',.true.) - 1
+      iend = index(fld,'[',BACK=.false.) - 1
+c .true = rindex .false = index
 
-
+      fld_cut=' '
       if(iend.lt.0) then
-        fld_cut = trim(fld)
+        fld_cut = trim(fld(1:len(trim(fld))-1))
       else
         fld_cut = fld(1:iend)
       end if
-
+      carg=' '
       if(iend.ge.0) then
         call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
         if (err) return
       end if
 
       calc_field = 0
+
       select case (trim(fld_cut))
 c
 c  List of available fields
-c
+c     
       case ('LIST')
         call list
         return
@@ -91,44 +95,44 @@ c
 c
 c  Grid heights
 c
-      case ('GRID')
-       call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
-       if(err) return
+!      case ('GRID')
+!       call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+!       if(err) return
 
-       calc_field = vert_grid(carg(1),ndims,dims,stag,min,max,missing,
-     &                 data_units,data_display_units,dim_names)
+!       calc_field = vert_grid(carg(1),ndims,dims,stag,min,max,missing,
+!     &                 data_units,data_display_units,dim_names)
 c
 c  Translate domain
 c
-      case ('TRANSLATE')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,0,err)
-        if(err) return
+!      case ('TRANSLATE')
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,0,err)
+!        if(err) return
 
-        call translate_domain(rarg(1),rarg(2))
-        !calc_field = 1
-        return
+!        call translate_domain(rarg(1),rarg(2))
+!        !calc_field = 1
+!        return
 c
 c  Translate time
 c
-      case ('TRANS_TIME')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
-        if(err) return
-        call translate_time(rarg(1))
+!      case ('TRANS_TIME')
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
+!        if(err) return
+!        call translate_time(rarg(1))
 
         !calc_field = 1
-        return
+!        return
 c
 c  Turn vertical coordinate transformation on or off
 c
-      case ('TRANS_ON')
-        call trans_switch(1)
-        calc_field = 1
-        return
+!      case ('TRANS_ON')
+!        call trans_switch(1)
+!        calc_field = 1
+!        return
 
-      case ('TRANS_OFF')
-        call trans_switch(0)
-        calc_field = 1
-        return
+!      case ('TRANS_OFF')
+!        call trans_switch(0)
+!        calc_field = 1
+!        return
 c
 c  Derivative (fourth order diff)
 c
@@ -143,92 +147,90 @@ c
 c
 c  Rotate u wind through angle theta
 c
-      case ('UROT')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,2,err)
-        if(err) return
+!      case ('UROT')
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,2,err)
+!        if(err) return
 
-        calc_field = urot2(rarg(1),carg(1),carg(2),
-     &                ndims,dims,stag,min,max,missing,
-     &                data_units,data_display_units,dim_names)
-        return
+!        calc_field = urot2(rarg(1),carg(1),carg(2),
+!     &                ndims,dims,stag,min,max,missing,
+!     &                data_units,data_display_units,dim_names)
+!        return
 c
 c  OMEGA
 c
       case ('OMEGA')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,3,err)
-        if (err) return
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,3,err)
+!        if (err) return
 
-        calc_field = omega(carg(1),carg(2),carg(3),
+!        calc_field = omega(carg(1),carg(2),carg(3),
+!     &                      ndims,dims,stag,min,max,missing,
+!     &                      data_units,data_display_units,dim_names)
+        calc_field = omega('Pressure','T','W',
      &                      ndims,dims,stag,min,max,missing,
      &                      data_units,data_display_units,dim_names)
         return
 c    
 c  Buoyancy frequency
 c    
-      case ('NSPEC')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
-        if (err) return
+!      case ('NSPEC')
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,1,err)
+!        if (err) return
 
-        calc_field = buoy_freq(carg(1),
-     &                   ndims,dims,stag,min,max,missing,data_units,
-     &                   data_display_units,dim_names,0)
-        return
+!        calc_field = buoy_freq(carg(1),
+!     &                   ndims,dims,stag,min,max,missing,data_units,
+!     &                   data_display_units,dim_names,0)
+!        return
 
-      case ('N')
-        calc_field = buoy_freq('the',ndims,dims,stag,min,max,missing,
-     &                 data_units,data_display_units,dim_names,0)
-        return
+!      case ('N')
+!        calc_field = buoy_freq('the',ndims,dims,stag,min,max,missing,
+!     &                 data_units,data_display_units,dim_names,0)
+!        return
 
-      case ('N2')
-        calc_field = buoy_freq('the',ndims,dims,stag,min,max,missing,
-     &                 data_units,data_display_units,dim_names,1)
-        return
+!      case ('N2')
+!        calc_field = buoy_freq('the',ndims,dims,stag,min,max,missing,
+!     &                 data_units,data_display_units,dim_names,1)
+!        return
 c
-      case ('THE2TEMP')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
-        if(err) return
+!      case ('THE2TEMP')
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+!        if(err) return
 
-        calc_field = the2temp(carg(1),carg(2),
-     &                  ndims,dims,stag,min,max,missing,data_units,
-     &                  data_display_units,dim_names)
-        return
+!        calc_field = the2temp(carg(1),carg(2),
+!     &                  ndims,dims,stag,min,max,missing,data_units,
+!     &                  data_display_units,dim_names)
+!        return
 
-      case ('VORT_X') ! x component of vorticity
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
-        if(err) return
+!      case ('VORT_X') ! x component of vorticity
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+!        if(err) return
 
-        calc_field = vort_x(carg(1),carg(2),
-     &                  ndims,dims,stag,min,max,missing,data_units,
-     &                  data_display_units,dim_names)
-        return
+!        calc_field = vort_x(carg(1),carg(2),
+!     &                  ndims,dims,stag,min,max,missing,data_units,
+!     &                  data_display_units,dim_names)
+!        return
 
-      case ('VORT_Y') ! y component of vorticity
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
-        if(err) return
+!      case ('VORT_Y') ! y component of vorticity
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+!        if(err) return
 
-        calc_field = vort_y(carg(1),carg(2),
-     &                  ndims,dims,stag,min,max,missing,data_units,
-     &                  data_display_units,dim_names)
-        return
+!        calc_field = vort_y(carg(1),carg(2),
+!     &                  ndims,dims,stag,min,max,missing,data_units,
+!     &                  data_display_units,dim_names)
+!        return
 
-      case ('VORT_Z') ! z component of vorticity
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
-        if(err) return
-
-        calc_field = vort_z(carg(1),carg(2),
-     &                  ndims,dims,stag,min,max,missing,data_units,
-     &                  data_display_units,dim_names)
-        return
+!      case ('VORT_Z') ! z component of vorticity
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
+!        if(err) return
+!
+!        calc_field = vort_z(carg(1),carg(2),
+!     &                  ndims,dims,stag,min,max,missing,data_units,
+!     &                  data_display_units,dim_names)
+!        return
 
       case ('PVORT') ! potential vorticity
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,5,err)
-        if(err) then
-          call make_help_widget('Expected: pvort[U:V:W:THE:PRE]')
-          return
-        end if
-
-        calc_field = pvort(carg(1),carg(2),carg(3),carg(4),carg(5),
-     &                  ndims,dims,stag,min,max,missing,data_units,
+!                    In WRF we know the names:U,V,T,F etc
+!                    So they are hard coded unlike coamps etc.
+        calc_field = pvort(ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
         return
 c
