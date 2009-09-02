@@ -43,27 +43,27 @@ c        call sound_out(rarg(1),rarg(2),rarg(3),0.0,rarg(4),
 c     &                iarg(1),2)
 c        return
 
-      case ('TRANSLATE') ! translate the horizontal spatial domain
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,0,err)
-        if(err) return
+!      case ('TRANSLATE') ! translate the horizontal spatial domain
+!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,0,err)
+!        if(err) return
 
-        call translate_domain(rarg(1),rarg(2))
-        return
+!        call translate_domain(rarg(1),rarg(2))
+!        return
 
-      case ('TRANS_TIME','trans_time') ! translate the time domain
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
-        if(err) return
-        call translate_time(rarg(1))
+!      case ('TRANS_TIME','trans_time') ! translate the time domain
+!!        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
+!!        if(err) return
+!        call translate_time(rarg(1))
 
-        return
+!        return
 
-      case ('TRANS_ON') ! Turn on vertical transform
-        call trans_switch(1)
-        return
+!      case ('TRANS_ON') ! Turn on vertical transform
+!        call trans_switch(1)
+!        return
 
-      case ('TRANS_OFF') ! Turn off vertical transform
-        call trans_switch(0)
-        return
+!      case ('TRANS_OFF') ! Turn off vertical transform
+!        call trans_switch(0)
+!        return
 
       case ('TEST','test')
         print *,'THIS IS A TEST'
