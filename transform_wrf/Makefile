@@ -61,9 +61,9 @@ MODS	=	default_module.o   	\
 
 OBJS_F =  default.o calc_field.o run_sub.o \
 	  deriv.o   metrics.o get_args.o list.o omega.o \
-	  destagger.o move_parcel.o pvort.o
+	  destagger.o move_parcel.o pvort.o units_smpfy.o
 #	  buoy_freq.o  ive_funcs.o\
-#	  mkfield.o  units_smpfy.o \
+#	  mkfield.o  \
 #	  vert_grid.o xy_grid.o rho.o interp_pres.o interp_height.o \
 #	  vert_interp_field.o horiz_interp_field.o the2temp.o \
 #	  max_min.o point_val.o vort.o pvort.o filt9.o

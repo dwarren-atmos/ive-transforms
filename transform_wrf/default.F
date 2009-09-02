@@ -751,7 +751,9 @@ c     Handle vertical transformation
 !                this is wrf transform for dry hydrostatic flow
 !                write(6,*)phys(j, i),mupt ,ptop
 !                phys(j, i) = phys(j, i)*mupt + ptop
-                if( phys(j, i) .gt. mh) phys(j, i)=spval
+                  if(mh .gt. 0) then
+                     if( phys(j, i) .gt. mh) phys(j, i)=spval
+                  endif
                endif
 
             endif
@@ -871,7 +873,9 @@ c               write(6,*)myin
             
             mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
      &           index(1,i),index(2,i),1.,index(4,i),spval)
-            if(phys(3, i) .gt. mh)index(3,i)=-1 !under ground
+            if(mh .gt. 0) then
+               if(phys(3, i) .gt. mh)index(3,i)=-1 !under ground
+            endif
          endif
 
       enddo
