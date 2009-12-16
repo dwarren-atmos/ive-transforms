@@ -55,16 +55,16 @@ c
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
      &                 interp_height, kgain, localize, vort_z, vort_x,
-     &                 vort_y,pvort,sigdiff
+     &                 vort_y,pvort,sigdiff,rmserr
 c
       call setstr(fld,name)
 c
-      !data_units(1:len(data_units)) = ' '
-      !data_display_units(1:len(data_display_units)) = ' '
-      data_units = ' '
-      data_display_units = ' '
+      write(6,*)'du:',len(data_units),' ddu: ',len(data_display_units)
+      data_units(1:len(data_units)) = ' '
+      data_display_units(1:len(data_display_units)) = ' '
+!      data_units = ' '
+!      data_display_units = ' '
       iend = index(fld,'[',.true.) - 1
-
 
       if(iend.lt.0) then
         fld_cut = trim(fld)
@@ -72,10 +72,8 @@ c
         fld_cut = fld(1:iend)
       end if
 
-      if(iend.ge.0) then
-        call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
-        if (err) return
-      end if
+      call get_args(fld,rarg,iarg,carg,rcnt,icnt,ccnt,err)
+      if (err) return
 
       calc_field = 0
       select case (trim(fld_cut))
@@ -354,19 +352,34 @@ c
 c  Interpolate a field to a presure level
 c
       case ('INTERPP')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,1,err)
+        if(ccnt.eq.1) then
+          ccnt=2 ; carg(2) = 'PPP'
+        end if
+        if(icnt.eq.0) then
+          icnt=1 ; iarg(1) = 0
+        end if
+
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,1,2,err)
         if(err) return
 
-        calc_field = interp_pres(carg(1),rarg(1),
+        calc_field = interp_pres(carg(1),carg(2),rarg(1),iarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
         return
 c
       case ('GEOPOT')
-        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,0,err)
+        if(ccnt.eq.0) then
+          ccnt=1 ; carg(1) = 'PPP'
+        end if
+
+        if(icnt.eq.0) then
+          icnt=1 ; iarg(1) = 0
+        end if
+
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,1,1,err)
         if(err) return
 
-        calc_field = findz('PPP',rarg(1),.false.,.true.,
+        calc_field = findz(carg(1),rarg(1),.false.,.true.,iarg(1),
      &                  ndims,dims,stag,min,max,missing,data_units,
      &                  data_display_units,dim_names)
         return
@@ -397,6 +410,24 @@ c
         if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
         calc_field = kgain(carg(1),carg(2),
      &                    rarg(1),rarg(2),rarg(3),rarg(4),lmap,fld_cut,
+     &                    0,0,
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+        return
+      case ('KGAIN_SPEC')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,0,3,err)
+        if(err) return
+        
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.4) ctmp = carg(4)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+
+        call get_stnloc(rarg(3),rarg(4),carg(3))
+        print '(A,F9.4,A1,F8.5,A)',
+     &        'draw_point_map=',rarg(3),',',rarg(4),',dot,2' 
+
+        calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(3),rarg(4),rarg(2),lmap,fld_cut,
      &                    0,0,
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
@@ -445,6 +476,18 @@ c
      &                    data_display_units,dim_names)
 
         return
+
+      case ('GCLOC_SPEC')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,1,0,2,err)
+        if(err) return
+
+        call get_stnloc(rarg(3),rarg(2),carg(1))
+
+        calc_field = localize(rarg(2),rarg(3),rarg(1),carg(2),
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+
+        return
 c
 c  Calculates the hierarchical localization factor
 c
@@ -460,6 +503,32 @@ c
      &                    iarg(1),iarg(2),
      &                    ndims,dims,stag,min,max,missing,data_units,
      &                    data_display_units,dim_names)
+
+        return
+
+      case ('HIERLOC_SPEC')
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,2,2,3,err)
+        if(err) return
+
+        ctmp = 'F' ; lmap = .false.
+        if(ccnt.eq.4) ctmp = carg(4)
+        if(ctmp.eq.'T'.or.ctmp.eq.'t') lmap = .true.
+
+        call get_stnloc(rarg(3),rarg(4),carg(3))
+        print '(A,F9.4,A1,F8.5,A)',
+     &        'draw_point_map=',rarg(3),',',rarg(4),',dot,2' 
+
+        print *, rarg
+        print *, iarg
+        print *, carg
+
+        calc_field = kgain(carg(1),carg(2),
+     &                    rarg(1),rarg(3),rarg(4),rarg(2),lmap,fld_cut,
+     &                    iarg(1),iarg(2),
+     &                    ndims,dims,stag,min,max,missing,data_units,
+     &                    data_display_units,dim_names)
+
+        return
 
       case ('VORT_X') ! x component of vorticity
         call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
@@ -513,6 +582,41 @@ c
      &                       ndims,dims,stag,min,max,missing,data_units,
      &                       data_display_units,dim_names)
         return
+
+      case ('RMSERR') ! RMS Difference between two means
+
+        if(icnt.lt.1) then
+         icnt = 1 ; iarg(1) = 0
+        end if
+
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,1,2,err)
+        if(err) then
+         call make_help_widget('Expected: RMSERR[VAR1:VAR2:[FULL_DOM]]')
+         return
+        end if
+
+        calc_field = rmserr(carg(1),carg(2),iarg(1),.false.,
+     &                       ndims,dims,stag,min,max,missing,data_units,
+     &                       data_display_units,dim_names)
+        return
+
+      case ('ABSERR') ! ABSOLUTE Difference between two means
+
+        if(icnt.eq.0) then
+         icnt = 1 ; iarg(1) = 0
+        end if
+
+        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,1,2,err)
+        if(err) then
+         call make_help_widget('Expected: ABSERR[VAR1:VAR2:[FULL_DOM]]')
+         return
+        end if
+
+        calc_field = rmserr(carg(1),carg(2),iarg(1),.true.,
+     &                       ndims,dims,stag,min,max,missing,data_units,
+     &                       data_display_units,dim_names)
+        return
+c
 c
 c
 c  Variable not found
@@ -530,7 +634,7 @@ c
         if ((dims(1).eq.1).and.(dims(2).eq.1).and.(dims(3).eq.1)
      &                   .and.(dims(4).eq.1)) then
           write(6,*)
-          write(6,*) 'Field ',fld(1:iend),' = ',
+          write(6,*) 'Field ',trim(fld_cut),' = ',
      &                    r_val(%val(calc_field),1)
           write(6,*)
         end if

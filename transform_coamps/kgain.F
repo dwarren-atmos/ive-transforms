@@ -6,6 +6,7 @@
       use default_module
       !use module_numerics
 
+
       implicit none
 
       real, intent(in) :: x0, y0, z0, R
@@ -31,7 +32,7 @@
 
       select case (trim(calc_type))
 
-      case('kgain','k','gain','KGAIN')
+      case('kgain','k','gain','KGAIN','KGAIN_SPEC','kgain_spec')
         lkgain = .true. ; lcov = .false. ; lcor = .false.
         lhier = .false.
       case('cov','covariance','ENS_COV')
@@ -40,7 +41,7 @@
       case('cor','correlation','ENS_COR')
         lkgain = .false. ; lcov = .false. ; lcor = .true.
         lhier = .false.
-      case('hier','hier_loc','hloc','HIERLOC')
+      case('hier','HIERLOC','HIERLOC_SPEC','hierloc_spec')
         lkgain = .false. ; lcov = .false. ; lcor = .false. 
         lhier = .true.
       case default
@@ -108,8 +109,11 @@
       elseif(lcor) then
         call covcor_calc(%val(kgain),ye,%val(xprior),mnk,Ne,lcor)
       elseif(lhier) then
+      print *,trim(obs_name),trim(upd_name),R,x0,y0,z0,Nbin,nfilt
         call hierloc_calc(%val(kgain),ye,%val(xprior),R,mnk,Ne,Nbin)
-        call filt9(%val(kgain),ix,iy,iz,nfilt)
+      print *,trim(obs_name),trim(upd_name),R,x0,y0,z0,Nbin,nfilt
+c        call filt9(%val(kgain),ix,iy,iz,nfilt)
+c      print *,trim(obs_name),trim(upd_name),R,x0,y0,z0,Nbin,nfilt
       end if
 
 

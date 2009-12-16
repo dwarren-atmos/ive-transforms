@@ -39,7 +39,8 @@ c   data will be NULL.
 c
       integer(ive_ptr) :: data(4)
       integer :: size(4)
-      common/cdf_dimvar/data,size
+c      common/cdf_dimvar/data,size
+c     Use getavar rutines instead
 c
 c common block t_cdfid holds the netCDF id of the current input file
 c 
@@ -68,7 +69,9 @@ c
 
       integer :: nf_get_att_int1, nf_get_att_real, nf_global, nf_noerr
       character(len=80) :: nf_strerror
-
+      
+      call getparr('dimvar_data', data, 4, error)
+      call getiarr('dimvar_size', size, 4, error)
       lgz=0; wgz=0; sgz=0; time=0; zbot_p=0;
       zbot_u=0; zbot_v=0; fcor=0; grdrot=0
 
@@ -150,7 +153,7 @@ c
       endif
 c
 c set up coordinate vector for thermo pts
-c
+
       if (sgz.ne.0) call freemem(sgz)
 
       tsgz = getvar('sgz',ndims,dims,stagger,min,max,missing,
@@ -498,7 +501,7 @@ c save the physical and index limits in the common block in
 c   default.icl for use in later calculations by other transform
 c   routines.
 c
-      if(trim(name) .eq. 'wgz') return
+      if(trim(name(1:len(name))) .eq. 'wgz') return
       call getrarr("phmin",phmin,4,error)
       if (error.ne.0) then
         write(6,*) 'Error:  problem getting physical domain ',
@@ -608,6 +611,12 @@ c
         end if
       end if
 
+      ! find out what the stagering is.  
+      ! Perhaps there is a better way but I don't have time
+      u_stag = .false. ;  v_stag = .false.
+      if(.not.requ(phmin(1),plmin(1))) u_stag=.true.
+      if(.not.requ(phmin(2),plmin(2))) v_stag=.true.
+
       return
       end subroutine
 c
@@ -712,7 +721,7 @@ c
       integer i, j, k
       real    r_val	! function
       real    zter, p
-
+         
       do i = 1, npts
          do j = 1, ndims
             if (flag(j) .eq. 1) then
@@ -1047,6 +1056,8 @@ c
       do i=1,npts
         grdi(i) = grid(1,i)
         grdj(i) = grid(2,i)
+         if(u_stag) grdi(i) = grdi(i) + 0.5
+         if(v_stag) grdj(i) = grdj(i) + 0.5
       end do
 c
       call ij2ll (igrid,reflat,reflon,iref,jref,stdlt1,stdlt2
@@ -1092,6 +1103,8 @@ c
       do i = 1, npts
          grid(1,i) = grdi(i)
          grid(2,i) = grdj(i)
+         if(u_stag) grid(1,i) = grid(1,i) - 0.5
+         if(v_stag) grid(2,i) = grid(2,i) - 0.5
       end do
 c
       call index_2_phys(phys,grid,iflag,2,npts)

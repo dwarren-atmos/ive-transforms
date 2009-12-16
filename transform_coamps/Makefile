@@ -10,16 +10,7 @@
 
 MODLIB	= ./mods
 
-machine := ${shell /usr/ucb/arch}
-ifndef machine
-machine := ${shell /usr/bin/arch}
-endif
-ifndef machine
-machine := ${shell /usr/bin/uname}
-endif
-ifndef machine
-machine := ${shell /bin/uname}
-endif
+machine := ${shell uname -m}
 ifeq (${machine},alpha)
    F90 = f90
    CC = cc
@@ -40,9 +31,17 @@ else
    FC=ifort
    CC = icc
    CPP = ${F90} -E
-   DEC = -fPIC
+   ifeq (${machine},x86_64)
+       DEC=-DSIXTY_FOUR_bptr -fPIC
+   else
+   	   DEC= 
+   endif
    LDEC = -shared
-   LIBS = -lfftpack -lnetcdf
+   ifeq (${machine},x86_64)
+	   LIBS = -lfftpack -lnetcdf -i_dynamic
+   else	
+	   LIBS = -lfftpack -lnetcdf
+   endif	
    OPT = -O2
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include
@@ -57,13 +56,14 @@ FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 #
 #			module_numerics.o
-MODS	=   default_module.o   	\
-	    module_mapping.o   	\
-	    misc_module.o
+MODS	=	default_module.o   	\
+            module_mapping.o   	\
+			misc_module.o
 
-OBJS_F =     default.o				\
-	     calc_field_coamps.o	\
-	     run_sub.o				\
+OBJS_F = 						\
+		 default.o				\
+ 		 calc_field_coamps.o	\
+ 		 run_sub.o				\
 	     buoy_freq.o			\
 	     deriv.o				\
 	     get_args.o				\
@@ -95,15 +95,16 @@ OBJS_F =     default.o				\
 	     time_mean.o			\
 	     the2temp.o				\
 	     variance.o				\
-	     max_min.o 				\
-	     sound_out.o 			\
-	     point_val.o			\
-	     kgain.o				\
-	     localize.o				\
-	     vort.o				\
-	     sigdiff.o				\
-	     pvort.o				\
-	     filt9.o
+		 max_min.o 				\
+		 sound_out.o 			\
+		 point_val.o			\
+		 kgain.o				\
+		 localize.o				\
+		 vort.o				\
+		 sigdiff.o				\
+		 rmserr.o				\
+		 pvort.o				\
+		 filt9.o
 
 OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
 
@@ -113,7 +114,7 @@ OBJS_F: ${OBJS_F} ${MODS}
 OBJS_f: ${OBJS_f}
 
 TRANS_TER: ${MODS} ${OBJS_f} ${OBJS_F}
-	${LD} ${LDEC} ${OBJS_f} ${OBJS_F} ${MODS} -o trans_coamps.o ${LIBS}
+	${LD} ${LDEC} ${OBJS_F} ${OBJS_f} ${MODS} -o trans_coamps.o ${LIBS}
 	cp trans_coamps.o ../
 
 clean:
@@ -124,6 +125,6 @@ ${OBJS_F}  : ${MODS}
 .f.o:
 	$(F90) $(FFLAGS) -module $(MODLIB) -c $<
 .F.o:
-	$(F90) -module $(MODLIB) $(FFLAGS) -c $<
+	$(F90) ${FFLAGS} -module $(MODLIB) -c $<
 .c.o:
 	${CC}  -c ${CFLAGS} $*.c -o $*.o

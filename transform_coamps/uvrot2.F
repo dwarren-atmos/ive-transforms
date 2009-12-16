@@ -74,7 +74,7 @@ c
       call rot_calc('U',%val(urot2),%val(uvar),%val(vvar),theta,
      &              nx,ny,nz,nt,iu,iv)
 
-      call freemem(vvar) ; call freemem(uvar)
+      call freemem(vvar)
 
       return
       end

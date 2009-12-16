@@ -15,7 +15,10 @@
       ive_ptr getmem,u,v
 
       nt = ntime
-
+      if(nobottom) then
+         s_ive = 0
+         return
+      endif
       s_ive = getmem(nx*ny*nz*nt)
       if (s_ive.eq.0) then
         write(6,*) 'Error:  could not allocate space for s_ive.'
@@ -228,6 +231,10 @@
       ive_ptr getmem,u,w
 
       nt = ntime
+      if(nobottom) then
+         r_ive = 0
+         return
+      endif
 
       r_ive = getmem(nx*ny*nz*nt)
       if (r_ive.eq.0) then
@@ -420,6 +427,10 @@
 
       nt = ntime
 
+      if(nobottom) then
+         q_ive = 0
+         return
+      endif
       q_ive = getmem(nx*ny*nz*nt)
       if (q_ive.eq.0) then
         write(6,*) 'Error:  could not allocate space for q_ive.'
