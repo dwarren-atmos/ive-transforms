@@ -45,9 +45,10 @@ c
 
       ive_ptr zbot_p,zbot_u,zbot_v
       integer zbot_dims(2)
+      logical nobottom
       real zbot_delta(2),zbot_min(4),zbot_max(4),ztop
       common/t_ter/zbot_p,zbot_u,zbot_v,zbot_delta,zbot_min,
-     >             zbot_max,ztop,zbot_dims
+     >             zbot_max,ztop,zbot_dims, nobottom
 
       ive_ptr dqdx_xy,dqdx_zt,dqdx_zw
       ive_ptr dqdy_xy,dqdy_zt,dqdy_zw

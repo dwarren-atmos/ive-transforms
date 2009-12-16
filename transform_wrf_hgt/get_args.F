@@ -18,14 +18,23 @@
       logical delimit,charstr,realstr,lendbrk,lbegbrk
 
       err = .false.
-      carg(:) = ' ' ; iarg(:) = -1 ; rarg(:) = -999.
-      rcnt = 0 ; icnt = 0 ; ccnt = 0
+      lendbrk=.true.;lbegbrk=.true.
+      do k=1,10
+        carg(k) = ' '
+        iarg(k) = -1
+        rarg(k) = -999.
+      enddo
+      rcnt = 0
+      icnt = 0
+      ccnt = 0
 
       call setstr(cstr,fld)
       iend = index(cstr,char(0)) - 1
-
       if (cstr(iend:iend).ne.']') then
         lendbrk=.false.
+c        write(*,*) 'Error:  no ending bracket.'
+c        err = .true.
+c        return
       end if
 *
 *  Find open bracket.
@@ -39,6 +48,9 @@
 
       if (k.eq.iend) then
         lbegbrk=.false.
+c        write(*,*) 'Error:  no opening bracket.'
+c        err = .true.
+c        return
       end if
 
       if(lbegbrk.and..not.lendbrk) then
@@ -90,7 +102,6 @@
           err = .true.
           return
         end if
-
 
         if (charstr(cstr(i1+1:k-1))) then
 
@@ -148,13 +159,8 @@
       integer char2int
       logical minus
 
-      if(trim(str).eq.'.FALSE.') then
-        str2int = 0 ; return
-      elseif(trim(str).eq.'.TRUE.') then 
-        str2int = 1 ; return
-      endif
-
-      ibeg = strbeg(str) ; iend = strend(str)
+      ibeg = strbeg(str)
+      iend = strend(str)
 
       if (str(strbeg(str):strbeg(str)).eq.'-') then
         minus = .true.
@@ -164,6 +170,7 @@
       end if
 
       lgth = iend-ibeg+1
+
       istr = 0
 
       do k=ibeg,iend
@@ -198,31 +205,30 @@
 *    integer
 *
       character*1 chr
-      
-      select case(trim(chr))
-      case('0')
-        char2int = 0
-      case('1')
+
+      if (chr.eq.'1') then
         char2int = 1
-      case('2')
+      else if (chr.eq.'2') then
         char2int = 2
-      case('3')
+      else if (chr.eq.'3') then
         char2int = 3
-      case('4')
+      else if (chr.eq.'4') then
         char2int = 4
-      case('5')
+      else if (chr.eq.'5') then
         char2int = 5
-      case('6')
+      else if (chr.eq.'6') then
         char2int = 6
-      case('7')
+      else if (chr.eq.'7') then
         char2int = 7
-      case('8')
+      else if (chr.eq.'8') then
         char2int = 8
-      case('9')
+      else if (chr.eq.'9') then
         char2int = 9
-      case default
+      else if (chr.eq.'0') then
+        char2int = 0
+      else
         char2int = -1
-      end select
+      end if
 
       return
       end
@@ -332,8 +338,6 @@
       charstr = .false.
       k = strbeg(str)
 
-      if(trim(str).eq.'.FALSE.' .or. trim(str).eq.'.TRUE.') return
-
  9867 if (k.le.strend(str)) then
      
         if (notnumber(str(k:k))) then
@@ -383,8 +387,6 @@
 
       realstr = .false.
       k = strbeg(str)
-
-      if(trim(str).eq.'.FALSE.' .or. trim(str).eq.'.TRUE.') return
 
  98   if (k.le.strend(str)) then
 

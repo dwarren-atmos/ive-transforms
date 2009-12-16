@@ -21,7 +21,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       integer :: i,j,k,nf,np,imin,imax,jmin,jmax
       real :: s1,z2(ix,iy,iz)
 
-      imin = 2 ; imax = ix-1 ; jmin = 2 ; jmax = iy-1
+      imin = 2 ; imax = ix ; jmin = 2 ; jmax = iy
 
       if (nfpass.le.0) return
 
@@ -39,18 +39,17 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
           do k=1,iz
             !filter in the x-direction
             do j = jmin-1, jmax+1 ; do i = imin, imax
-               z2(i,j,k) = z1(i,j,k) + 
-     &                     s1*( z1(i-1,j,k)+z1(i+1,j,k)-2.0*z1(i,j,k))
+                 z2(i,j,k) = z1(i,j,k) + 
+     &              s1*( z1(i-1,j,k) + z1(i+1,j,k) - 2.0*z1(i,j,k) )
             end do ; end do
-            z1(:,:,k)=z2(:,:,k)
+            z1(:,:,:)=z2(:,:,:)
 
             !filter in the y-direction
-            do j = jmin,jmax ; do i=imin-1,imax+1
-               z2(i,j,k) = z1(i,j,k) +
-     c                     s1*(z1(i,j-1,k)+z1(i,j+1,k)-2.0*z1(i,j,k))
+            do j = jmin, jmax ; do i = imin-1, imax+1
+               z2(i,j,k)=z1(i,j,k)
+     c              +(z1(i,j-1,k)+z1(i,j+1,k)-2.0*z1(i,j,k))*s1
             end do ; end do
-            z1(:,:,k) = z2(:,:,k)
-
+            z1(:,:,:) = z2(:,:,:)
 
           end do ! end k loop
         end do ! end nf loop

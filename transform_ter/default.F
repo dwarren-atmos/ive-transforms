@@ -131,13 +131,14 @@ c
       ive_ptr getmem,tsgz,twgz,ttime,tzbot_p,tzbot_u,tzbot_v,tztop
       ive_ptr tfcor,ttgrid
       logical error,flag
-      real r_val,tgrid,stagger(4),min(4),max(4),missing
+      real r_val,tgrid,stagger(4),min(4),max(4),missing,mydelta(4)
       real*8 slope,intercept
       integer i,j,ndims,dims(4),k
       character*80 data_units,display_units,dim_names(4),dom_units(4)
 
       data wgz,sgz,time,zbot_p,zbot_u,zbot_v/0,0,0,0,0,0/
 
+      nobottom = .false.
       call getiarr('dimvar_size', dimvar_size, 4, error)
       call getparr('dimvar_data', dimvar_data, 4, error)
 
@@ -246,8 +247,11 @@ c
 c
 c get total domain depth (not necessarily the same as wgz_max)
 c
+      mydelta=delta
+      write(6,*)
       tztop = getvar('ztop',ndims,dims,stagger,min,max,missing,
      >            data_units,display_units,dim_names,flag)
+      delta=mydelta
       if (tztop.eq.0) then
         write(6,*) 'Error:  could not find total domain depth ztop.'
         write(6,*) 'Could be old version of model.  Assuming ztop ',
@@ -267,9 +271,10 @@ c
      >           data_units,display_units,dim_names,flag)
       if (tzbot_p.eq.0) then
         zbot_p = 0
-        write(6,*) 'Error:  could not find terrain at ',
-     >                'thermodynamic pts.'
-        stop
+        write(6,*) 'Could not find terrain at pressure pts',
+     >                ' Hope your run had no bottom.'
+        nobottom = .true.
+c        stop
       else
         zbot_dims(1) = dims(1)
         zbot_dims(2) = dims(2)
@@ -297,9 +302,10 @@ c
      >           data_units,display_units,dim_names,flag)
       if (tzbot_u.eq.0) then
         zbot_u = 0
-        write(6,*) 'Error:  could not find terrain at ',
-     >                   'x velocity pts.'
-        stop
+        write(6,*) 'Could not find terrain at ',
+     >                   'x velocity pts. Hope your run had no bottom'
+c        stop
+        nobottom = .true.
       else
         zbot_u = getmem(dims(1)*dims(2))
         call convert_units(data_units,dom_units(3),slope,intercept)
@@ -317,9 +323,10 @@ c
      >           data_units,display_units,dim_names,flag)
       if (tzbot_v.eq.0) then
         zbot_v = 0
-        write(6,*) 'Error:  could not find terrain at ',
-     >                   'y velocity pts.'
-        stop
+        write(6,*) 'Could not find terrain at ',
+     >                   'y velocity pts. Hope your run had no bottom'
+c        stop
+        nobottom = .true.
       else
         zbot_v = getmem(dims(1)*dims(2))
         call convert_units(data_units,dom_units(3),slope,intercept)
@@ -375,23 +382,25 @@ c       stop
 c
 c compute metric arrays (subroutine in metrics.F)
 c
-      dqdx_xy = getmem(3*(nx+1)*(ny+1))
-      dqdx_zt = getmem(nz+1)
-      dqdx_zw = getmem(nz+1)
-      dqdy_xy = getmem(3*(nx+1)*(ny+1))
-      dqdy_zt = getmem(nz+1)
-      dqdy_zw = getmem(nz+1)
-      dqdz = getmem(3*(nx+1)*(ny+1))
-      dzdq = getmem(3*(nx+1)*(ny+1))
-      call metric_calc(%val(zbot_p),%val(zbot_u),%val(zbot_v),
-     >              %val(sgz),%val(wgz),%val(dqdx_xy),%val(dqdx_zt),
-     >              %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zt),
-     >              %val(dqdy_zw),%val(dqdz),%val(dzdq),ztop,dx,dy,
-     >              nx,ny,nz)
+      if(.not. nobottom) then
+         dqdx_xy = getmem(3*(nx+1)*(ny+1))
+         dqdx_zt = getmem(nz+1)
+         dqdx_zw = getmem(nz+1)
+         dqdy_xy = getmem(3*(nx+1)*(ny+1))
+         dqdy_zt = getmem(nz+1)
+         dqdy_zw = getmem(nz+1)
+         dqdz = getmem(3*(nx+1)*(ny+1))
+         dzdq = getmem(3*(nx+1)*(ny+1))
+         call metric_calc(%val(zbot_p),%val(zbot_u),%val(zbot_v),
+     >        %val(sgz),%val(wgz),%val(dqdx_xy),%val(dqdx_zt),
+     >        %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zt),
+     >        %val(dqdy_zw),%val(dqdz),%val(dzdq),ztop,dx,dy,
+     >        nx,ny,nz)
+      endif
 c
 c set up boundary arrays (subroutine in metrics.F; arrays in misc.icl)
 c
- 112  format(5x,A5,I3,5x,A8,I3)
+ 112  format(5x,A5,I6,5x,A8,I6)
 
       if ((nx.gt.nxmax).or.(ny.gt.nymax).or.(nz.gt.nzmax)) then
         write(6,*) 'Error:  not enough scratch space.'

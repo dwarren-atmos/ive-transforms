@@ -47,6 +47,8 @@ c
       real :: reflat,reflon,stdlt1,stdlt2,stdlon
       real :: get_ter_pt
 
+      logical :: u_stag,v_stag
+
       external :: getvar, getmem, get_ter_pt
 
       integer, parameter :: MAX_LEN = 80, dim_len = 4

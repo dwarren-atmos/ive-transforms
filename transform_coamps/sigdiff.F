@@ -108,7 +108,7 @@
       end if
 
       !tcrit = tinv(conflev,N1+N2-2)
-       tcrit=2.1009 ! alpha=0.5, nu=18
+       tcrit=2.1009 ! alpha=0.05, nu=18
 
       do i=1,mnk 
 

@@ -17,6 +17,10 @@
 
       nt = ntime
 
+      if(nobottom) then
+         pvs = 0
+         return
+      endif
       pvs = getmem(nx*ny*nz*nt) 
       if (pvs.eq.0) then
         write(6,*) 'Error:  could not allocate space for pvs.'
@@ -458,6 +462,10 @@
 
       nt = ntime
 
+      if(nobottom) then
+         vortz = 0
+         return
+      endif
       vortz = getmem((nx+1)*(ny+1)*nz*nt)
       if (vortz.eq.0) then
         write(6,*) 'Error:  could not allocate space for vortz.'
@@ -674,6 +682,10 @@
       ive_ptr getmem,u,w
 
       nt = ntime
+      if(nobottom) then
+         vorty = 0
+         return
+      endif
 
       vorty = getmem((nx+1)*ny*(nz+1)*nt)
       if (vorty.eq.0) then
@@ -859,6 +871,10 @@
 
       nt = ntime
 
+      if(nobottom) then
+         vortx = 0
+         return
+      endif
       vortx = getmem(nx*(ny+1)*(nz+1)*nt)
       if (vortx.eq.0) then
         write(6,*) 'Error:  could not allocate space for vortx.'

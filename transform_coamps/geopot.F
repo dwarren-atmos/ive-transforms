@@ -4,7 +4,7 @@
 ! The search starts from either the top or the bottom of the domain.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      integer(ive_ptr) function findz(fldnam,p0,ltop,lpre,
+      integer(ive_ptr) function findz(fldnam,p0,ltop,lpre,nflt,
      &  ndims,dims,stag,min,max,miss,dunits,
      &  disunits,dim_names)
 
@@ -13,6 +13,7 @@
 
       character(len=*), intent(in) :: fldnam
       real, intent(in) :: p0
+      integer, intent(in) :: nflt
       logical, intent(in) :: ltop,lpre
 c
       integer, intent(out) :: ndims,dims(4)
@@ -66,6 +67,11 @@ c        do i=1,mn*iz*it
 c          call s_val(%val(var),i,exp(r_val(%val(var),i)))
 c        end do
 c      end if          
+
+      do i=1,nflt
+        call filt9_iso(%val(findz),ix,iy,ntime)
+      end do
+      !call filt9(%val(findz),ix,iy,ntime,1)
 
 c
       dims(1) = ix ; dims(2) = iy ; dims(3) = 1 ; dims(4) = ntime

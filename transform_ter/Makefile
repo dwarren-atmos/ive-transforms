@@ -9,10 +9,6 @@
 #
 
 
-machine := ${shell /usr/ucb/arch}
-ifndef machine
-machine := ${shell /usr/bin/arch}
-endif
 ifndef machine
 machine := ${shell /usr/bin/uname}
 endif
@@ -45,11 +41,11 @@ else
    CPP = /usr/lib/cpp
    DEC = 
 ifeq (${mtype},x86_64)
-   DEC=-DSIXTY_FOUR_bptr
+   DEC=-DSIXTY_FOUR_bptr -fPIC
 endif
    LDEC = -shared
    LIBS = -L/usr/local/lib -lfftpack 
-   OPT = -O2 -fPIC
+   OPT = -O2 
    AUTOMATIC = -automatic
    INCLUDES = -I/usr/include -I/usr/local/include
 endif
