@@ -67,7 +67,8 @@ c
       integer(ive_ptr) :: tlgz,tsgz,twgz,ttime,thgt_ptr,tzbot_u,tzbot_v
       integer(ive_ptr) :: tztop,ttgrid,theight
       logical :: error,error1,error2,flag
-      real :: r_val,tgrid,stagger(4),min(4),max(4),missing, pls(4)
+      real :: r_val,tgrid,stagger(4),min(4),max(4),missing,pls(4),junk
+      double precision :: extrap
       real*8 :: slope,intercept
       integer :: i,j,ndims,dims(4),k,nxp1,nyp1,ierr,iproj
       character(len=80) :: data_units,display_units,
@@ -200,6 +201,7 @@ c
       flag=.true.
       hgt_ptr = getvar('HGT',ndims,dims,stagger,min,max,missing,
      >                 data_units,display_units,dim_names,flag)
+      height_t=dims(4)
       ierr = set_button_name ('HGT'//char(0), '') ! Terrain
       zbot_dims(1) = dims(1)
       zbot_dims(2) = dims(2)
@@ -217,15 +219,19 @@ c
          mutot_ptr = 0
       endif
       flag=.true.
-      mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
+      mutot_ptr=getvar('MU_TOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(mutot_ptr .eq. 0) then
-         call sleep(1)
-         mutot_ptr=addvar('MU+MUB','MUTOT',ndims,dims,stagger,min,max,
+         mutot_ptr=addvar('MU+MUB','MU_TOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(mutot_ptr .eq. 0) then
-            write(6,*)'MU_TOT failed',flag
-            stop 1
+            call sleep(1)
+            mutot_ptr=addvar('MU+MUB','MU_TOT',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(mutot_ptr .eq. 0) then
+               write(6,*)'MU_TOT failed',flag
+               stop 1
+            endif
          endif
       endif
       mu_delta=delta(:) ; mu_dims = dims(:)  
@@ -233,27 +239,36 @@ c
       
 
       flag=.true.
-      phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
+      phtot_ptr = getvar('PH_TOT',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(phtot_ptr .eq. 0) then
-         call sleep(1)
-         phtot_ptr = addvar('PH+PHB','PHTOT',ndims,dims,stagger,min,max,
+         phtot_ptr=addvar('PH+PHB','PH_TOT',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(phtot_ptr .eq. 0) then
-            write(6,*)'PHTOT failed',flag
-            stop 1
+            call sleep(1)
+            phtot_ptr = addvar('PH+PHB','PH_TOT',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(phtot_ptr .eq. 0) then
+               write(6,*)'PHTOT failed',flag
+               stop 1
+            endif
          endif
       endif
+      phdims=dims
       flag=.true.
-      ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
+      ptot_ptr = getvar('Pressure',ndims,dims,stagger,min,max,
      >     missing,data_units,display_units,dim_names,flag)
       if(ptot_ptr .eq. 0) then
-         call sleep(1)
          ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,max,
      >        missing,data_units,display_units,dim_names,flag)
          if(ptot_ptr .eq. 0) then
-            write(6,*)'Pressure failed',flag
-            stop 1
+            call sleep(1)
+            ptot_ptr = addvar('P+PB','Pressure',ndims,dims,stagger,min,
+     >           max,missing,data_units,display_units,dim_names,flag)
+            if(ptot_ptr .eq. 0) then
+               write(6,*)'Pressure failed',flag
+               stop 1
+            endif
          endif
       endif
       ierr = set_button_name ('MU', '')  
@@ -261,15 +276,42 @@ c
       ierr = set_button_name ('PH', '')
       ierr = set_button_name ('PHB', '')
       
-c     mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c      
-c     mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c     
-c     mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,missing,
-c     >                  data_units,display_units,dim_names,flag)
-c     
+      mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapM_ptr .eq. 0) then
+         call sleep(1)
+         mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapM_ptr .eq. 0) then
+            write(6,*)'MAPFAC_M failed',flag
+            stop 1
+         endif
+      endif
+         
+      mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapU_ptr .eq. 0) then
+         call sleep(1)
+         mapU_ptr = getvar('MAPFAC_U',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapU_ptr .eq. 0) then
+            write(6,*)'MAPFAC_U failed',flag
+            stop 1
+         endif
+      endif
+     
+      mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,missing,
+     >                  data_units,display_units,dim_names,flag)
+      if(mapV_ptr .eq. 0) then
+         call sleep(1)
+         mapV_ptr = getvar('MAPFAC_V',ndims,dims,stagger,min,max,
+     >        missing,data_units,display_units,dim_names,flag)
+         if(mapV_ptr .eq. 0) then
+            write(6,*)'MAPFAC_V failed',flag
+            stop 1
+         endif
+      endif
+
       twod = 0
       if (plmax(2).eq.plmin(2)) twod = 1
       
@@ -284,13 +326,26 @@ c
       
       mumax = 0.0
       mumin = 999999.0
+      htop = 0.0
+      hbot = 100000.0
       do i=1,nx*ny*ntime
          mumax=amax1(r_val(%val(mutot_ptr),i),mumax)
          mumin=amin1(r_val(%val(mutot_ptr),i),mumin)
       end do
-      
-       plmax(3) = ptop ; plmin(3) = (mumax+ptop)
-       phmax(3) = ptop ; phmin(3) = (mumax+ptop)
+      do i=1,phdims(1)*phdims(2)*phdims(3)*phdims(4)
+         junk=r_val(%val(phtot_ptr),i)
+         htop = amax1(junk,htop)
+         hbot = amin1(junk,hbot)
+      enddo
+      htop = int(htop/9.80665)
+      hbot = int(hbot/9.80665)
+      write(6,*)'top/bot',htop,hbot
+!       plmax(3) = ptop ; plmin(3) = (mumax+ptop)
+!       phmax(3) = ptop ; phmin(3) = (mumax+ptop)
+!     Z2 - Z1 = RT/G0ln(p1/p2)
+!      htop = (29.3*216)*log(1000/ptop)
+       plmax(3) = htop ; plmin(3) = hbot
+       phmax(3) = htop ; phmin(3) = hbot
 
       call setrarr('phmax',phmax,4,error1)
       call setrarr('phmin',phmin,4,error2)
@@ -313,7 +368,7 @@ c
       end if
 
       call getaarr('domain_units',domain_units,4,error1)
-      domain_units(3) = 'Pa'
+      domain_units(3) = domain_units(2)
       call setaarr('domain_units',domain_units,4,error2)
       if (error1 .or. error2) then
         write(6,*) 'Error:  could not change the domain_units.'
@@ -321,7 +376,7 @@ c
       end if
 
       call getaarr('domain_display_units',domain_display_units,4,error1)
-      domain_display_units(3) = 'hPa'
+      domain_display_units(3) =  domain_display_units(2)
       call setaarr('domain_display_units',domain_display_units,4,error2)
       if (error1 .or. error2) then
         write(6,*) 'Error:  could not change the domain_display_units.'
@@ -329,7 +384,7 @@ c
       end if
 
       call getaarr('dim_display_names',dim_display_names,4,error1)
-      dim_display_names(3) = 'p'
+      dim_display_names(3) = 'Z'
       call setaarr('dim_display_names',dim_display_names,4,error1)
       if (error1 .or. error2) then
         write(6,*) 'Error:  could not change the dim_display_names.'
@@ -402,7 +457,6 @@ c
 c set domain offsets to zero
       offset(1) = 0. ;  offset(2) = 0. ;  offset(4) = 0.
 
-      call driver('domain_units=,,hPa,',0)
       return
       end subroutine
 
@@ -459,7 +513,8 @@ c
 !         write(6,*)'len(name',len(name)
 !         write(6,*)'NEW_FIELD name = ',name(1:80)
 !      endif
-      call setrvar('spval',9.9999997E+37,error)
+      call setrvar('spval',-10.0**27,error)
+      call setlvar('reset_spval', .true ., error)
       if(trim(name(1:len(name))) .eq. 'ZNW' .or. 
      &     trim(name(1:len(name))) .eq. 'ZNU' .or.
      &     trim(name(1:len(name))) .eq. 'XLAT' .or. 
@@ -527,32 +582,7 @@ c
         phmax(4) = phmax(4) + offset(4)
       end if
 
-c
-c check to see whether vertical coordinate should be transformed
-c
-      if ( (inmax(3).ne.1) .and. 
-     &     (inmax(1).ne.1) .and.
-     &     (inmax(2).ne.1 .or. twod.eq.1) .and.
-     &     (phmin(3).le.znw_min) .and.
-     &     (trans_on.eq.1)) then
         trans_eta = 1
-      else
-        trans_eta = 0
-      end if   
-
-      
-      !if (phmin(3).lt.1.) then
-      if (inmax(3).eq.nz) then
-         phmax(3)=(mumax*znu_max+ptop) ; phmin(3)=(mumin*znu_min+ptop)
-      else
-         phmax(3)=(mumax*znw_max+ptop) ; phmin(3)=(mumin*znw_min+ptop)
-      end if
-
-      call setrarr("phmin",phmin,4,error)
-
-!      print *,'PHMIN: ',PHMIN
-!      print *,'PHMAX: ',PHMAX
-
 c
 c set grid intervals assuming evenly spaced coordinates 
 c
@@ -565,43 +595,7 @@ c
       enddo
 
 
-c
-c find the appropriate vertical coordinate vector
-c
-      if (inmax(3).eq.nzp1) then 
-        coord(3) = znw_ptr
-      else if (inmax(3).eq.nz) then
-        coord(3) = znu_ptr
-      else 
-        coord(3) = 0
-      endif
-
-c      if (requ(phmax(3),znw_max)) then 
-c        coord(3) = znw_ptr
-c      else if (requ(phmax(3),znu_max)) then
-c        coord(3) = znu_ptr
-c      else 
-c        coord(3) = 0
-c      endif
-
-c
-c check to see if vertical coordinate vector is evenly spaced.  If
-c     not, set delta = 0 to indicate uneven spacing. 
-c     
-      if (coord(3).ne.0) then
-         k = 1
-         start = r_val(%val(coord(3)),1)
-
-         do while (k.le.inmax(3) )
-            if (requ(start+(k-1)*delta(3),r_val(%val(coord(3)),k))) then
-               k = k+1
-            else
-               delta(3) = 0.   
-               k = inmax(3)+1
-            end if
-         end do
-
-      end if
+      coord(3) = 0
 c
 c check to see if time coordinate vector is evenly spaced
 c
@@ -649,25 +643,53 @@ c     npts	integer	input	Number of points to convert.
 c
 
       integer npts, ndims, flag(ndims)
-      real    phys(ndims, npts), index(ndims, npts)
+      real    phys(ndims, npts), index(ndims, npts), myind(ndims)
 
       integer i, j, k, iflag(4)
       logical error
       real    mupt, coord_k, coord_kp1, ind2(ndims), mh, spval
-      real junk
+      real junk, geo_to_geom
       real    r_val ! function
       double precision extrap
 
       data iflag/0, 0, 0, 1/
 
       call getrvar('spval', spval, error)
-      if(error)spval = -9999.99
+      if(error)spval = 0.0
       do i = 1, npts
          do j = 1, ndims
             if (flag(j) .eq. 1) then
+c     Handle vertical transformation
+               if ( j.eq.3 ) then
+                  if(height_t .ge. index(4,i)) then
+                     junk = index(4,i)
+                  else
+                     junk = height_t
+                  endif
+                  mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &                 index(1,i),index(2,i),1.,junk,spval)
+                  myind=index(:,i)
+                  myind(3)=myind(3)+.5
+                  phys(j, i) = extrap(%val(phtot_ptr),phdims(1),
+     &                 phdims(2),phdims(3),phdims(4),myind(1),
+     &                 myind(2),myind(3),myind(4),spval)
+                  if(phys(j, i) .ne. spval) then
+!                     phys(i,j) =  geo_to_geom(phys(j, i),
+!     &                 myind(1),myind(2),myind(4))
+                     phys(j, i)=phys(j, i)/9.80665
+                  endif
+!                  if( phys(j, i) .lt. mh .or. phys(j, i) .lt. hbot) then
+!                     write(6,*)'below ground - set to',spval,phys(j, i),
+!     &                    mh, hbot
+!                     phys(j, i)=mh
+!                  endif
+!                  if( phys(j, i) .ge. htop) then
+!                     write(6,*)'in space - set to',htop
+!                     phys(j, i)=htop
+!                  endif
 
 c     Case where we are out of the data array
-               if ( index(j,i) .lt. 1 ) then
+               else if ( index(j,i) .lt. 1 ) then
                   phys(j,i) = spval !missing
 c     Trivial case where dimension does not exist (depth of array is 
 c     unity along this dimension)
@@ -694,31 +716,10 @@ c     Case of evenly spaced physical coord.
                      phys(j,i) = phmin(j) + (index(j,i)-1)*delta(j)
                endif
 
-c     Handle vertical transformation
-               if ( j.eq.3 .and. trans_eta.eq.1 ) then
-                  mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &                 index(1,i),index(2,i),1.,index(4,i),spval)
-                 
-                  phys(j, i) = extrap(%val(ptot_ptr),nx,ny,nz,ntime,
-     &                 index(1,i),index(2,i),index(3,i),
-     &                 index(4,i),spval)
-
-!                call phys_2_index(phys(:,i), ind2, iflag, ndims, 1)
-!                mupt = get_2Dpt_time(%val(mutot_ptr), 
-!     &                 phys(1, i), phys(2, i), ind2(4),
-!     &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
-!     &                 phys_mumin(1:2), mu_delta(1:2))
-
-!                this is wrf transform for dry hydrostatic flow
-!                write(6,*)phys(j, i),mupt ,ptop
-!                phys(j, i) = phys(j, i)*mupt + ptop
-                if( phys(j, i) .gt. mh) phys(j, i)=spval
-               endif
-
             endif
          enddo
       enddo
-
+      
       return
       end subroutine
 c
@@ -754,107 +755,127 @@ c
       real    mupt, p, mh, myin(4), myph(4)
       double precision extrap
 
+      call getrvar('spval', spval, error)
+      if(error)spval = 0.0
 !     can't do without all others
       if(flag(3) .eq. 1) then
-         flag(1) = 1
-         flag(2) = 1
-         flag(4) = 1
-         call getrvar('spval', spval, error)
-         if(error)spval = -9999.99
-      endif
-      do i = 1, npts
-         do j = ndims, 1, -1
-            if (flag(j) .eq. 1) then
-               
-               if (j.ne.3) then
-                  
-!     mupt = get_2Dpt_time(%val(mutot_ptr), 
-!     &                 phys(1, i), phys(2, i), index(4,i),
-!     &                 int(mu_dims(1)), int(mu_dims(2)),int(mu_dims(4)),
-!     &                 phys_mumin(1:2), mu_delta(1:2))
-                  
-                  
-!     This is wrf transform for dry hydrostatic flow
-!     if(mupt .ne. 0.) then
-!     p = (phys(j, i) - ptop )/mupt
-!     else
-!     p=-1.0
-!     endif
-!     p = phys(j, i)
-                  
-!     if (p .lt. 0) then
-!     index(j, i) = -1.0
-!     goto 5
-!     end if
-!     else
-!     p = phys(j, i)
-               endif
+         do i = 1, npts
+            do j=1,4
+               if( j .ne. 3) then
+                  p = phys(j, i)
                   
 c     Trivial case where dimension does not exist (depth of array is 
 c     unity along this dimension)
-               if(inmax(j) .eq. 1) then
-                  index(j,i) = 1.
-
+                  if(inmax(j) .eq. 1) then
+                     index(j,i) = 1.
+                     
 c     Case where interpolation must be performed between the grid
 c     point locations given in a 1D "dimension variable" array.
-               else if (delta(j) .eq. 0.) then
-c
+                  else if (delta(j) .eq. 0.) then
+c     
 c     Physical coord. increasing with index.
-                  if (phmin(j) .lt. phmax(j)) then
-                     k = 2
- 10                  if ((p.gt.r_val(%val(coord(j)),k)).and.
-     >                    (k.lt.inmax(j))) then
-                        k = k+1
-                        goto 10
-                     end if
+                     if (phmin(j) .lt. phmax(j)) then
+                        k = 2
+ 10                     if ((p.gt.r_val(%val(coord(j)),k)).and.
+     >                       (k.lt.inmax(j))) then
+                           k = k+1
+                           goto 10
+                        end if
+                        
+                        index(j,i) = real(k) - (p-
+     &                       r_val(%val(coord(j)),k))/
+     &                       (r_val(%val(coord(j)),k-1)-
+     &                       r_val(%val(coord(j)),k))
+                        
+                     else       ! Physical coord. decreasing with index.
+                        k = 2
+ 20                     if ((p.lt.r_val(%val(coord(j)),k)).and.
+     >                       (k.lt.inmax(j))) then
+                           k = k+1
+                           goto 20
+                        end if
+                        
+                        index(j,i) = real(k) - (p-
+     &                       r_val(%val(coord(j)),k))/
+     &                       (r_val(%val(coord(j)),k-1)-
+     &                       r_val(%val(coord(j)),k))
+                     endif
                      
-                     index(j,i) = real(k) - (p-
-     &                    r_val(%val(coord(j)),k))/
-     &                    (r_val(%val(coord(j)),k-1)-
-     &                    r_val(%val(coord(j)),k))
-                     
-                  else          ! Physical coord. decreasing with index.
-                     k = 2
- 20                  if ((p.lt.r_val(%val(coord(j)),k)).and.
-     >                    (k.lt.inmax(j))) then
-                        k = k+1
-                        goto 20
-                     end if
-                     
-                     index(j,i) = real(k) - (p-
-     &                    r_val(%val(coord(j)),k))/
-     &                    (r_val(%val(coord(j)),k-1)-
-     &                    r_val(%val(coord(j)),k))
+                  else          ! Case of evenly spaced physical coord.
+                     index(j,i) = (p-phmin(j))/delta(j) + 1
+                     if (index(j,i) .lt. 1) index(j,i) = 1
+                     if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
                   endif
-                  
-               else             ! Case of evenly spaced physical coord.
-                  index(j,i) = (p-phmin(j))/delta(j) + 1
-!     if (index(j,i) .lt. 1) index(j,i) = 1
-!     if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
-                  if (index(j,i) .lt. 1) index(j,i) = -1
-                  if (index(j,i) .gt. inmax(j)) index(j,i) = -1
                endif
-               
-         enddo
-         if(flag(3) .eq. 1) then
-!
-!           must have gotten all others for j
-!     need to index3,i) because wrf transform is bad!!!
-!
-            if((index(3,i) .ne. -1) .and. (trans_eta.eq.1)) then
-               myin=index(:,i)
-               write(6,*)myin
-               call pres_2_index(phys(3,i),myin,4,spval)
-               index(:,i)=myin
-               write(6,*)myin
-            endif
-            
-            mh = extrap(%val(psfc_ptr),nx,ny,1,ntime,
+            enddo
+            mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
      &           index(1,i),index(2,i),1.,index(4,i),spval)
-            if(phys(3, i) .gt. mh)index(3,i)=-1 !under ground
-         endif
-
-      enddo
+            if(phys(3, i) .le. mh .or. phys(3, i) .le. hbot) then
+               index(3,i)=-1    !under ground
+            else if(phys(3, i) .ge. htop) then
+               index(3,i)=nz+1    !in space
+            else
+               myin=index(:,i)
+               call hgt_2_index(phys(3,i),myin,4,spval)
+               index(:,i)=myin
+            endif
+c     write(6,*)myin
+         enddo
+!!!!  Don't care about height
+      else
+         do i = 1, npts
+            do j = ndims, 1, -1
+               if (flag(j) .eq. 1) then
+                  p = phys(j, i)
+                  
+c     Trivial case where dimension does not exist (depth of array is 
+c     unity along this dimension)
+                  if(inmax(j) .eq. 1) then
+                     index(j,i) = 1.
+                     
+c     Case where interpolation must be performed between the grid
+c     point locations given in a 1D "dimension variable" array.
+                  else if (delta(j) .eq. 0.) then
+c     
+c     Physical coord. increasing with index.
+                     if (phmin(j) .lt. phmax(j)) then
+                        k = 2
+ 30                     if ((p.gt.r_val(%val(coord(j)),k)).and.
+     >                       (k.lt.inmax(j))) then
+                           k = k+1
+                           goto 30
+                        end if
+                        
+                        index(j,i) = real(k) - (p-
+     &                       r_val(%val(coord(j)),k))/
+     &                       (r_val(%val(coord(j)),k-1)-
+     &                       r_val(%val(coord(j)),k))
+                        
+                     else       ! Physical coord. decreasing with index.
+                        k = 2
+ 40                     if ((p.lt.r_val(%val(coord(j)),k)).and.
+     >                       (k.lt.inmax(j))) then
+                           k = k+1
+                           goto 40
+                        end if
+                        
+                        index(j,i) = real(k) - (p-
+     &                       r_val(%val(coord(j)),k))/
+     &                       (r_val(%val(coord(j)),k-1)-
+     &                       r_val(%val(coord(j)),k))
+                     endif
+                     
+                  else          ! Case of evenly spaced physical coord.
+                     index(j,i) = (p-phmin(j))/delta(j) + 1
+                     if (index(j,i) .lt. 1) index(j,i) = 1
+                     if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
+!     if (index(j,i) .lt. 1) index(j,i) = -1
+!     if (index(j,i) .gt. inmax(j)) index(j,i) = -1
+                  endif
+               endif
+            enddo
+         enddo
+      endif
       return
       end subroutine
 c
@@ -950,7 +971,7 @@ c
       parameter (MAXDIM = 4)
       integer   i, iflag
       logical error
-      real      phypt, min, max, spval
+      real      phypt, min, max, spval, mytime
       dimension iflag(MAXDIM), phypt(MAXDIM),
      &          min(MAXDIM), max(MAXDIM)
 c
@@ -975,6 +996,11 @@ c
          else
             stepby = 0
          endif
+         if(min(4) .lt. height_t) then
+            mytime = min(4)
+         else
+            mytime= height_t
+         endif
 c
 c     Handle case where slice is along coordinate axis.
 c     Step by computational coordinate.
@@ -990,34 +1016,34 @@ c
             yter = getmem(nter)
             topoht = getmem(nter)
 
-            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &           min(1),min(2),1.,min(4),spval)
+            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &           min(1),min(2),1.,mytime,spval)
 c            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 c     &              zbot_dims(1), zbot_dims(2), zbot_min,
 c     &              zbot_delta)
-            if(value .eq. spval)value=101325.
+            if(value .eq. spval)value=0
 c            value = amax1(value, zero)
             call put_ter(%val(xter), %val(yter), %val(topoht), 1, pt1,
      &           value)
             do i = 2, nter-1
                min(stepby) = int(min(stepby)+1)
                call index_2_phys(phypt, min, iflag, MAXDIM, 1)
-               value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &              min(1),min(2),1.,min(4),spval)
+               value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &              min(1),min(2),1.,mytime,spval)
 !               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &              zbot_dims(1), zbot_dims(2), zbot_min,
 !     &              zbot_delta)
-               if(value .eq. spval)value=101325.
+               if(value .eq. spval)value=0
 c               value = amax1(value, zero)
                call put_ter(%val(xter), %val(yter), %val(topoht), i,
      &              phypt, value)
             enddo
-            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &           max(1),max(2),1.,max(4),spval)
+            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &           max(1),max(2),1.,mytime,spval)
 !            value =  get_ter_pt (%val(hgt_ptr), max(1), max(2),
 !     &           zbot_dims(1), zbot_dims(2), zbot_min,
 !           &           zbot_delta)
-            if(value .eq. spval)value=101325.
+            if(value .eq. spval)value=0
 c            value = amax1(value, zero)
             call put_ter(%val(xter), %val(yter), %val(topoht), nter,
      &           pt2, value)
@@ -1029,8 +1055,8 @@ c
             xter = getmem(nter+1)
             yter = getmem(nter+1)
             topoht = getmem(nter+1)
-            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &           min(1),min(2),1.,min(4),spval)
+            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &           min(1),min(2),1.,mytime,spval)
 !            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &           zbot_dims(1), zbot_dims(2), zbot_min,
 !           &           zbot_delta)
@@ -1042,8 +1068,8 @@ c            value = amax1(value, zero)
                phypt(1) = pt1(1) + i * (pt2(1) - pt1(1)) / real(nter)
                phypt(2) = pt1(2) + i * (pt2(2) - pt1(2)) / real(nter)
                call phys_2_index(phypt, min, iflag, MAXDIM, 1)
-            value = extrap(%val(psfc_ptr),nx,ny,1,ntime,
-     &           min(1),min(2),1.,min(4),spval)
+            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &           min(1),min(2),1.,mytime,spval)
 !               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &              zbot_dims(1), zbot_dims(2), zbot_min,
 !     &              zbot_delta)
@@ -1111,7 +1137,7 @@ c
       double precision interp
 c
 c
-      write(6,*)'in phys_2_latlon'
+c      write(6,*)'in phys_2_latlon'
       call getrvar('tloc',mytime,error)
       if(error)mytime=1.0
 
@@ -1119,9 +1145,9 @@ c
          grdi(i) =  x(i)/dx
          grdj(i) =  y(i)/dx
          lat(i) = interp(%val(xlat), nx, ny, 1, ntime,
-     &        grdi(i),grdj(i),1,time)
+     &        grdi(i),grdj(i),1,mytime)
       lon(i) = interp(%val(xlong), nx, ny, 1, ntime,
-     &        grdi(i),grdj(i),1,time)
+     &        grdi(i),grdj(i),1,mytime)
       enddo
 c	 
       return
@@ -1272,160 +1298,6 @@ c
 c
 c     -----------------------------------------------------------------
 c
-      integer(ive_ptr) function data_slicer_1d(endpt, ni, da, nda)
-      use default_module
-c
-c     data_slicer_1d_ : This routine returns the computational points at
-c     which a 1d slice should be taken.
-c
-c     Arguments:
-c     	endpt	real	input	2 endpoints of the line in physical space
-c     	ni	integer	output	Number of points
-c	    da	integer	input	axis coordinate of average
-c     	nda	integer	output	Number of points in the da-direction.
-c
-      real endpt(4,2)
-      integer ni, da, nda
-c
-c     Let's do the obvious, just divide the slice evenly, using the
-c     number of computational points represented by the slice.
-c
-      integer iflag(4), i, j, k, error
-      real cendpt(4,2), dv(4), dda, cpmin(4), cmin, cmax, ceil, floor
-      integer(ive_ptr) pslice, slice
-
-      do i = 1, 4
-         iflag(i) = 1
-      enddo
-
-      call phys_2_index(endpt, cendpt, iflag, 4, 2)
-      ni = 0
-
-      do i = 1, 4
-         if (i .ne. da) ni = ni + abs(cendpt(i, 2) - cendpt(i, 1))
-      enddo
-
-      do i = 1, 4
-         dv(i) = (endpt(i, 2) - endpt(i, 1))/(ni-1)
-      enddo
-c
-c     No average case.
-c
-      if (da .eq. 0) then
-         pslice = getmem(4*ni)
-         slice = getmem(4*ni)
-         do i = 1, ni
-            do j = 1, 4
-               call s_val(%val(pslice), (i-1)*4+j,
-     &              endpt(j,1) + (i-1)*dv(j))
-            enddo
-         enddo
-         j = ni
-c
-c     Average case
-c
-      else
-         dv(da) = 0
-         call getiarr("cpmin", cpmin, 4, error)
-
-         if (cendpt(da, 1) .lt. 0) then
-            cmin = cpmin(da)
-         else
-            cmin = cendpt(da, 1)
-         endif
-
-         if (cendpt(da, 2) .lt. 0) then
-            cmax = cpmin(da)
-         else
-            cmax = cendpt(da, 1)
-         endif
-
-         if (cmax .eq. cmin) then
-            nda = 1
-         else
-            nda = ceil(cmax) - floor(cmin) + 1
-            dda = (endpt(da,2) - endpt(da,1))/(nda-1)
-         endif
-
-         pslice = getmem(ni*nda)
-         slice = getmem(ni*nda)
-         do i = 1, ni
-            do k = 1, nda
-               do j = 1, 4
-                  if (j .ne. da .or. nda .eq. 1) then
-                     call s_val(%val(pslice), 4*(nda*(i-1) + (k-1)) + j,
-     &                    endpt(j,1) + (i-1)*dv(j))
-                  else
-                     call s_val(%val(pslice), 4*(nda*(i-1) + (k-1)) + j,
-     &                    endpt(j,1) + (k-1)*dda)
-                  endif
-               enddo
-            enddo
-         enddo
-         j = ni*nda
-      endif
-
-      call phys_2_index(pslice, slice, iflag, 4, j)
-      call freemem(pslice)
-      data_slicer_1d = slice
-
-      return
-      end
-c
-c     -----------------------------------------------------------------
-c
-      integer(ive_ptr) function data_slicer_2d(corner, ii, jj, ni, 
-     &                                         nj, da, nda)
-      use default_module
-c
-c     data_slicer_2d_ : This routine returns the computational points at
-c     which a 2d slice should be taken.
-c
-c     Arguments:
-c     	corner	real	input	4 corner points of slice in physical space.
-c     	ii	integer	input	axis coordinate of ni.
-c     	jj	integer	input	axis coordinate of nj.
-c     	ni	integer	output	Number of points in the x-direction.
-c     	nj	integer	output	Number of points in the y-direction.
-c     	da	integer	input	axis coordinate of average
-c     	nda	integer	output	Number of points in the da-direction.
-c
-c     The corners will be:     2    3
-c                           jj
-c                              0    1
-c                                ii
-c
-      real corner(4,4)
-      integer ii, jj, ni, nj, da, nda
-c
-c     Call the internal routine that does 2d physical slicing for
-c     vectors.
-c
-      integer(ive_ptr) pslicer2d
-
-      data_slicer_2d = pslicer2d(corner, ii, jj, ni, nj, da, nda)
-      return
-      end function
-c
-c     -----------------------------------------------------------------
-c
-      subroutine heading(where, which, line)
-c
-c     heading_ : This routine allows the user to change headings on plots
-c
-c     Arguments:
-c     	where   integer		Wherefrom called
-c     	which   integer		Which heading (first (1) or second (2) line)
-c     	line    character	The line to be changed.
-c
-      integer where, which
-      character*(256) line
-
-      return
-      end subroutine
-c
-c     -----------------------------------------------------------------
-c
 c
 c     Local routines
 c
@@ -1450,6 +1322,30 @@ c
       dimension array(j)
 
       r_val = array(j)
+      return
+      end function
+c
+      real function r4_val(array, i,j,k,l,ni,nj,nk,nl)
+c
+c     This routine is used to return the value stored in an 4d real array.
+c     Since Fortran cannot be used to directly access memory given
+c     a integer(ive_ptr), this function can be used to dereference the pointer
+c     and extract a value from the corresponding array as follows:
+c
+c     If p is the integer(ive_ptr) to some data array X, you get the j th data 
+c     value in X (i.e. X(j)) with the following call:
+c
+c     r4_val(%val(p), i,j,k,l)
+c
+c     Arguments:
+c     array	real	input	The array to extract the value from.
+c     j		integer	input	The index of array to use.
+c
+      real array
+      integer i,j,k,l,ni,nj,nk,nl
+      dimension array(ni,nj,nk,nl)
+
+      r4_val = array(i,j,k,l)
       return
       end function
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1711,33 +1607,33 @@ c
       data iflag/1,1,0,1/
       real bottom, top, part, retpres
       call phys_2_index(hgt, index, iflag, ndims, 1)
-      if(index(1) .lt. 1 .or. index(2) .lt. 1 .or. 
-     &     index(4) .lt. 1) then
+      if(index(1) .lt. 1. .or. index(2) .lt. 1. .or. 
+     &     index(4) .lt. 1.) then
          index(3)=-1
          return
       endif
          
-      k=nz
-      bottom=interp(%val(phtot_ptr),nx,ny,nz,ntime,
-     &     index(1),index(2), real(k), index(4),spval)
-      do while(bottom .gt. hgt(3) .and. k .gt. 1)
-         k=k-1
-         bottom=interp(%val(phtot_ptr),nx,ny,nz,ntime,
-     &        index(1),index(2), real(k), index(4),spval)
+      k=1
+      top=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+     &     phdims(4),index(1),index(2), real(k), index(4),spval)
+      if(top .gt. hgt(3)) then
+          index(3)=-1
+          return
+       endif
+      do while(top .lt. hgt(3) .and. k .lt. phdims(3))
+         k=k+1
+         top=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+     &        phdims(4),index(1),index(2), real(k), index(4),spval)
       enddo
-      if((bottom .lt. hgt(3) .and. k .eq. nz) .or.
-     &     ((k.eq.1) .and. bottom .gt. hgt(3))) then
+      if(top .lt. hgt(3)) then
          index(3)=-1
-         return
-      endif
-
-      if(bottom .eq. hgt(3)) then
+      else if(top .eq. hgt(3)) then
          index(3)=real(k)
       else
-         top=interp(%val(phtot_ptr),nx,ny,nz,ntime,
-     &        index(1),index(2), real(k+1), index(4),spval)
+         bottom=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+     &        phdims(4),index(1),index(2), real(k-1), index(4),spval)
          part=(hgt(3)-bottom)/(top-bottom)
-         index(3)=real(k)+part
+         index(3)=real(k-1)+part
       endif
       end
 
@@ -1765,24 +1661,23 @@ c
       real    r_val, spval
       double precision interp
       
-      integer iflag(4)
-      data iflag/1,1,0,1/
-      real bottom, top, part, retpres
+      real bottom, top, part
          
-      if(nz = 1) then
+      if(nz .eq. 1) then
          index(3) = 1
          return
       endif
       k=nz
       bottom=interp(%val(ptot_ptr),nx,ny,nz,ntime,
      &     index(1),index(2), real(k), index(4),spval)
-      do while(bottom .gt. pres .and. k .gt. 1)
+      do while(bottom .lt. pres .and. k .gt. 1)
          k=k-1
-         bottom=interp(%val(phtot_ptr),nx,ny,nz,ntime,
+         bottom=interp(%val(ptot_ptr),nx,ny,nz,ntime,
      &        index(1),index(2), real(k), index(4),spval)
       enddo
-      if((bottom .lt. pres .and. k .eq. nz) .or.
-     &     ((k.eq.1) .and. bottom .gt. pres)) then
+!      write(6,*)pres,bottom,k
+      if((bottom .gt. pres .and. k .eq. nz) .or.
+     &     ((k.eq.1) .and. bottom .lt. pres)) then
          index(3)=-1
          return
       endif
@@ -1817,3 +1712,43 @@ c
       lon_ll(:) = lons(1,1,1,:)
       lon_ur(:) = lons(x,y,z,:)
       end
+
+      real function geo_to_geom(geohgt, x, y, t)
+      use default_module
+      real geohgt, x, y, t, somigliana,eccentricity
+      real termg, termr, termrg, slat, zges, sin2, spval
+      double precision interp
+      
+!     Convert geopotential height at layer midpoints to geometric 
+!     height using equations (17, 20, 23) in MJ Mahoney's note 
+!     "A discussion of various measures of altitude" (2001).  
+!     Available on the web at
+!     http://mtp.jpl.nasa.gov/notes/altitude/altitude.html
+!     From: http://www.emc.ncep.noaa.gov/gmb/treadon/gsi/gsi_browser/html_code/gsi/setupw.f90.html
+!     termg  = equation 17
+!     termr  = equation 21
+!     termrg = first term in the denominator of equation 23
+!     zges  = equation 23
+      spval=0.0
+      somigliana = (6378.1370e3/6356.7523142e3)*
+     &     (9.8321849378/9.7803253359) -1.0
+      eccentricity=sqrt((6378.1370e3)**2 -(6356.7523142e3)**2)/
+     &     6378.1370e3
+      slat = interp(%val(xlat), nx,ny,1,ntime,x,y,1,t,spval)
+      slat = slat * (3.14159/180.0)
+      sin2  = sin(slat)*sin(slat)
+      termg = 9.7803253359 *
+     &     ((1.0+somigliana*sin2)/
+     &     sqrt(1.0-eccentricity*eccentricity*sin2))
+      termr =  6378.1370e3 /(1.0 + 
+     &     (6378.1370e3-6356.7523142e3)/6378.1370e3 + 
+     &     ((7.292115e-5**2 * 6378.1370e3**2 * 6356.7523142e3)/ 
+     &     3.986004418e14) - 
+     &     (2.0*(6378.1370e3-6356.7523142e3)/6378.1370e3)*sin2)
+
+      termrg = (termg/9.80665)*termr
+      geo_to_geom = (termr*geohgt)/(termrg-geohgt) ! eq (23)
+      return
+      end
+      
+      
