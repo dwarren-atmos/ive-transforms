@@ -254,6 +254,7 @@ c
             endif
          endif
       endif
+      dz = (max(3)-min(3))/dims(3) ; nz = dims(3)
       phdims=dims
       flag=.true.
       ptot_ptr = getvar('Pressure',ndims,dims,stagger,min,max,
@@ -315,7 +316,6 @@ c
       twod = 0
       if (plmax(2).eq.plmin(2)) twod = 1
       
-      dz = znw_min/nznu ; nz = nznu
       dx = abs(delta(1)) ; nx = nint((plmax(1)-plmin(1))/dx)
       if (twod.ne.1) then
          dy = abs(delta(2)) ; ny = nint((plmax(2)-plmin(2))/dy)
