@@ -42,7 +42,7 @@ else
 endif
    LIBS = -L/usr/lib -L/usr/local/lib -lnetcdf -lnetcdff #-lfftpack
    OPT = -O2
-   AUTOMATIC = -automatic
+   AUTOMATIC = -automatic -recursive
    INCLUDES = -I/usr/include -I/usr/local/include
 endif
 
@@ -51,7 +51,7 @@ RCSRM = -/usr/local/bin/rcsclean
 
 DEBUG = 
 CFLAGS = ${OPT} ${DEC} -D_NO_PROTO ${INCLUDES}
-FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
+FFLAGS = ${OPT} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -module $(MODLIB) -u
 #
 #
 #			module_numerics.o
@@ -59,18 +59,19 @@ MODS	=	default_module.o   	\
             module_mapping.o   	\
 			misc_module.o
 
-OBJS_F =  default.o 
+OBJS_F =  default.o rho.o calc_field.o regrid.o
 
 #calc_field.o run_sub.o \
-#	  deriv.o   metrics.o get_args.o list.o omega.o \
+#	   metrics.o omega.o \
 #	  destagger.o units_smpfy.o
 #	  buoy_freq.o  ive_funcs.o  move_parcel.o\
-#	  mkfield.o  pvort.o \
+#	  mkfield.o \
 #	  vert_grid.o xy_grid.o rho.o interp_pres.o interp_height.o \
 #	  vert_interp_field.o horiz_interp_field.o the2temp.o \
-#	  max_min.o point_val.o vort.o pvort.o filt9.o
+#	  max_min.o point_val.o vort.o filt9.o
 
-OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o
+OBJS_f = grdij.o grid.o hm2uv.o ij2ll.o ll2ij.o map_factors.o uvg2uv.o z2zint.o s2pint.o \
+	deriv.o list.o massflux.o get_args.o
 
 all: TRANS_WRF
 
@@ -87,8 +88,8 @@ clean:
 ${OBJS_F}  : ${MODS}
 
 .f.o:
-	$(F90) $(FFLAGS)  -module $(MODLIB) -c $<
+	$(F90) $(FFLAGS) -c $<
 .F.o:
-	$(F90) -module $(MODLIB) $(FFLAGS) -c $<
+	$(F90) $(FFLAGS) -c $<
 .c.o:
 	${CC}  -c ${CFLAGS} $*.c -o $*.o
