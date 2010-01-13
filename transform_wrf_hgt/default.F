@@ -160,8 +160,6 @@ c
 
       do i = 1,4
         exact_coord(i) = dimvar_data(i)
-        coord(i) = dimvar_data(i)
-        n(i) = dimvar_size(i)
       enddo
 
 c
@@ -323,7 +321,21 @@ c
          dy = 1. ; ny = 1
       end if
       nxp1 = nx + 1 ; nyp1 = ny + 1
-      
+      if(coord(1) .ne. 0)call freemem(coord(1))
+      if(coord(2) .ne. 0)call freemem(coord(2))
+      coord(1) = getmem(nx)
+      coord(2) = getmem(ny)
+      do i=1,nx
+         call s_val(%val(coord(1)),i,plmin(1)+(dx*(i-1)))
+      enddo
+      do i=1,ny
+         call s_val(%val(coord(2)),i,plmin(2)+(dy*(i-1)))
+      enddo
+      coord(4) = dimvar_data(4)
+        n(1)=nx
+        n(2)=ny
+        n(3)=0
+        n(4) = dimvar_size(4)
       mumax = 0.0
       mumin = 999999.0
       htop = 0.0
@@ -339,7 +351,6 @@ c
       enddo
       htop = int(htop/9.80665)
       hbot = int(hbot/9.80665)
-      write(6,*)'top/bot',htop,hbot
 !       plmax(3) = ptop ; plmin(3) = (mumax+ptop)
 !       phmax(3) = ptop ; phmin(3) = (mumax+ptop)
 !     Z2 - Z1 = RT/G0ln(p1/p2)
@@ -601,7 +612,6 @@ c check to see if time coordinate vector is evenly spaced
 c
       if (inmax(4).ne.1) then
          call getparr('dimvar_data', dimvar_data, 4, error)
-!         write(6,*)'time: ',time, dimvar_data(4)
           coord(4) = dimvar_data(4) !should = time
         k = 1
         start = r_val(%val(coord(4)),1)
@@ -653,7 +663,7 @@ c
       double precision extrap
 
       data iflag/0, 0, 0, 1/
-
+      
       call getrvar('spval', spval, error)
       if(error)spval = 0.0
       do i = 1, npts
@@ -661,33 +671,13 @@ c
             if (flag(j) .eq. 1) then
 c     Handle vertical transformation
                if ( j.eq.3 ) then
-                  if(height_t .ge. index(4,i)) then
-                     junk = index(4,i)
-                  else
-                     junk = height_t
-                  endif
-                  mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &                 index(1,i),index(2,i),1.,junk,spval)
                   myind=index(:,i)
-                  myind(3)=myind(3)+.5
+!                  myind(3)=myind(3)+1
                   phys(j, i) = extrap(%val(phtot_ptr),phdims(1),
      &                 phdims(2),phdims(3),phdims(4),myind(1),
      &                 myind(2),myind(3),myind(4),spval)
-                  if(phys(j, i) .ne. spval) then
-!                     phys(i,j) =  geo_to_geom(phys(j, i),
-!     &                 myind(1),myind(2),myind(4))
-                     phys(j, i)=phys(j, i)/9.80665
-                  endif
-!                  if( phys(j, i) .lt. mh .or. phys(j, i) .lt. hbot) then
-!                     write(6,*)'below ground - set to',spval,phys(j, i),
-!     &                    mh, hbot
-!                     phys(j, i)=mh
-!                  endif
-!                  if( phys(j, i) .ge. htop) then
-!                     write(6,*)'in space - set to',htop
-!                     phys(j, i)=htop
-!                  endif
-
+                  phys(j, i)=phys(j, i)/9.80665
+                  
 c     Case where we are out of the data array
                else if ( index(j,i) .lt. 1 ) then
                   phys(j,i) = spval !missing
@@ -704,7 +694,6 @@ c     point locations given in a 1D "dimension variable" array.
                   if (k .lt. inmax(j)) then
                      coord_k   = r_val(%val(coord(j)),k)
                      coord_kp1 = r_val(%val(coord(j)),k+1)
-
                      phys(j,i) = coord_k  +
      &                          (index(j,i) - k)*(coord_kp1 - coord_k)
                   else
@@ -712,8 +701,8 @@ c     point locations given in a 1D "dimension variable" array.
                   endif
 
 c     Case of evenly spaced physical coord.
-               else
-                     phys(j,i) = phmin(j) + (index(j,i)-1)*delta(j)
+               else 
+                  phys(j,i) = phmin(j) + (index(j,i)-1)*delta(j)
                endif
 
             endif
@@ -749,77 +738,29 @@ c
       integer npts, ndims, flag(ndims)
       real    phys(ndims, npts), index(ndims, npts)
 
-      integer i, j, k, l
+      integer i, j, k, l, myflag(4)
       logical error
       real    r_val, spval
       real    mupt, p, mh, myin(4), myph(4)
       double precision extrap
-
+      data myflag /1,1,0,1/
       call getrvar('spval', spval, error)
       if(error)spval = 0.0
 !     can't do without all others
       if(flag(3) .eq. 1) then
+         call phys_2_index(phys, index, myflag, ndims, npts)
          do i = 1, npts
-            do j=1,4
-               if( j .ne. 3) then
-                  p = phys(j, i)
-                  
-c     Trivial case where dimension does not exist (depth of array is 
-c     unity along this dimension)
-                  if(inmax(j) .eq. 1) then
-                     index(j,i) = 1.
-                     
-c     Case where interpolation must be performed between the grid
-c     point locations given in a 1D "dimension variable" array.
-                  else if (delta(j) .eq. 0.) then
-c     
-c     Physical coord. increasing with index.
-                     if (phmin(j) .lt. phmax(j)) then
-                        k = 2
- 10                     if ((p.gt.r_val(%val(coord(j)),k)).and.
-     >                       (k.lt.inmax(j))) then
-                           k = k+1
-                           goto 10
-                        end if
-                        
-                        index(j,i) = real(k) - (p-
-     &                       r_val(%val(coord(j)),k))/
-     &                       (r_val(%val(coord(j)),k-1)-
-     &                       r_val(%val(coord(j)),k))
-                        
-                     else       ! Physical coord. decreasing with index.
-                        k = 2
- 20                     if ((p.lt.r_val(%val(coord(j)),k)).and.
-     >                       (k.lt.inmax(j))) then
-                           k = k+1
-                           goto 20
-                        end if
-                        
-                        index(j,i) = real(k) - (p-
-     &                       r_val(%val(coord(j)),k))/
-     &                       (r_val(%val(coord(j)),k-1)-
-     &                       r_val(%val(coord(j)),k))
-                     endif
-                     
-                  else          ! Case of evenly spaced physical coord.
-                     index(j,i) = (p-phmin(j))/delta(j) + 1
-                     if (index(j,i) .lt. 1) index(j,i) = 1
-                     if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
-                  endif
-               endif
-            enddo
             mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
      &           index(1,i),index(2,i),1.,index(4,i),spval)
-            if(phys(3, i) .le. mh .or. phys(3, i) .le. hbot) then
+            if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
                index(3,i)=-1    !under ground
             else if(phys(3, i) .ge. htop) then
-               index(3,i)=nz+1    !in space
+               index(3,i)=nz+1  !in space
             else
                myin=index(:,i)
                call hgt_2_index(phys(3,i),myin,4,spval)
                index(:,i)=myin
             endif
-c     write(6,*)myin
          enddo
 !!!!  Don't care about height
       else
@@ -827,10 +768,14 @@ c     write(6,*)myin
             do j = ndims, 1, -1
                if (flag(j) .eq. 1) then
                   p = phys(j, i)
-                  
+                  if(p .le. phmin(j)) then
+                     index(j,i) =1
+                  elseif(p .ge. phmax(j)) then
+                     index(j,i) = inmax(j)
+                     
 c     Trivial case where dimension does not exist (depth of array is 
 c     unity along this dimension)
-                  if(inmax(j) .eq. 1) then
+                  elseif(inmax(j) .eq. 1) then
                      index(j,i) = 1.
                      
 c     Case where interpolation must be performed between the grid
@@ -867,10 +812,6 @@ c     Physical coord. increasing with index.
                      
                   else          ! Case of evenly spaced physical coord.
                      index(j,i) = (p-phmin(j))/delta(j) + 1
-                     if (index(j,i) .lt. 1) index(j,i) = 1
-                     if (index(j,i) .gt. inmax(j)) index(j,i) = inmax(j)
-!     if (index(j,i) .lt. 1) index(j,i) = -1
-!     if (index(j,i) .gt. inmax(j)) index(j,i) = -1
                   endif
                endif
             enddo
@@ -1601,39 +1542,39 @@ c
 
       integer i, j, k
       real    r_val, spval
-      double precision interp
+      double precision extrap
       
-      integer iflag(4)
+      integer iflag(4),count
       data iflag/1,1,0,1/
       real bottom, top, part, retpres
-      call phys_2_index(hgt, index, iflag, ndims, 1)
-      if(index(1) .lt. 1. .or. index(2) .lt. 1. .or. 
-     &     index(4) .lt. 1.) then
-         index(3)=-1
-         return
-      endif
-         
+
       k=1
-      top=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+      top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &     phdims(4),index(1),index(2), real(k), index(4),spval)
       if(top .gt. hgt(3)) then
-          index(3)=-1
+          index(3)=1
           return
        endif
-      do while(top .lt. hgt(3) .and. k .lt. phdims(3))
+      do while(top .lt. hgt(3))
          k=k+1
-         top=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+         top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k), index(4),spval)
       enddo
-      if(top .lt. hgt(3)) then
-         index(3)=-1
-      else if(top .eq. hgt(3)) then
+      if(top .eq. hgt(3)) then
          index(3)=real(k)
+         return
+      elseif(k .gt. phdims(3)) then
+         bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+     &        phdims(4),index(1),index(2), phdims(3), index(4),spval)
+         part=(hgt(3)-bottom)/(top-bottom)
+         index(3)=real(k-1)+part
+         return
       else
-         bottom=interp(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
+         bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k-1), index(4),spval)
          part=(hgt(3)-bottom)/(top-bottom)
          index(3)=real(k-1)+part
+         return
       endif
       end
 

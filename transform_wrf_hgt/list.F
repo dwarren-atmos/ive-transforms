@@ -2,7 +2,7 @@
 
       integer numlines,k
       
-      PARAMETER (numlines = 5 )
+      PARAMETER (numlines = 6 )
       
       character*(65) line(numlines)
       
@@ -10,8 +10,9 @@
      >     'LIST            generates this list of fields',
      >     'D[fld:dir]      derivative of field ''fld'' in ',
      >     '                direction ''dir'' ',
-     >     'OMEGA[U:V:W]    Calculate the vertical velocity on ',
-     >     '                the untransformed grid, omega.'/
+     >     'VER_MASFLX      Calculate the vertical mass flux',
+     >     'HOR_MASSFLX     Calculate the horizontal mass flux',
+     >     'RHO             Calculate the total density' /
       
       write(*,*)
       write(*,*) '------------------------------------------------'

@@ -56,7 +56,7 @@ c
      &                 geowind,urot2,windspeed,reldiff,time_diff,
      &                 variance, maxmin_reg, time_mean, the2temp,
      &                 interp_height, kgain, localize, vort_z, vort_x,
-     &                 vort_y,pvort,sigdiff
+     &                 vort_y,sigdiff,get_vmassflux,get_hmassflux,regrid
 c
       call setstr(fld,name)
 c
@@ -158,17 +158,17 @@ c
 c
 c  OMEGA
 c
-      case ('OMEGA')
+!      case ('OMEGA')
 !        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,3,err)
 !        if (err) return
 
 !        calc_field = omega(carg(1),carg(2),carg(3),
 !     &                      ndims,dims,stag,min,max,missing,
 !     &                      data_units,data_display_units,dim_names)
-        calc_field = omega('Pressure','T','W',
-     &                      ndims,dims,stag,min,max,missing,
-     &                      data_units,data_display_units,dim_names)
-        return
+!        calc_field = omega('Pressure','T','W',
+!     &                      ndims,dims,stag,min,max,missing,
+!     &                      data_units,data_display_units,dim_names)
+!        return
 c    
 c  Buoyancy frequency
 c    
@@ -191,6 +191,12 @@ c
 !     &                 data_units,data_display_units,dim_names,1)
 !        return
 c
+       case ('REGRID')
+
+        calc_field = regrid(carg(1),carg(2),ndims,dims,stag,min,
+     &                   max,missing,data_units,data_display_units,
+     &                   dim_names,err)
+        return
 !      case ('THE2TEMP')
 !        call calc_field_message(fld_cut,rcnt,icnt,ccnt,0,0,2,err)
 !        if(err) return
@@ -227,12 +233,37 @@ c
 !     &                  data_display_units,dim_names)
 !        return
 
-      case ('PVORT') ! potential vorticity
-!                    In WRF we know the names:U,V,T,F etc
-!                    So they are hard coded unlike coamps etc.
-        calc_field = pvort(ndims,dims,stag,min,max,missing,data_units,
-     &                  data_display_units,dim_names)
-        return
+      case ('RHO')
+         err = .false.
+         calc_field = rho_calc('PRESSURE', 'T', ndims,dims,stag,
+     &        min,max,missing,data_units,data_display_units,dim_names)
+         return
+!
+!
+      case  ('VER_MASSFLX')
+*   Here, getvar returns a pointer to the memory location where the field
+*   'VER_MASSFLX' is stored
+
+         err = .false.
+      if(iend.ge.0) then
+         
+      endif
+         calc_field = get_vmassflux('RHO','REGRID[W:RHO]',
+     >        ndims,dims,stag,min,max,missing,data_units,
+     >                   data_display_units,dim_names,new,err)
+         return
+
+       case ('HOR_MASSFLX')
+*   Here, getvar returns a pointer to the memory location where the field
+*   'HOR_MASSFLX' is stored
+
+         err = .false.
+         calc_field = get_hmassflux('RHO','REGRID[U:RHO]',
+     >        ndims,dims,stag,min,max,missing,data_units,
+     >                   data_display_units,dim_names,new,err)
+         return
+
+
 c
 c  Variable not found
 c
