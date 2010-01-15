@@ -28,10 +28,9 @@ c
      >     disunits,dim_names,new)
       if(err) return
       
-      mf=getmem(dims(2)*dims(3)*dims(4))
+      get_vmassflux=getmem(dims(2)*dims(3)*dims(4))
       call ver_mass_flux(dims(1),dims(2),dims(3),dims(4),
-     &     %val(w),%val(r),%val(mf))
-      get_vmassflux=mf
+     &     %val(w),%val(r),%val(get_vmassflux))
       dims(1)=1
       return
       end
@@ -63,10 +62,9 @@ c
      >     disunits,dim_names,new)
       if(err) return
       
-      mf=getmem(dims(1)*dims(2)*dims(4))
+      get_hmassflux=getmem(dims(1)*dims(2)*dims(4))
       call hor_mass_flux(dims(1),dims(2),dims(3),dims(4),
-     &     %val(u),%val(r),%val(mf))
-      get_hmassflux=mf
+     &     %val(u),%val(r),%val(get_hmassflux))
       dims(3)=1
       return
       end
@@ -110,15 +108,14 @@ c
 
        hor_massflx = 0
        do n=1,mnt
-          do k=1,mnz
-             do j=1,mny
-                do i=1,mnx
+          do j=1,mny
+             do i=1,mnx
+                do k=1,mnz
                    hor_massflx(i,j,1,n)=hor_massflx(i,j,1,n)+
      &                  rho(i,j,k,n)*(uatrho(i,j,k,n))*dz
                 enddo
              enddo
           enddo
-          write(6,*)hor_massflx(5,1,1,n)
        enddo
        return
        end

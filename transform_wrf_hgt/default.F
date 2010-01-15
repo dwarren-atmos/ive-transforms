@@ -158,9 +158,6 @@ c
       ! the vertical coord is a function of everything
       coord_dep(:,3) = 1 
 
-      do i = 1,4
-        exact_coord(i) = dimvar_data(i)
-      enddo
 
 c
 c set up coordinate vector for times
@@ -252,7 +249,7 @@ c
             endif
          endif
       endif
-      dz = (max(3)-min(3))/dims(3) ; nz = dims(3)
+      nz = dims(3)
       phdims=dims
       flag=.true.
       ptot_ptr = getvar('Pressure',ndims,dims,stagger,min,max,
@@ -317,9 +314,13 @@ c
       dx = abs(delta(1)) ; nx = nint((plmax(1)-plmin(1))/dx)
       if (twod.ne.1) then
          dy = abs(delta(2)) ; ny = nint((plmax(2)-plmin(2))/dy)
+         if(ny .le. 5) then
+            dy=1.; ny=1; twod=1
+         endif
       else
          dy = 1. ; ny = 1
       end if
+      
       nxp1 = nx + 1 ; nyp1 = ny + 1
       if(coord(1) .ne. 0)call freemem(coord(1))
       if(coord(2) .ne. 0)call freemem(coord(2))
@@ -332,8 +333,9 @@ c
          call s_val(%val(coord(2)),i,plmin(2)+(dy*(i-1)))
       enddo
       coord(4) = dimvar_data(4)
-        n(1)=nx
-        n(2)=ny
+      exact_coord(4) = coord(4)
+        n(1)=0
+        n(2)=0
         n(3)=0
         n(4) = dimvar_size(4)
       mumax = 0.0
@@ -351,12 +353,16 @@ c
       enddo
       htop = int(htop/9.80665)
       hbot = int(hbot/9.80665)
+      if(hbot .le. .01)hbot=0.0
 !       plmax(3) = ptop ; plmin(3) = (mumax+ptop)
 !       phmax(3) = ptop ; phmin(3) = (mumax+ptop)
 !     Z2 - Z1 = RT/G0ln(p1/p2)
 !      htop = (29.3*216)*log(1000/ptop)
        plmax(3) = htop ; plmin(3) = hbot
        phmax(3) = htop ; phmin(3) = hbot
+       max(3) = htop
+       min(3) = hbot
+      dz = (max(3)-min(3))/nz
 
       call setrarr('phmax',phmax,4,error1)
       call setrarr('phmin',phmin,4,error2)
@@ -569,6 +575,8 @@ c      print *,'PLMIN/MAX_SCLAED: ', plmin_scaled, plmax_scaled
 
       inmax(1) = inmax1 ; inmax(2) = inmax2 
       inmax(3) = inmax3 ; inmax(4) = inmax4
+      if(trim(name(1:len(name))) .eq. 'HOR_MASSFLX' ) inmax(3)=1
+      if(trim(name(1:len(name))) .eq. 'VER_MASSFLX' ) inmax(1)=1
 
 c      print *,'INMAX: ',inmax
 !      print *,'PLMIN: ',PLMIN
@@ -677,7 +685,7 @@ c     Handle vertical transformation
      &                 phdims(2),phdims(3),phdims(4),myind(1),
      &                 myind(2),myind(3),myind(4),spval)
                   phys(j, i)=phys(j, i)/9.80665
-                  
+                  write(6,*)'phys(3)',phys(j, i), myind(3)
 c     Case where we are out of the data array
                else if ( index(j,i) .lt. 1 ) then
                   phys(j,i) = spval !missing
@@ -749,19 +757,23 @@ c
 !     can't do without all others
       if(flag(3) .eq. 1) then
          call phys_2_index(phys, index, myflag, ndims, npts)
-         do i = 1, npts
-            mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &           index(1,i),index(2,i),1.,index(4,i),spval)
-            if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
-               index(3,i)=-1    !under ground
-            else if(phys(3, i) .ge. htop) then
-               index(3,i)=nz+1  !in space
-            else
-               myin=index(:,i)
-               call hgt_2_index(phys(3,i),myin,4,spval)
-               index(:,i)=myin
-            endif
-         enddo
+         if(inmax(3) .eq. 1) then
+            index(3,:) = 1
+         else
+            do i = 1, npts
+               mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+     &              index(1,i),index(2,i),1.,index(4,i),spval)
+               if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
+                  index(3,i)=-1 !under ground
+               else if(phys(3, i) .ge. htop) then
+                  index(3,i)=nz+1 !in space
+               else
+                  myin=index(:,i)
+                  call hgt_2_index(phys(3,i),myin,4,spval)
+                  index(:,i)=myin
+               endif
+            enddo
+         endif
 !!!!  Don't care about height
       else
          do i = 1, npts
@@ -1538,7 +1550,7 @@ c     npts	integer	input	Number of points to convert.
 c
 
       integer  ndims, flag(ndims)
-      real    hgt(ndims), index(ndims)
+      real    hgt, index(ndims)
 
       integer i, j, k
       real    r_val, spval
@@ -1551,28 +1563,28 @@ c
       k=1
       top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &     phdims(4),index(1),index(2), real(k), index(4),spval)
-      if(top .gt. hgt(3)) then
+      if(top .gt. hgt) then
           index(3)=1
           return
        endif
-      do while(top .lt. hgt(3))
+      do while(top .lt. hgt)
          k=k+1
          top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k), index(4),spval)
       enddo
-      if(top .eq. hgt(3)) then
+      if(top .eq. hgt) then
          index(3)=real(k)
          return
       elseif(k .gt. phdims(3)) then
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), phdims(3), index(4),spval)
-         part=(hgt(3)-bottom)/(top-bottom)
+         part=(hgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return
       else
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k-1), index(4),spval)
-         part=(hgt(3)-bottom)/(top-bottom)
+         part=(hgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return
       endif
