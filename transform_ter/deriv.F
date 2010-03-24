@@ -124,7 +124,7 @@
       subroutine diff1_upts(var,deriv,dqdx_xy,dqdx_zw,dqdy_xy,
      >                 dqdy_zw,dqdz,dx,dy,time,nx,ny,nz,nt,idir)
 
-      include 'misc.icl'
+#include "misc.icl"
 
       integer nx,ny,nz,nt,idir
       real var(nx+1,ny,nz,nt),deriv(nx+1,ny,nz,nt)
@@ -325,7 +325,7 @@
       subroutine diff1_vpts(var,deriv,dqdx_xy,dqdx_zw,dqdy_xy,
      >                 dqdy_zw,dqdz,dx,dy,time,nx,ny,nz,nt,idir)
 
-      include 'misc.icl'
+#include "misc.icl"
 
       integer nx,ny,nz,nt,idir
       real var(nx,ny+1,nz,nt),deriv(nx,ny+1,nz,nt)
@@ -526,7 +526,7 @@
       subroutine diff1_wpts(var,deriv,dqdx_xy,dqdx_zt,dqdy_xy,
      >                 dqdy_zt,dqdz,dx,dy,time,nx,ny,nz,nt,idir)
 
-      include 'misc.icl'
+#include "misc.icl"
 
       integer nx,ny,nz,nt,idir
       real var(nx,ny,nz+1,nt),deriv(nx,ny,nz+1,nt)
@@ -752,7 +752,7 @@
       subroutine diff1_spts(var,deriv,dqdx_xy,dqdx_zw,dqdy_xy,
      >                 dqdy_zw,dqdz,dx,dy,time,nx,ny,nz,nt,idir)
 
-      include 'misc.icl'
+#include "misc.icl"
 
       integer nx,ny,nz,nt,idir
       real var(nx,ny,nz,nt),deriv(nx,ny,nz,nt)
