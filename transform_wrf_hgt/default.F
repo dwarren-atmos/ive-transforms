@@ -269,8 +269,8 @@ c
       endif
       ierr = set_button_name ('MU', '')  
       ierr = set_button_name ('MUB', '')
-      ierr = set_button_name ('PH', '')
-      ierr = set_button_name ('PHB', '')
+!      ierr = set_button_name ('PH', '')
+!      ierr = set_button_name ('PHB', '')
       
       mapM_ptr = getvar('MAPFAC_M',ndims,dims,stagger,min,max,missing,
      >                  data_units,display_units,dim_names,flag)
@@ -685,7 +685,7 @@ c     Handle vertical transformation
      &                 phdims(2),phdims(3),phdims(4),myind(1),
      &                 myind(2),myind(3),myind(4),spval)
                   phys(j, i)=phys(j, i)/9.80665
-                  write(6,*)'phys(3)',phys(j, i), myind(3)
+!                  write(6,*)'phys(3)',phys(j, i), myind(3)
 c     Case where we are out of the data array
                else if ( index(j,i) .lt. 1 ) then
                   phys(j,i) = spval !missing
@@ -762,8 +762,11 @@ c
          else
             do i = 1, npts
                mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &              index(1,i),index(2,i),1.,index(4,i),spval)
+     &              index(1,i),index(2,i),1.,
+     &              index(4,i),spval)
+!     &              min(real(height_t),index(4,i)), spval)
                if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
+!                  write(6,*)'under ground ',phys(3, i), mh, hbot
                   index(3,i)=-1 !under ground
                else if(phys(3, i) .ge. htop) then
                   index(3,i)=nz+1 !in space
@@ -1563,6 +1566,7 @@ c
       k=1
       top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &     phdims(4),index(1),index(2), real(k), index(4),spval)
+      top = top/9.80665
       if(top .gt. hgt) then
           index(3)=1
           return
@@ -1571,6 +1575,7 @@ c
          k=k+1
          top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k), index(4),spval)
+         top = top/9.80665
       enddo
       if(top .eq. hgt) then
          index(3)=real(k)
@@ -1578,12 +1583,14 @@ c
       elseif(k .gt. phdims(3)) then
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), phdims(3), index(4),spval)
+         bottom = bottom/9.80665
          part=(hgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return
       else
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k-1), index(4),spval)
+         bottom = bottom/9.80665
          part=(hgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return

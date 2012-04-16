@@ -59,7 +59,7 @@ MODS	=	default_module.o   	\
             module_mapping.o   	\
 			misc_module.o
 
-OBJS_F =  default.o rho.o calc_field.o regrid.o
+OBJS_F =  default.o rho.o calc_field.o regrid.o units_smpfy.o 
 
 #calc_field.o run_sub.o \
 #	   metrics.o omega.o \
