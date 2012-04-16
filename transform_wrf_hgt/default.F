@@ -763,8 +763,7 @@ c
             do i = 1, npts
                mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
      &              index(1,i),index(2,i),1.,
-     &              index(4,i),spval)
-!     &              min(real(height_t),index(4,i)), spval)
+     &              min(real(height_t),index(4,i)), spval)
                if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
 !                  write(6,*)'under ground ',phys(3, i), mh, hbot
                   index(3,i)=-1 !under ground
@@ -856,10 +855,11 @@ c
 
       integer nxw, nyw, error, i, j, iflag(4)
       real    topo(nxw, nyw), stagi(nxw), stagj(nyw), zero
-      real    compt(4), phypt(4)
+      real    compt(4), phypt(4), spval
       data iflag/1, 1, 0, 0/
-
+      double precision extrap
       error = 0
+      call getrvar('spval', spval, error)
       if (hgt_ptr .eq. 0) then
          topo(:,:) = zero
       else
@@ -878,9 +878,14 @@ c
 c
 c     Interpolate terrain to the required point.
 c
-               topo(i, j) =  get_ter_pt (%val(hgt_ptr), compt(1), 
-     &              compt(2), zbot_dims(1), zbot_dims(2), zbot_min,
-     &              zbot_delta)
+               topo(i,j) = extrap(%val(hgt_ptr),zbot_dims(1), 
+     &              zbot_dims(2),1,height_t,
+     &              compt(1),compt(2),1.,
+     &              min(real(height_t),compt(4)), spval)
+
+!               topo(i, j) =  get_ter_pt (%val(hgt_ptr), compt(1), 
+!     &              compt(2), zbot_dims(1), zbot_dims(2), zbot_min,
+!     &              zbot_delta)
                topo(i, j) = amax1 (topo(i, j), zero)
             enddo
          enddo
@@ -972,8 +977,8 @@ c
             yter = getmem(nter)
             topoht = getmem(nter)
 
-            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &           min(1),min(2),1.,mytime,spval)
+            value = extrap(%val(hgt_ptr),zbot_dims(1), zbot_dims(2),1,
+     &           height_t,min(1),min(2),1.,mytime,spval)
 c            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 c     &              zbot_dims(1), zbot_dims(2), zbot_min,
 c     &              zbot_delta)
@@ -984,8 +989,8 @@ c            value = amax1(value, zero)
             do i = 2, nter-1
                min(stepby) = int(min(stepby)+1)
                call index_2_phys(phypt, min, iflag, MAXDIM, 1)
-               value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &              min(1),min(2),1.,mytime,spval)
+               value = extrap(%val(hgt_ptr),zbot_dims(1), zbot_dims(2),
+     &              1,height_t,min(1),min(2),1.,mytime,spval)
 !               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &              zbot_dims(1), zbot_dims(2), zbot_min,
 !     &              zbot_delta)
@@ -994,8 +999,8 @@ c               value = amax1(value, zero)
                call put_ter(%val(xter), %val(yter), %val(topoht), i,
      &              phypt, value)
             enddo
-            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &           max(1),max(2),1.,mytime,spval)
+            value = extrap(%val(hgt_ptr),zbot_dims(1), zbot_dims(2),
+     &           1,height_t,max(1),max(2),1.,mytime,spval)
 !            value =  get_ter_pt (%val(hgt_ptr), max(1), max(2),
 !     &           zbot_dims(1), zbot_dims(2), zbot_min,
 !           &           zbot_delta)
@@ -1011,8 +1016,8 @@ c
             xter = getmem(nter+1)
             yter = getmem(nter+1)
             topoht = getmem(nter+1)
-            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &           min(1),min(2),1.,mytime,spval)
+            value = extrap(%val(hgt_ptr),zbot_dims(1), zbot_dims(2),
+     &           1,height_t,min(1),min(2),1.,mytime,spval)
 !            value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &           zbot_dims(1), zbot_dims(2), zbot_min,
 !           &           zbot_delta)
@@ -1024,8 +1029,8 @@ c            value = amax1(value, zero)
                phypt(1) = pt1(1) + i * (pt2(1) - pt1(1)) / real(nter)
                phypt(2) = pt1(2) + i * (pt2(2) - pt1(2)) / real(nter)
                call phys_2_index(phypt, min, iflag, MAXDIM, 1)
-            value = extrap(%val(hgt_ptr),nx,ny,1,height_t,
-     &           min(1),min(2),1.,mytime,spval)
+            value = extrap(%val(hgt_ptr),zbot_dims(1), zbot_dims(2),
+     &           1,height_t,min(1),min(2),1.,mytime,spval)
 !               value =  get_ter_pt (%val(hgt_ptr), min(1), min(2),
 !     &              zbot_dims(1), zbot_dims(2), zbot_min,
 !     &              zbot_delta)
