@@ -42,7 +42,7 @@ else
 endif
    LIBS = -L/usr/lib -L/usr/local/lib -lnetcdf -lnetcdff #-lfftpack
    OPT = -O2
-   AUTOMATIC = -automatic -recursive
+   AUTOMATIC = -auto -recursive
    INCLUDES = -I/usr/include -I/usr/local/include
 endif
 
