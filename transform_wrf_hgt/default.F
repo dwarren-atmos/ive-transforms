@@ -75,7 +75,7 @@ c
      &                     dim_names(4),dom_units(4)
 
       integer :: npts, id
-      real :: lat, lon, tfcor
+      real :: lat, lon, tfcor, spval
       real, parameter :: omega = 0.00007292
 
       character(len=80) :: dummy
@@ -453,6 +453,9 @@ c
          projection='ME'
       endif
 
+      call getrvar('spval',spval,error)
+      if(spval .eq. 0.)call setrvar('spval',-999.990,error)
+
 c      end if
 c
 c compute metric arrays (subroutine in metrics.F)
@@ -513,9 +516,10 @@ c
       character*81 data_units,display_units,dim_names(4)
       real missing,stagger(4),start,r_val,d,dom_min(4),dom_max(4)
       integer i,j,min(4),max(4),dims(4),nd,error,ndims
-      integer k,iflg, strbeg,strend
+      integer k,l,iflg, strbeg,strend
       logical flag,requ
-      real :: plmin_scaled(4), plmax_scaled(4)
+      real :: plmin_scaled(4), plmax_scaled(4), myphmin(4), myphmax(4)
+      real :: mmin,mmax
       integer(ive_ptr) :: dimvar_data(4)
       integer :: dimvar_size(4)
 c
@@ -530,8 +534,6 @@ c
 !         write(6,*)'len(name',len(name)
 !         write(6,*)'NEW_FIELD name = ',name(1:80)
 !      endif
-      call setrvar('spval',-10.0**27,error)
-      call setlvar('reset_spval', .true ., error)
       if(trim(name(1:len(name))) .eq. 'ZNW' .or. 
      &     trim(name(1:len(name))) .eq. 'ZNU' .or.
      &     trim(name(1:len(name))) .eq. 'XLAT' .or. 
@@ -539,45 +541,55 @@ c
      &     trim(name(1:len(name))) .eq. 'MU' .or.
      &     trim(name(1:len(name))) .eq. 'MUB' .or.
      &     trim(name(1:len(name))) .eq. 'PH' .or.
-     &     trim(name(1:len(name))) .eq. 'PHB' 
+     &     trim(name(1:len(name))) .eq. 'PH+PHB' .or.
+     &     trim(name(1:len(name))) .eq. 'PHB'
      &     ) return
+!      call getrarr("plmax_scaled",plmax_scaled,4,error)
+!      if (error.ne.0) then
+!        write(6,*) 'Error:  problem getting physical domain ',
+!     >                               'for field.'
+!        stop
+!      end if
 
-      call getrarr("plmax_scaled",plmax_scaled,4,error)
-      if (error.ne.0) then
-        write(6,*) 'Error:  problem getting physical domain ',
-     >                               'for field.'
-        stop
-      end if
-
-      call getrarr("plmin_scaled",plmin_scaled,4,error)
-      if (error.ne.0) then
-        write(6,*) 'Error:  problem getting physical domain ',
-     >                               'for field.'
-        stop
-      end if
+!      call getrarr("plmin_scaled",plmin_scaled,4,error)
+!      if (error.ne.0) then
+!        write(6,*) 'Error:  problem getting physical domain ',
+!     >                               'for field.'
+!        stop
+!      end if
 
 c      print *,'PLMIN/MAX_SCLAED: ', plmin_scaled, plmax_scaled
 
-      call getrarr("phmin",phmin,4,error)
+      call getrarr("phmin",myphmin,4,error)
       if (error.ne.0) then
         write(6,*) 'Error:  problem getting physical domain ',
      >                               'for field.'
         stop
       end if
 
-      call getrarr("phmax",phmax,4,error)
+      call getrarr("phmax",myphmax,4,error)
       if (error.ne.0) then
         write(6,*) 'Error:  problem getting physical domain ',
      >                               'maximum for field.'
         stop
       end if
-
+!     the min and max for height in the file is meaningless so keep ours and fill int the rest
+!     also, time min and max better not change between vars in same file
+      phmin(1:2)=myphmin(1:2)
+      phmin(3) = hbot
+      phmin(4)=myphmin(4)
+      phmax(1:2)=myphmax(1:2)
+      phmax(4)=myphmax(4)
+      phmax(3) = htop
+      
 
       inmax(1) = inmax1 ; inmax(2) = inmax2 
       inmax(3) = inmax3 ; inmax(4) = inmax4
       if(trim(name(1:len(name))) .eq. 'HOR_MASSFLX' ) inmax(3)=1
       if(trim(name(1:len(name))) .eq. 'VER_MASSFLX' ) inmax(1)=1
 
+!      print *,'PHMIN',phmin
+!      print *,'PHMAX',phmax
 c      print *,'INMAX: ',inmax
 !      print *,'PLMIN: ',PLMIN
 !      print *,'PLMAX: ',PLMAX
@@ -586,20 +598,20 @@ c
 c translate variable domain limits if necessary (we assume a domain
 c   translation greater than (dx,dy))
 c
-      if ((abs(phmin(1)-plmin(1)).gt.dx).and.(inmax1.ne.1)) then
-        phmin(1) = phmin(1) + offset(1)
-        phmax(1) = phmax(1) + offset(1)
-      end if
+!      if ((abs(phmin(1)-plmin(1)).gt.dx).and.(inmax1.ne.1)) then
+!        phmin(1) = phmin(1) + offset(1)
+!        phmax(1) = phmax(1) + offset(1)
+!      end if
 
-      if ((abs(phmin(2)-plmin(2)).gt.dy).and.(inmax2.ne.1)) then
-        phmin(2) = phmin(2) + offset(2)
-        phmax(2) = phmax(2) + offset(2)
-      end if
+!      if ((abs(phmin(2)-plmin(2)).gt.dy).and.(inmax2.ne.1)) then
+!        phmin(2) = phmin(2) + offset(2)
+!        phmax(2) = phmax(2) + offset(2)
+!      end if
 
-      if (inmax4.ne.1.and.abs(phmin(4)-plmin(4)).gt.0.0) then
-        phmin(4) = phmin(4) + offset(4)
-        phmax(4) = phmax(4) + offset(4)
-      end if
+!      if (inmax4.ne.1.and.abs(phmin(4)-plmin(4)).gt.0.0) then
+!        phmin(4) = phmin(4) + offset(4)
+!        phmax(4) = phmax(4) + offset(4)
+!      end if
 
         trans_eta = 1
 c
@@ -668,24 +680,27 @@ c
       real    mupt, coord_k, coord_kp1, ind2(ndims), mh, spval
       real junk, geo_to_geom
       real    r_val ! function
-      double precision extrap
+      double precision extrap, interp
 
       data iflag/0, 0, 0, 1/
       
       call getrvar('spval', spval, error)
-      if(error)spval = 0.0
+      if(error)spval = -999.990
       do i = 1, npts
          do j = 1, ndims
             if (flag(j) .eq. 1) then
 c     Handle vertical transformation
                if ( j.eq.3 ) then
                   myind=index(:,i)
-!                  myind(3)=myind(3)+1
-                  phys(j, i) = extrap(%val(phtot_ptr),phdims(1),
-     &                 phdims(2),phdims(3),phdims(4),myind(1),
-     &                 myind(2),myind(3),myind(4),spval)
-                  phys(j, i)=phys(j, i)/9.80665
-!                  write(6,*)'phys(3)',phys(j, i), myind(3)
+!     myind(3)=myind(3)+1
+                  if(myind(3) .gt. nz) then
+                     phys(j,i) = phmax(j)
+                  else
+                     phys(j, i) = extrap(%val(phtot_ptr),phdims(1),
+     &                    phdims(2),phdims(3),phdims(4),myind(1),
+     &                    myind(2),myind(3),myind(4),spval)
+                     phys(j, i)=phys(j, i)/9.80665
+                  endif
 c     Case where we are out of the data array
                else if ( index(j,i) .lt. 1 ) then
                   phys(j,i) = spval !missing
@@ -750,7 +765,7 @@ c
       logical error
       real    r_val, spval
       real    mupt, p, mh, myin(4), myph(4)
-      double precision extrap
+      double precision extrap, interp
       data myflag /1,1,0,1/
       call getrvar('spval', spval, error)
       if(error)spval = 0.0
@@ -761,10 +776,11 @@ c
             index(3,:) = 1
          else
             do i = 1, npts
-               mh = extrap(%val(hgt_ptr),nx,ny,1,height_t,
+               mh = extrap(%val(hgt_ptr),zbot_dims(1),zbot_dims(2),1,
+     &              height_t,
      &              index(1,i),index(2,i),1.,
      &              min(real(height_t),index(4,i)), spval)
-               if(phys(3, i) .lt. mh .or. phys(3, i) .lt. hbot) then
+               if(phys(3, i) .lt. mh) then ! .or. phys(3, i) .lt. hbot) then
 !                  write(6,*)'under ground ',phys(3, i), mh, hbot
                   index(3,i)=-1 !under ground
                else if(phys(3, i) .ge. htop) then
@@ -1566,37 +1582,38 @@ c
       
       integer iflag(4),count
       data iflag/1,1,0,1/
-      real bottom, top, part, retpres
+      real bottom, top, part, retpres, myhgt
 
       k=1
+      myhgt = hgt * 9.80665
       top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &     phdims(4),index(1),index(2), real(k), index(4),spval)
-      top = top/9.80665
-      if(top .gt. hgt) then
+!      top = top/9.80665
+      if(top .gt. myhgt) then
           index(3)=1
           return
        endif
-      do while(top .lt. hgt)
+      do while(top .lt. myhgt)
          k=k+1
          top=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k), index(4),spval)
-         top = top/9.80665
+ !        top = top/9.80665
       enddo
-      if(top .eq. hgt) then
+      if(top .eq. myhgt) then
          index(3)=real(k)
          return
       elseif(k .gt. phdims(3)) then
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), phdims(3), index(4),spval)
-         bottom = bottom/9.80665
-         part=(hgt-bottom)/(top-bottom)
+ !        bottom = bottom/9.80665
+         part=(myhgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return
       else
          bottom=extrap(%val(phtot_ptr),phdims(1),phdims(2),phdims(3),
      &        phdims(4),index(1),index(2), real(k-1), index(4),spval)
-         bottom = bottom/9.80665
-         part=(hgt-bottom)/(top-bottom)
+ !        bottom = bottom/9.80665
+         part=(myhgt-bottom)/(top-bottom)
          index(3)=real(k-1)+part
          return
       endif
