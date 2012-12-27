@@ -55,7 +55,7 @@ RCSRM = -/usr/local/bin/rcsclean
 #
 DEBUG = 
 CFLAGS = ${OPT} ${SUN} ${DEC} -D_NO_PROTO ${INCLUDES}
-FFLAGS = ${OPT} ${SUN} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
+FFLAGS = -cpp ${OPT} ${SUN} ${DEC} ${AUTOMATIC} ${DEBUG} ${INCLUDES} -u
 #
 OBJS_TER = default.o metrics.o calc_field.o deriv.o rho.o run_int.o \
            mix.o press_drag.o press_drag_vp.o area.o area_int_z.o \

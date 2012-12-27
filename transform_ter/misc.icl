@@ -1,7 +1,7 @@
 
       integer nxmax,nymax,nzmax
-#ifdef SIXTY_FOUR_bptr
-      parameter (nxmax=5001,nymax=1001,nzmax=201)
+#ifdef SIXTY_FOUR_bptr 
+      parameter (nxmax=5001,nymax=5001,nzmax=501)
 #else
       parameter (nxmax=5001,nymax=201,nzmax=201)
 #endif
