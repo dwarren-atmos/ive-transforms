@@ -134,6 +134,7 @@ c
       real r_val,tgrid,stagger(4),min(4),max(4),missing,mydelta(4)
       real*8 slope,intercept
       integer i,j,ndims,dims(4),k
+      integer strbeg, strend
       character*80 data_units,display_units,dim_names(4),dom_units(4)
 
       data wgz,sgz,time,zbot_p,zbot_u,zbot_v/0,0,0,0,0,0/
@@ -178,10 +179,8 @@ c set up coordinate vector for w pts
 c
       if (wgz.ne.0) call freemem(wgz)
 
-      print *,'BEFORE WGZ GETVAR'
       twgz = getvar('wgz',ndims,dims,stagger,min,max,missing,
      >            data_units,display_units,dim_names,flag)
-      print *,'AFTER WGZ GETVAR'
 
       if (twgz.eq.0) then
         wgz = 0
@@ -193,7 +192,11 @@ c
 
         nwgz = dims(1)
         wgz = getmem(nwgz)
-        call convert_units(data_units,dom_units(3),slope,intercept)
+        call convert_units(
+     >       data_units(strbeg(data_units):strend(data_units))//char(0),
+     >       dom_units(3)(strbeg(dom_units(3)):
+     >       strend(dom_units(3)))//char(0),
+     >       slope,intercept)
         do i = 1,nwgz
           call s_val(%val(wgz),i,
      >          real(r_val(%val(twgz),i)*slope+intercept))
@@ -202,8 +205,7 @@ c
         wgz_max = r_val(%val(wgz),nwgz)
 
       endif
-      print *,'WGZ_MIN,WGZ_MAX',wgz_min,wgz_max
-c
+
 c set up coordinate vector for thermo pts
 c
       if (sgz.ne.0) call freemem(sgz)
@@ -226,7 +228,6 @@ c
         sgz_min = r_val(%val(sgz),1)
         sgz_max = r_val(%val(sgz),nsgz)
       end if
-      print *,'SGZ_MIN,SGZ_MAX',sgz_min,sgz_max
 c
 c set up coordinate vector for times
 c
@@ -238,6 +239,7 @@ c
         write(6,*) 'Error:  could not find time coordinate vector.'
         stop
       else
+         write(6,*)'dimvar_size(4)',dimvar_size(4)
         ntime = dimvar_size(4)
         time = getmem(ntime)
         do i = 1,ntime
@@ -248,7 +250,6 @@ c
 c get total domain depth (not necessarily the same as wgz_max)
 c
       mydelta=delta
-      write(6,*)
       tztop = getvar('ztop',ndims,dims,stagger,min,max,missing,
      >            data_units,display_units,dim_names,flag)
       delta=mydelta
@@ -627,13 +628,21 @@ c find the appropriate vertical coordinate vector
 c
       if (requ(phmin(3),wgz_min)) then 
         coord(3) = wgz
+        if(phmax(3) .lt. wgz_max) phmax(3) = wgz_max
       else if (requ(phmin(3),sgz_min)) then
         coord(3) = sgz
+        if(phmax(3) .lt. sgz_max) phmax(3) = sgz_max
       else 
         write(*,*) 'Warning:  could not find vertical coordinate ',
      >               'vector.' 
         stop
       endif
+      call setrarr("phmax",phmax,4,error)
+      if (error.ne.0) then
+        write(6,*) 'Error:  problem getting physical domain ',
+     >                               'for field.'
+        stop
+      end if
 c
 c check to see if vertical coordinate vector is evenly spaced.  If
 c    not, set delta = 0 to indicate uneven spacing. 
