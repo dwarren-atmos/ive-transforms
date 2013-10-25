@@ -471,7 +471,7 @@ c
 !      call metric_calc(%val(hgt_ptr),%val(hgt_ptr),%val(hgt_ptr),
 !     >     %val(znu_ptr),%val(znw_ptr),%val(dqdx_xy),%val(dqdx_zt),
 !     >     %val(dqdx_zw),%val(dqdy_xy),%val(dqdy_zt),
-!     >     %val(dqdy_zw),%val(dqdz),%val(dzdq),ztop,dx,dy,
+!     >     %val(dqdy_zw),%val(dqdz),%val(dzdq),htop,dx,dy,
 !     >     nx,ny,nz)
 
 c set domain offsets to zero
@@ -957,6 +957,7 @@ c
       double precision extrap
 
 c
+
       call getrvar('spval', spval, error)
       if(error) call write_message('cant get spval in vert_ter')
       if ( hgt_ptr .ne. 0 ) then
@@ -989,6 +990,7 @@ c
                i = int(max(stepby) + 1)
             endif
             nter = i - int(min(stepby)) + 1
+            if(nter .lt. 0)nter=-nter
             xter = getmem(nter)
             yter = getmem(nter)
             topoht = getmem(nter)
@@ -1029,6 +1031,7 @@ c     Handle case of arbitrary slice - step by physical coordinate
 c
          else
             nter = 2 * (max(2) - min(2) + max(1) - min(1))
+            if(nter .lt.0)nter=-nter
             xter = getmem(nter+1)
             yter = getmem(nter+1)
             topoht = getmem(nter+1)
